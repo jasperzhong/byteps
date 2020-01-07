@@ -83,7 +83,7 @@ class BytePSGlobal {
 
   static bool IsTensorDeclared(const std::string& name);
   static void RegisterCompressor(const std::string& name, 
-                                 CompressorParam& param_dict);
+                                 compressor::CompressorParam& param_dict);
   static ps::Key GetKeyFromName(const std::string& name);
   static BPSContext& GetContextFromName(const std::string& name);
   static uint32_t GetTensorCount();
