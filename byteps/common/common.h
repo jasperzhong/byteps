@@ -43,6 +43,7 @@
 namespace byteps {
 namespace common {
 namespace compressor {
+struct ByteBuf;
 class BaseCompressor;
 class ErrorFeedback;
 }  // namespace compressor
@@ -88,8 +89,10 @@ enum QueueType {
   COPYD2H,
   PCIE_REDUCE,
   COORDINATE_PUSH,
+  COMPRESS,
   PUSH,
   PULL,
+  DECOMPRESS,
   COPYH2D,
   COORDINATE_BROADCAST,
   BROADCAST,
@@ -99,10 +102,18 @@ enum QueueType {
 const int QueueNum =
     (int)QUEUE_NUM_AND_NOT_A_REAL_QUEUE_TYPE_AND_MUST_BE_THE_LAST;
 
-const std::vector<std::string> LogStrings = {
-    "COORDINATE_REDUCE",    "REDUCE",   "COPYD2H", "PCIE_REDUCE",
-    "COORDINATE_PUSH",      "PUSH",     "PULL",    "COPYH2D",
-    "COORDINATE_BROADCAST", "BROADCAST"};
+const std::vector<std::string> LogStrings = {"COORDINATE_REDUCE",
+                                             "REDUCE",
+                                             "COPYD2H",
+                                             "PCIE_REDUCE",
+                                             "COORDINATE_PUSH",
+                                             "COMPRESS",
+                                             "PUSH",
+                                             "PULL",
+                                             "DECOMPRESS",
+                                             "COPYH2D",
+                                             "COORDINATE_BROADCAST",
+                                             "BROADCAST"};
 
 class Status {
  public:
@@ -246,6 +257,8 @@ struct TensorTableEntry {
   unsigned int total_partnum = 0;
   // Compressor
   std::shared_ptr<compressor::BaseCompressor> compressor;
+  // Compressed
+  std::shared_ptr<compressor::ByteBuf> compressed;
 };
 using TensorTable = std::unordered_map<std::string, TensorTableEntry>;
 
@@ -265,7 +278,7 @@ int getDataTypeLength(int dtype);
 
 inline size_t Align(size_t size, int dtype) {
   const size_t min_size =
-      (getDataTypeLength(dtype) * getDataTypeLength(dtype)) * 8;  
+      (getDataTypeLength(dtype) * getDataTypeLength(dtype)) * 8;
   return size + (min_size - size % min_size) % min_size;
 }
 }  // namespace common

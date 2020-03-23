@@ -42,6 +42,7 @@ void byteps_init() {
   if (BytePSGlobal::IsDistributed()) {
     if (BytePSGlobal::IsRootDevice()) {
       func.push_back(PullLoop);
+      func.push_back(DecompressLoop);
     }
   }
 
@@ -57,6 +58,7 @@ void byteps_init() {
       // PUSH can be a real push in distributed mode
       // Or a dummy barrier in cross-pcie-switch mode
       func.push_back(PushLoop);
+      func.push_back(CompressLoop);
       func.push_back(RootCopyHost2DeviceLoop);
     } else {
       func.push_back(CoordinatePushLoop);
@@ -153,6 +155,14 @@ Status EnqueueTensor(BPSContext &context, std::shared_ptr<Tensor> input,
   if (input && output) {
     BPS_CHECK_EQ(input->size(), output->size())
         << name << " output tensor size does not match";
+  }
+
+  // add queue
+  if (BytePSGlobal::IsRootDevice() && !context.compressor_list.empty()) {
+    auto it = std::find(queue_list->begin(), queue_list->end(), PUSH);
+    it = queue_list->insert(it, COMPRESS); // before PUSH
+    it = std::find(queue_list->begin(), queue_list->end(), PULL);
+    queue_list->insert(it+1, DECOMPRESS); // after PULL
   }
 
   std::shared_ptr<TensorTableEntry> e(new TensorTableEntry);
