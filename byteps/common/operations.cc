@@ -42,6 +42,7 @@ void byteps_init() {
   if (BytePSGlobal::IsDistributed()) {
     if (BytePSGlobal::IsRootDevice()) {
       func.push_back(PullLoop);
+      func.push_back(DecompressLoop);
     }
   }
 
@@ -57,6 +58,7 @@ void byteps_init() {
       // PUSH can be a real push in distributed mode
       // Or a dummy barrier in cross-pcie-switch mode
       func.push_back(PushLoop);
+      func.push_back(CompressLoop);
       func.push_back(RootCopyHost2DeviceLoop);
     } else {
       func.push_back(CoordinatePushLoop);
