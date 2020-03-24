@@ -50,7 +50,7 @@ class NesterovMomentum(Compressor):
         self.mom = None
 
     def compress(self, tensor):
-        if not self.mom:
+        if self.mom is None:
             self.mom = nd.zeros_like(tensor)
         self.mom = self.mu * self.mom + tensor
         tensor += self.mu * self.mom
