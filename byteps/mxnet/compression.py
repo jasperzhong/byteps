@@ -81,9 +81,9 @@ class FP16Compressor(Compressor):
 
 
 def create_compressor(params):
-    compressor = NoneCompressor
+    compressor = NoneCompressor()
     if "byteps_fp16pushpull" in params:
-        compressor = FP16Compressor
+        compressor = FP16Compressor()
     if "byteps_momentum_type" in params:
         if params["byteps_momentum_type"] == "nesterov":
             mu = 0.9
