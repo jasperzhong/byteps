@@ -40,13 +40,8 @@ CompressorRegistry::ctor_t CompressorRegistry::Find(const std::string& name) {
 
 std::unique_ptr<BaseCompressor> CompressorRegistry::Create(
     const kwargs_t& kwargs) {
-#ifndef BYTEPS_BUILDING_SERVER
-  const std::string types[] = {"momentum_type", "error_feedback_type",
-                                "compressor_type"};
-#else
-  // server do not need momentum
   const std::string types[] = {"error_feedback_type", "compressor_type"};
-#endif
+
   for (auto& type : types) {
     auto iter = kwargs.find(type);
     if (iter != kwargs.end()) {

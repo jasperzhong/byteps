@@ -15,39 +15,55 @@
 # ==============================================================================
 """Gradient compression algorithms."""
 
-import mxnet
+import mxnet as mx
+import mxnet.ndarray as nd
 
 
 class Compressor(object):
     """Interface for compressing and decompressing a given tensor."""
-    @staticmethod
-    def compress(tensor):
+
+    def compress(self, tensor):
         """Compresses a tensor and returns it with the context needed to decompress it."""
         pass
 
-    @staticmethod
-    def decompress(tensor, ctx):
+    def decompress(self, tensor, ctx):
         """Decompress the tensor with the given context."""
         pass
 
 
 class NoneCompressor(Compressor):
     """Default no-op compression."""
-    @staticmethod
-    def compress(tensor):
+
+    def compress(self, tensor):
         """Returns the tensor unmodified."""
         return tensor, None
 
-    @staticmethod
-    def decompress(tensor, ctx):
+    def decompress(self, tensor, ctx):
         """Returns the tensor unmodified."""
         return tensor
 
 
+class NesterovMomentum(Compressor):
+    def __init__(self, compressor, mu):
+        self.compressor = compressor
+        self.mu = mu
+        self.mom = None
+
+    def compress(self, tensor):
+        if not self.mom:
+            self.mom = nd.zeros_like(tensor)
+        self.mom = self.mu * self.mom + tensor
+        tensor += self.mu * self.mom
+        return self.compressor.compress(tensor)
+
+    def decompress(self, tensor, ctx):
+        return self.compressor.decompress(tensor, ctx)
+
+
 class FP16Compressor(Compressor):
     """Compress all floating point gradients to 16-bit."""
-    @staticmethod
-    def compress(tensor):
+
+    def compress(self, tensor):
         """Downcasts the tensor to 16-bit."""
         tensor_compressed = tensor
         if 'float' in str(tensor.dtype):
@@ -55,8 +71,7 @@ class FP16Compressor(Compressor):
             tensor_compressed = tensor.astype('float16', copy=False)
         return tensor_compressed, tensor.dtype
 
-    @staticmethod
-    def decompress(tensor, ctx):
+    def decompress(self, tensor, ctx):
         """Upcasts the tensor to the initialization dtype."""
         tensor_decompressed = tensor
         dtype = ctx
@@ -65,11 +80,15 @@ class FP16Compressor(Compressor):
         return tensor_decompressed
 
 
-class Compression(object):
-    """Optional gradient compression algorithm used during push_pull."""
+def create_compressor(params):
+    compressor = NoneCompressor
+    if "byteps_fp16pushpull" in params:
+        compressor = FP16Compressor
+    if "byteps_momentum_type" in params:
+        if params["byteps_momentum_type"] == "nesterov":
+            mu = 0.9
+            if "byteps_momentum_mu" in params:
+                mu = float(params["byteps_momentum_mu"])
+            compressor = NesterovMomentum(compressor, mu)
 
-    """Do not compress the gradients. This is the default."""
-    none = NoneCompressor
-
-    """Compress all floating point gradients to 16-bit."""
-    fp16 = FP16Compressor
+    return compressor
