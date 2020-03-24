@@ -152,9 +152,8 @@ optimizer_params = {'momentum': args.momentum,
 if args.compress_momentum or args.momentum == 0.0:
     del optimizer_params['momentum']
 
-compression = bps.Compression.fp16 if args.fp16_pushpull else bps.Compression.none
 trainer = bps.DistributedTrainer(
-    params, "sgd", optimizer_params, compression=compression)
+    params, "sgd", optimizer_params)
 
 # Create loss function and train metric
 loss_fn = gluon.loss.SoftmaxCrossEntropyLoss()
