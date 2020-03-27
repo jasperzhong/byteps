@@ -35,9 +35,6 @@ def worker(local_rank, local_size, command):
         if command.find("python") != 0:
             command = "python " + command
         command = "gdb -ex 'run' -ex 'bt' -batch --args " + command
-    # root
-    if local_rank == local_size - 1:
-        command = "numactl --physcpubind 0-16 " + command
     
     if os.environ.get("BYTEPS_TRACE_ON", "") == "1":
         print("\n!!!Enable profiling for WORKER_ID: %s and local_rank: %d!!!" % (os.environ.get("DMLC_WORKER_ID"), local_rank))
