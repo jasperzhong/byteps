@@ -42,6 +42,11 @@ class CpuReducer {
  public:
   CpuReducer(std::shared_ptr<BytePSComm> comm);
 
+#ifndef BYTEPS_BUILDING_SERVER
+  bool isRoot();
+  std::shared_ptr<BytePSComm> getComm() { return _comm; }
+#endif
+
 #ifndef BYTEPS_ENABLE_CUDA
   ~CpuReducer() {
     if (_comm) _comm.reset();
@@ -55,12 +60,6 @@ class CpuReducer {
   int copy(void* dst, const void* src, size_t len);
   int sign(void* dst, const void* src, size_t len, DataType dtype);
   float norm1(const void* src, size_t len, DataType dtype);
-
-
-#ifndef BYTEPS_BUILDING_SERVER
-  bool isRoot();
-  std::shared_ptr<BytePSComm> getComm() { return _comm; }
-#endif
 
   DataType GetDataType(int dtype) { return static_cast<DataType>(dtype); }
 
