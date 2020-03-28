@@ -200,11 +200,7 @@ void BytePSGlobal::Init() {
 
   // Init CPU Reducer
   if (_is_cross_pcie_switch) {
-#ifndef BYTEPS_ENABLE_CUDA
-  _cpu_reducer.reset(new CpuReducer(_basic_comm));
-#else
-  _cpu_reducer.reset(new CpuReducer(aligned_size));
-#endif 
+    _cpu_reducer = std::make_shared<CpuReducer>(_basic_comm);
   }
 
   // ReadyTable for Push & Pull

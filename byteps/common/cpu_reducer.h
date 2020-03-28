@@ -40,12 +40,13 @@ namespace common {
 
 class CpuReducer {
  public:
-#ifndef BYTEPS_ENABLE_CUDA
   CpuReducer(std::shared_ptr<BytePSComm> comm);
   ~CpuReducer() {
     if (_comm) _comm.reset();
     BPS_LOG(DEBUG) << "Clear CpuReducer";
   }
+
+#ifndef BYTEPS_ENABLE_CUDA
 
   int sum(void* dst, const void* src, size_t len, DataType dtype,
           float alpha = 1.0);
