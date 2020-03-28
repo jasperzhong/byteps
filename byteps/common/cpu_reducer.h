@@ -21,8 +21,9 @@
 #include <immintrin.h>
 #endif
 
-#include <memory>
 #include <cstring>
+#include <memory>
+
 #include "common.h"
 #include "logging.h"
 
@@ -39,27 +40,56 @@ namespace common {
 
 class CpuReducer {
  public:
+#ifndef BYTEPS_ENABLE_CUDA
   CpuReducer(std::shared_ptr<BytePSComm> comm);
   ~CpuReducer() {
     if (_comm) _comm.reset();
     BPS_LOG(DEBUG) << "Clear CpuReducer";
   }
 
-  int sum(void* dst, const void* src, size_t len, DataType dtype, float alpha=1.0);
-  int sum(void* dst, const void* src1, const void* src2, size_t len, DataType dtype, float alpha=1.0);
+  int sum(void* dst, const void* src, size_t len, DataType dtype,
+          float alpha = 1.0);
+  int sum(void* dst, const void* src1, const void* src2, size_t len,
+          DataType dtype, float alpha = 1.0);
   int copy(void* dst, const void* src, size_t len);
   int sign(void* dst, const void* src, size_t len, DataType dtype);
   float norm1(const void* src, size_t len, DataType dtype);
+#else
+
+  CpuReducer(size_t size) {
+    _thread_per_block = 256;
+    _block_per_grid = (size / 4 + _thread_per_block - 1) / _thread_per_block;
+    cudaMalloc(&dev_dst, size);
+    cudaMalloc(&dev_src1, size);
+    cudaMalloc(&dev_src2, size);
+    cudaMalloc(&dev_scalar, 4);
+  };
+  ~CpuReducer() {
+    cudaFree(dev_dst);
+    cudaFree(dev_src1);
+    cudaFree(dev_src2);
+    cudaFree(dev_scalar);
+  }
+
+  // does not need cuda
+  int copy(void* dst, const void* src, size_t len);
+
+  __global__ int sum(float* dst, const float* src, size_t len, float alpha);
+
+  __global__ int sum(float* dst, const float* src1,
+                     const float* src2 size_t len, float alpha);
+
+  __global__ int sign(float* dst, const float* src, size_t len);
+
+  __global__ float norm1(const float* src, size_t len);
+#endif
 
 #ifndef BYTEPS_BUILDING_SERVER
   bool isRoot();
   std::shared_ptr<BytePSComm> getComm() { return _comm; }
 #endif
 
-
-  DataType GetDataType(int dtype) {
-    return static_cast<DataType>(dtype);
-  }
+  DataType GetDataType(int dtype) { return static_cast<DataType>(dtype); }
 
  private:
 #if __AVX__ && __F16C__
@@ -183,7 +213,8 @@ class CpuReducer {
   int _sum(T* dst, const T* src1, const T* src2, size_t len, float alpha);
 
   int _sum_float16(void* dst, const void* src, size_t len, float alpha);
-  int _sum_float16(void* dst, const void* src1, const void* src2, size_t len, float alpha);
+  int _sum_float16(void* dst, const void* src1, const void* src2, size_t len,
+                   float alpha);
 
   template <typename T1, typename T2>
   size_t _sign(T1* dst, const T2* src, size_t len);
@@ -198,6 +229,12 @@ class CpuReducer {
 
   std::shared_ptr<BytePSComm> _comm;
   int _num_threads;
+
+#ifdef BYTEPS_ENABLE_CUDA
+  int _thread_per_block;
+  int _block_per_grid;
+  float *dev_dst, *dev_src1, *dev_src2, *dev_scalar;
+#endif
 };
 
 }  // namespace common
