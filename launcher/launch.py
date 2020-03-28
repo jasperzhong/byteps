@@ -73,10 +73,9 @@ def allocate_cpu(local_size):
                 del node[idx]
             return ret
         return ret
-
     def _get_quota(nodes, local_size):
         cpu_nums = reduce(lambda x, y: (len(x) + len(y)), nodes)
-        default_quota = 4
+        default_quota = 6
         while default_quota >= 1 and default_quota * local_size > cpu_nums:
             default_quota //= 2
         root_quota = cpu_nums - default_quota * (local_size - 1)
