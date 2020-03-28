@@ -27,7 +27,11 @@ void ErrorFeedback::Init(size_t aligned_size) {
   _compressor_ptr->Init(aligned_size);
   _error.reset(new char[aligned_size]);
   memset(_error.get(), 0, aligned_size);
+#ifndef BYTEPS_ENABLE_CUDA
   _cpu_reducer.reset(new CpuReducer(nullptr));
+#else
+  _cpu_reducer.reset(new CpuReducer(aligned_size));
+#endif
 }
 
 void ErrorFeedback::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
