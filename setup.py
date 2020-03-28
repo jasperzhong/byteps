@@ -645,8 +645,7 @@ def build_mx_extension(build_ext, options):
 
     check_mx_version()
     mx_compile_flags, mx_link_flags = get_mx_flags(
-        build_ext, {'g++' : options['COMPILE_FLAGS'] + \
-        mx_compile_flags, 'nvcc': []})
+        build_ext, options['COMPILE_FLAGS'])
 
     mx_have_cuda = is_mx_cuda()
     macro_have_cuda = check_macro(options['MACROS'], 'HAVE_CUDA')
@@ -811,9 +810,13 @@ class custom_build_ext(build_ext):
         def _compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
             if os.path.splitext(src)[1] == '.cu':
                 self.compiler.set_executable('compiler_so', 'nvcc')
-                postargs = extra_postargs['nvcc']
+                if isinstance(extra_postargs, dict):
+                    postargs = extra_postargs['nvcc']
             else:
-                postargs = extra_postargs['g++']
+                if isinstance(extra_postargs, dict):
+                    postargs = extra_postargs['g++']
+                else:
+                    postargs = extra_postargs
             super(obj, src, ext, cc_args, postargs, pp_opts)
             self.compiler.compiler_so = default_compiler_so
         self.compiler._compile = _compile
