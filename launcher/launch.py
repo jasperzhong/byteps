@@ -8,7 +8,7 @@ import sys
 import time
 from functools import reduce
 
-from launcher.numa_utils import get_numa_info
+from numa_utils import get_numa_info
 
 COMMON_REQUIRED_ENVS = ["DMLC_ROLE", "DMLC_NUM_WORKER", "DMLC_NUM_SERVER",
                         "DMLC_PS_ROOT_URI", "DMLC_PS_ROOT_PORT"]
