@@ -55,36 +55,7 @@ class CpuReducer {
   int copy(void* dst, const void* src, size_t len);
   int sign(void* dst, const void* src, size_t len, DataType dtype);
   float norm1(const void* src, size_t len, DataType dtype);
-#else
 
-  CpuReducer(size_t size) {
-    _thread_per_block = 256;
-    _block_per_grid = (size / 4 + _thread_per_block - 1) / _thread_per_block;
-    cudaMalloc(&dev_dst, size);
-    cudaMalloc(&dev_src1, size);
-    cudaMalloc(&dev_src2, size);
-    cudaMalloc(&dev_scalar, 4);
-  };
-  ~CpuReducer() {
-    cudaFree(dev_dst);
-    cudaFree(dev_src1);
-    cudaFree(dev_src2);
-    cudaFree(dev_scalar);
-  }
-
-  // still keep cpu versions
-  int copy(void* dst, const void* src, size_t len);
-
-  __global__ int sum(void* dst, const void* src, size_t len, DataType dtype,
-                     float alpha = 1.0);
-
-  __global__ int sum(void* dst, const void* src1, const void* src2, size_t len,
-                     DataType dtype, float alpha = 1.0);
-
-  __global__ int sign(void* dst, const void* src, size_t len, DataType dtype);
-
-  __global__ float norm1(const void* src, size_t len, DataType dtype);
-#endif
 
 #ifndef BYTEPS_BUILDING_SERVER
   bool isRoot();
@@ -228,6 +199,37 @@ class CpuReducer {
 
   float _convert_half_to_full_precision(uint16_t h);
   uint16_t _convert_full_to_half_precision(float f);
+
+#else
+
+  CpuReducer(size_t size) {
+    _thread_per_block = 256;
+    _block_per_grid = (size / 4 + _thread_per_block - 1) / _thread_per_block;
+    cudaMalloc(&dev_dst, size);
+    cudaMalloc(&dev_src1, size);
+    cudaMalloc(&dev_src2, size);
+    cudaMalloc(&dev_scalar, 4);
+  };
+  ~CpuReducer() {
+    cudaFree(dev_dst);
+    cudaFree(dev_src1);
+    cudaFree(dev_src2);
+    cudaFree(dev_scalar);
+  }
+
+  // still keep cpu versions
+  int copy(void* dst, const void* src, size_t len);
+
+  __global__ int sum(void* dst, const void* src, size_t len, DataType dtype,
+                     float alpha = 1.0);
+
+  __global__ int sum(void* dst, const void* src1, const void* src2, size_t len,
+                     DataType dtype, float alpha = 1.0);
+
+  __global__ int sign(void* dst, const void* src, size_t len, DataType dtype);
+
+  __global__ float norm1(const void* src, size_t len, DataType dtype);
+#endif
 
   std::shared_ptr<BytePSComm> _comm;
   int _num_threads;
