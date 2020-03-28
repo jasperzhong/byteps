@@ -645,7 +645,8 @@ def build_mx_extension(build_ext, options):
 
     check_mx_version()
     mx_compile_flags, mx_link_flags = get_mx_flags(
-        build_ext, options['COMPILE_FLAGS'])
+        build_ext, {'g++' : options['COMPILE_FLAGS'] + \
+        mx_compile_flags, 'nvcc': []})
 
     mx_have_cuda = is_mx_cuda()
     macro_have_cuda = check_macro(options['MACROS'], 'HAVE_CUDA')
