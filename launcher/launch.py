@@ -1,18 +1,19 @@
 #!/usr/bin/python
 
 from __future__ import print_function
+
 import os
+import re
 import subprocess
-import threading
 import sys
+import threading
 import time
 from functools import reduce
-
-from numa_utils import get_numa_info
 
 COMMON_REQUIRED_ENVS = ["DMLC_ROLE", "DMLC_NUM_WORKER", "DMLC_NUM_SERVER",
                         "DMLC_PS_ROOT_URI", "DMLC_PS_ROOT_PORT"]
 WORKER_REQUIRED_ENVS = ["DMLC_WORKER_ID"]
+NUMA_PATH = "/sys/devices/system/node"
 
 
 def check_env():
@@ -30,6 +31,24 @@ def check_env():
         if env not in os.environ:
             print("The env " + env + " is missing")
             os._exit(0)
+
+
+def get_numa_info():
+    ret = []
+    if os.path.exists(NUMA_PATH):
+        items = os.listdir(NUMA_PATH)
+        nodes = list(filter(lambda str: str.startswith("node"), items))
+        if nodes:
+            for node in nodes:
+                items = os.listdir(os.path.join(NUMA_PATH, node))
+                cpus = [re.findall("cpu\d+", cpu) for cpu in items]
+                cpus = list(filter(lambda x: x, cpus))
+                cpu_ids = [int(cpu[0].split('cpu')[1]) for cpu in cpus]
+                cpu_ids = sorted(cpu_ids)
+                ret.append(cpu_ids)
+    else:
+        print("NUMA PATH %s NOT FOUND" % NUMA_PATH)
+    return ret
 
 
 def allocate_cpu(local_size):
@@ -54,6 +73,7 @@ def allocate_cpu(local_size):
                 del node[idx]
             return ret
         return ret
+
     def _get_quota(nodes, local_size):
         cpu_nums = reduce(lambda x, y: (len(x) + len(y)), nodes)
         default_quota = 4
@@ -64,7 +84,8 @@ def allocate_cpu(local_size):
         while root_quota >= 1 and root_quota > node_size:
             root_quota //= 2
         return [default_quota] * (local_size - 1) + [root_quota]
-    nodes = [list(range(0,16)) + list(range(32,48)), list(range(16, 32)) + list(range(48, 64))]
+    nodes = [list(range(0, 16)) + list(range(32, 48)),
+             list(range(16, 32)) + list(range(48, 64))]
     quota_list = _get_quota(nodes, local_size)
     ret = []
     for quota in quota_list:
