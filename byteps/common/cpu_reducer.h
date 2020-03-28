@@ -77,7 +77,7 @@ class CpuReducer {
   __global__ int sum(float* dst, const float* src, size_t len, float alpha);
 
   __global__ int sum(float* dst, const float* src1,
-                     const float* src2 size_t len, float alpha);
+                     const float* src2, size_t len, float alpha);
 
   __global__ int sign(float* dst, const float* src, size_t len);
 
