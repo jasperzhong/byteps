@@ -918,7 +918,7 @@ class custom_build_ext(build_ext):
         if not int(os.environ.get('BYTEPS_WITHOUT_MXNET', 0)):
 
             if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
-                custom_for_nvcc()
+                self.custom_for_nvcc()
             
             # fix "libcuda.so.1 not found" issue
             cuda_home = os.environ.get('BYTEPS_CUDA_HOME', '/usr/local/cuda')
