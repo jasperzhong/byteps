@@ -63,13 +63,14 @@ def allocate_cpu(local_size):
             for i in range(1, quota):
                 if node[i] != node[i-1] + 1:
                     split_index.append(i)
+            quota_bck = quota
             last_idx = 0
             for idx in split_index:
                 ret.append(node[last_idx:idx])
                 quota -= idx - last_idx
                 last_idx = idx
             ret.append(node[last_idx:last_idx+quota])
-            for idx in sorted(range(quota), reverse=True):
+            for idx in sorted(range(quota_bck), reverse=True):
                 del node[idx]
             return ret
         return ret
@@ -81,13 +82,21 @@ def allocate_cpu(local_size):
         root_quota = cpu_nums - default_quota * (local_size - 1)
         node_size = len(nodes[0])
         while root_quota >= 1 and root_quota > node_size:
-            root_quota //= 2
+            root_quota -= 6
         return [default_quota] * (local_size - 1) + [root_quota]
-    nodes = get_numa_info()
+    nodes = [list(range(0, 16)) + list(range(32, 48)),
+             list(range(16, 32)) + list(range(48, 64))]
     quota_list = _get_quota(nodes, local_size)
     ret = []
     for quota in quota_list:
-        ret.append(_get_allocation(nodes, quota))
+        while True:
+            allocation =  _get_allocation(nodes, quota)
+            if allocation:
+                ret.append(allocation)
+                break
+            else:
+                quota -= 2
+            
     return ret
 
 
