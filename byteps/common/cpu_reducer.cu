@@ -5,41 +5,44 @@
 namespace byteps {
 namespace common {
 
-__global__ int CpuReducer::sum(float* dst, const float* src, size_t len,
-                               float alpha) {
+__global__ int CpuReducer::sum(void* dst, const void* src, size_t len,
+                               DataType dtype, float alpha) {
   cudaMemcpy(dev_src1, src, len, cudaMemcpyHostToDevice);
 
-  _sum<<<_block_per_grid, _thread_per_block>>>(dev_dst, dev_src1, len/4, alpha);
-
-  cudaMemcpy(dst, dev_dst, len, cudaMemcpyDeviceToHost);
-  return 0;
-}
-
-__global__ int CpuReducer::sum(float* dst, const float* src1, const float* src2,
-                               size_t len, float alpha) {
-  cudaMemcpy(dev_src1, src1, len, cudaMemcpyHostToDevice);
-  cudaMemcpy(dev_src2, src2, len, cudaMemcpyHostToDevice);
-
-  _sum<<<_block_per_grid, _thread_per_block>>>(dev_dst, dev_src1, dev_src2, len/4,
+  _sum<<<_block_per_grid, _thread_per_block>>>(dev_dst, dev_src1, len / 4,
                                                alpha);
 
   cudaMemcpy(dst, dev_dst, len, cudaMemcpyDeviceToHost);
   return 0;
 }
 
-__global__ int CpuReducer::sign(float* dst, const float* src, size_t len) {
-  cudaMemcpy(dev_src1, src, len, cudaMemcpyHostToDevice);
+__global__ int CpuReducer::sum(void* dst, const void* src1, const void* src2,
+                               size_t len, DataType dtype, float alpha) {
+  cudaMemcpy(dev_src1, src1, len, cudaMemcpyHostToDevice);
+  cudaMemcpy(dev_src2, src2, len, cudaMemcpyHostToDevice);
 
-  _sum<<<_block_per_grid, _thread_per_block>>>(dev_dst, dev_src1, len/4);
+  _sum<<<_block_per_grid, _thread_per_block>>>(dev_dst, dev_src1, dev_src2,
+                                               len / 4, alpha);
 
   cudaMemcpy(dst, dev_dst, len, cudaMemcpyDeviceToHost);
   return 0;
 }
 
-__global__ float CpuReducer::norm1(const float* src, size_t len) {
+__global__ int CpuReducer::sign(void* dst, const void* src, size_t len,
+                                DataType dtype) {
   cudaMemcpy(dev_src1, src, len, cudaMemcpyHostToDevice);
 
-  _norm1<<<_block_per_grid, _thread_per_block>>>(dev_src1, dev_scalar, len/4);
+  _sum<<<_block_per_grid, _thread_per_block>>>(dev_dst, dev_src1, len / 4);
+
+  cudaMemcpy(dst, dev_dst, len, cudaMemcpyDeviceToHost);
+  return 0;
+}
+
+__global__ float CpuReducer::norm1(const void* src, size_t len,
+                                   DataType dtype) {
+  cudaMemcpy(dev_src1, src, len, cudaMemcpyHostToDevice);
+
+  _norm1<<<_block_per_grid, _thread_per_block>>>(dev_src1, dev_scalar, len / 4);
 
   float ret = 0.0;
   cudaMemcpy(&ret, dev_scalar, 4, cudaMemcpyDeviceToHost);

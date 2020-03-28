@@ -71,17 +71,17 @@ class CpuReducer {
     cudaFree(dev_scalar);
   }
 
-  // does not need cuda
+  // still keep cpu versions
   int copy(void* dst, const void* src, size_t len);
 
-  __global__ int sum(float* dst, const float* src, size_t len, float alpha);
+  __global__ int sum(void* dst, const void* src, size_t len, DataType dtype, float alpha=1.0);
 
-  __global__ int sum(float* dst, const float* src1,
-                     const float* src2, size_t len, float alpha);
+  __global__ int sum(void* dst, const void* src1, const void* src2,
+                     size_t len, DataType dtype, float alpha=1.0);
 
-  __global__ int sign(float* dst, const float* src, size_t len);
+  __global__ int sign(void* dst, const void* src, size_t len , DataType dtype);
 
-  __global__ float norm1(const float* src, size_t len);
+  __global__ float norm1(const void* src, size_t len, DataType dtype);
 #endif
 
 #ifndef BYTEPS_BUILDING_SERVER
