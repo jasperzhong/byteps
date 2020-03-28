@@ -531,7 +531,7 @@ def get_mx_flags(build_ext, cpp_flags):
     for include_dir in mx_include_dirs:
         compile_flags.append('-I%s' % include_dir)
     
-    if int(os.environ.get("BYTEPS_ENABLE_CUDA"), 0):
+    if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
         compile_flags.append('-DBYTEPS_ENABLE_CUDA')
 
     link_flags = []
@@ -917,7 +917,7 @@ class custom_build_ext(build_ext):
                     raise
         if not int(os.environ.get('BYTEPS_WITHOUT_MXNET', 0)):
 
-            if int(os.environ.get("BYTEPS_ENABLE_CUDA"), 0):
+            if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
                 custom_for_nvcc()
             
             # fix "libcuda.so.1 not found" issue
