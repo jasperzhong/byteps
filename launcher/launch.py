@@ -110,7 +110,7 @@ def worker(local_rank, local_size, command, allocation):
         command = "gdb -ex 'run' -ex 'bt' -batch --args " + command
 
     if local_rank == local_size - 1:
-        numa = "OMP_NUM_THREADS=8 numactl --physcpubind "
+        numa = "numactl --physcpubind "
         for cpu_set in allocation:
             numa += "{}-{},".format(cpu_set[0], cpu_set[-1])
         numa = numa.strip(',') + ' '
