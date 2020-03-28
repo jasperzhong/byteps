@@ -169,20 +169,21 @@ def get_mpi_flags():
 
 def get_cpp_flags(build_ext):
     last_err = None
-    default_flags = ['-std=c++11', '-fPIC', '-Ofast', '-Wall', '-fopenmp', '-march=native']
+    default_flags = ['-std=c++11', '-fPIC', '-Ofast',
+        '-Wall', '-fopenmp', '-march=native']
     flags_to_try = []
     if sys.platform == 'darwin':
         # Darwin most likely will have Clang, which has libc++.
         flags_to_try = [default_flags + ['-stdlib=libc++'],
                         default_flags]
     else:
-        flags_to_try = [default_flags ,
+        flags_to_try = [default_flags,
                         default_flags + ['-stdlib=libc++']]
     for cpp_flags in flags_to_try:
         try:
             test_compile(build_ext, 'test_cpp_flags', extra_compile_preargs=cpp_flags,
                          code=textwrap.dedent('''\
-                    #include <unordered_map>
+                    # include <unordered_map>
                     void test() {
                     }
                     '''))
@@ -223,13 +224,16 @@ def get_link_flags(build_ext):
 
     raise DistutilsPlatformError(last_err)
 
+
 def has_rdma_header():
     ret_code = subprocess.call(
         "echo '#include <rdma/rdma_cma.h>' | cpp -H -o /dev/null 2>/dev/null", shell=True)
     if ret_code != 0:
         import warnings
-        warnings.warn("\n\n No RDMA header file detected. Will disable RDMA for compilation! \n\n")
-    return ret_code==0
+        warnings.warn(
+            "\n\n No RDMA header file detected. Will disable RDMA for compilation! \n\n")
+    return ret_code == 0
+
 
 def get_common_options(build_ext):
     cpp_flags = get_cpp_flags(build_ext)
@@ -247,6 +251,7 @@ def get_common_options(build_ext):
                'byteps/common/ready_table.cc',
                'byteps/common/shared_memory.cc',
                'byteps/common/nccl_manager.cc',
+               'byteps/common/cpu_reducer.cu',
                'byteps/common/cpu_reducer.cc'] + [
                'byteps/common/compressor/base_compressor.cc',
                'byteps/common/compressor/error_feedback.cc',
@@ -273,7 +278,7 @@ def get_common_options(build_ext):
 
     # RDMA and NUMA libs
     LIBRARIES += ['numa']
-    
+
     # auto-detect rdma
     if has_rdma_header():
         LIBRARIES += ['rdmacm', 'ibverbs', 'rt']
@@ -295,10 +300,10 @@ def get_common_options(build_ext):
 def build_server(build_ext, options):
     server_lib.define_macros = options['MACROS']
     server_lib.include_dirs = options['INCLUDES']
-    server_lib.sources = ['byteps/server/server.cc', 
+    server_lib.sources = ['byteps/server/server.cc',
                           'byteps/common/cpu_reducer.cc',
                           'byteps/common/logging.cc',
-                          'byteps/common/common.cc']+ [
+                          'byteps/common/common.cc'] + [
                           'byteps/common/compressor/base_compressor.cc',
                           'byteps/common/compressor/error_feedback.cc',
                           'byteps/common/compressor/strategy/multibit.cc',
@@ -384,10 +389,10 @@ def get_tf_abi(build_ext, include_dirs, lib_dirs, libs, cpp_flags):
                                     include_dirs=include_dirs, library_dirs=lib_dirs,
                                     libraries=libs, extra_compile_preargs=cpp_flags,
                                     code=textwrap.dedent('''\
-                #include <string>
-                #include "tensorflow/core/framework/op.h"
-                #include "tensorflow/core/framework/op_kernel.h"
-                #include "tensorflow/core/framework/shape_inference.h"
+                # include <string>
+                # include "tensorflow/core/framework/op.h"
+                # include "tensorflow/core/framework/op_kernel.h"
+                # include "tensorflow/core/framework/shape_inference.h"
                 void test() {
                     auto ignore = tensorflow::strings::StrCat("a", "b");
                 }
@@ -525,6 +530,9 @@ def get_mx_flags(build_ext, cpp_flags):
     compile_flags = []
     for include_dir in mx_include_dirs:
         compile_flags.append('-I%s' % include_dir)
+    
+    if int(os.environ.get("BYTEPS_ENABLE_CUDA"), 0):
+        compile_flags.append('-DBYTEPS_ENABLE_CUDA')
 
     link_flags = []
     for lib_dir in mx_lib_dirs:
@@ -594,7 +602,7 @@ def get_cuda_dirs(build_ext, cpp_flags):
         test_compile(build_ext, 'test_cuda', libraries=['cudart'], include_dirs=cuda_include_dirs,
                      library_dirs=cuda_lib_dirs, extra_compile_preargs=cpp_flags,
                      code=textwrap.dedent('''\
-            #include <cuda_runtime.h>
+            # include <cuda_runtime.h>
             void test() {
                 cudaSetDevice(0);
             }
@@ -632,7 +640,7 @@ def get_nccl_vals():
 
 
 def build_mx_extension(build_ext, options):
-    # clear ROLE -- installation does not need this
+    # clear ROLE -- installation does not need thisREQUIRED
     os.environ.pop("DMLC_ROLE", None)
 
     check_mx_version()
@@ -671,8 +679,8 @@ def build_mx_extension(build_ext, options):
          'byteps/mxnet/tensor_util.cc',
          'byteps/mxnet/cuda_util.cc',
          'byteps/mxnet/adapter.cc']
-    mxnet_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
-        mx_compile_flags
+    mxnet_lib.extra_compile_args = {'g++' : options['COMPILE_FLAGS'] + \
+        mx_compile_flags, 'nvcc': []}
     mxnet_lib.extra_link_args = options['LINK_FLAGS'] + mx_link_flags
     mxnet_lib.extra_objects = options['EXTRA_OBJECTS']
     mxnet_lib.library_dirs = options['LIBRARY_DIRS']
@@ -730,7 +738,7 @@ def is_torch_cuda(build_ext, include_dirs, extra_compile_args):
         from torch.utils.cpp_extension import include_paths
         test_compile(build_ext, 'test_torch_cuda', include_dirs=include_dirs + include_paths(cuda=True),
                      extra_compile_preargs=extra_compile_args, code=textwrap.dedent('''\
-            #include <THC/THC.h>
+            # include <THC/THC.h>
             void test() {
             }
             '''))
@@ -794,19 +802,34 @@ def build_torch_extension(build_ext, options, torch_version):
 
 # run the customize_compiler
 class custom_build_ext(build_ext):
+    def custom_for_nvcc(self):
+        self.compiler.src_extensions.append('.cu')
+        default_compiler_so = self.compiler.compiler_so
+        super = self.compiler._compile
+
+        def _compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
+            if os.path.splitext(src)[1] == '.cu':
+                self.compiler.set_executable('compiler_so', 'nvcc')
+                postargs = extra_postargs['nvcc']
+            else:
+                postargs = extra_postargs['g++']
+            super(obj, src, ext, cc_args, postargs, pp_opts)
+            self.compiler.compiler_so = default_compiler_so
+        self.compiler._compile = _compile
+
     def build_extensions(self):
         make_option = ""
         # To resolve tf-gcc incompatibility
         has_cxx_flag = False
         glibcxx_flag = False
         if not int(os.environ.get('BYTEPS_WITHOUT_TENSORFLOW', 0)):
-            try: 
+            try:
                 import tensorflow as tf
                 make_option += 'ADD_CFLAGS="'
                 for flag in tf.sysconfig.get_compile_flags():
                     if 'D_GLIBCXX_USE_CXX11_ABI' in flag:
                         has_cxx_flag = True
-                        glibcxx_flag = False if (flag[-1]=='0') else True
+                        glibcxx_flag = False if (flag[-1] == '0') else True
                         make_option += flag + ' '
                         break
                 make_option += '" '
@@ -815,7 +838,7 @@ class custom_build_ext(build_ext):
 
         # To resolve torch-gcc incompatibility
         if not int(os.environ.get('BYTEPS_WITHOUT_PYTORCH', 0)):
-            try: 
+            try:
                 import torch
                 torch_flag = torch.compiled_with_cxx11_abi()
                 if has_cxx_flag:
@@ -838,8 +861,7 @@ class custom_build_ext(build_ext):
             if os.environ.get('CI', 'false') == 'false':
                 make_option += "-j "
             if has_rdma_header():
-                make_option += "USE_RDMA=1 "            
- 
+                make_option += "USE_RDMA=1 "
 
             make_process = subprocess.Popen('make ' + make_option,
                                             cwd='3rdparty/ps-lite',
@@ -854,7 +876,8 @@ class custom_build_ext(build_ext):
 
         options = get_common_options(self)
         if has_cxx_flag:
-            options['COMPILE_FLAGS'] += ['-D_GLIBCXX_USE_CXX11_ABI=' + str(int(glibcxx_flag))]
+            options['COMPILE_FLAGS'] += ['-D_GLIBCXX_USE_CXX11_ABI=' +
+                str(int(glibcxx_flag))]
 
         built_plugins = []
         try:
@@ -893,6 +916,10 @@ class custom_build_ext(build_ext):
                 else:
                     raise
         if not int(os.environ.get('BYTEPS_WITHOUT_MXNET', 0)):
+
+            if int(os.environ.get("BYTEPS_ENABLE_CUDA"), 0):
+                custom_for_nvcc()
+            
             # fix "libcuda.so.1 not found" issue
             cuda_home = os.environ.get('BYTEPS_CUDA_HOME', '/usr/local/cuda')
             cuda_stub_path = cuda_home + '/lib64/stubs'
