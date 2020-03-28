@@ -41,12 +41,12 @@ namespace common {
 class CpuReducer {
  public:
   CpuReducer(std::shared_ptr<BytePSComm> comm);
+
+#ifndef BYTEPS_ENABLE_CUDA
   ~CpuReducer() {
     if (_comm) _comm.reset();
     BPS_LOG(DEBUG) << "Clear CpuReducer";
   }
-
-#ifndef BYTEPS_ENABLE_CUDA
 
   int sum(void* dst, const void* src, size_t len, DataType dtype,
           float alpha = 1.0);
@@ -75,12 +75,13 @@ class CpuReducer {
   // still keep cpu versions
   int copy(void* dst, const void* src, size_t len);
 
-  __global__ int sum(void* dst, const void* src, size_t len, DataType dtype, float alpha=1.0);
+  __global__ int sum(void* dst, const void* src, size_t len, DataType dtype,
+                     float alpha = 1.0);
 
-  __global__ int sum(void* dst, const void* src1, const void* src2,
-                     size_t len, DataType dtype, float alpha=1.0);
+  __global__ int sum(void* dst, const void* src1, const void* src2, size_t len,
+                     DataType dtype, float alpha = 1.0);
 
-  __global__ int sign(void* dst, const void* src, size_t len , DataType dtype);
+  __global__ int sign(void* dst, const void* src, size_t len, DataType dtype);
 
   __global__ float norm1(const void* src, size_t len, DataType dtype);
 #endif
