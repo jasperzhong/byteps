@@ -259,7 +259,7 @@ def get_common_options(build_ext):
                'byteps/common/compressor/strategy/randomk.cc',
                'byteps/common/compressor/strategy/topk.cc',
                'byteps/common/compressor/strategy/vanilla_error_feedback.cc']
-    if int(os.environ("BYTEPS_ENABLE_CUDA", 0)):
+    if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
         SOURCES.append('byteps/common/gpu_reducer.cu')
     if "BYTEPS_USE_MPI" in os.environ and os.environ["BYTEPS_USE_MPI"] == "1":
         mpi_flags = get_mpi_flags()
