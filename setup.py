@@ -170,7 +170,7 @@ def get_mpi_flags():
 def get_cpp_flags(build_ext):
     last_err = None
     default_flags = ['-std=c++11', '-fPIC', '-Ofast',
-        '-Wall', '-fopenmp', '-march=native']
+                     '-Wall', '-fopenmp', '-march=native']
     flags_to_try = []
     if sys.platform == 'darwin':
         # Darwin most likely will have Clang, which has libc++.
@@ -252,13 +252,13 @@ def get_common_options(build_ext):
                'byteps/common/shared_memory.cc',
                'byteps/common/nccl_manager.cc',
                'byteps/common/cpu_reducer.cc'] + [
-               'byteps/common/compressor/base_compressor.cc',
-               'byteps/common/compressor/error_feedback.cc',
-               'byteps/common/compressor/strategy/multibit.cc',
-               'byteps/common/compressor/strategy/onebit.cc',
-               'byteps/common/compressor/strategy/randomk.cc',
-               'byteps/common/compressor/strategy/topk.cc',
-               'byteps/common/compressor/strategy/vanilla_error_feedback.cc']
+        'byteps/common/compressor/base_compressor.cc',
+        'byteps/common/compressor/error_feedback.cc',
+        'byteps/common/compressor/strategy/multibit.cc',
+        'byteps/common/compressor/strategy/onebit.cc',
+        'byteps/common/compressor/strategy/randomk.cc',
+        'byteps/common/compressor/strategy/topk.cc',
+        'byteps/common/compressor/strategy/vanilla_error_feedback.cc']
     if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
         SOURCES.append('byteps/common/gpu_reducer.cu')
     if "BYTEPS_USE_MPI" in os.environ and os.environ["BYTEPS_USE_MPI"] == "1":
@@ -305,13 +305,13 @@ def build_server(build_ext, options):
                           'byteps/common/cpu_reducer.cc',
                           'byteps/common/logging.cc',
                           'byteps/common/common.cc'] + [
-                          'byteps/common/compressor/base_compressor.cc',
-                          'byteps/common/compressor/error_feedback.cc',
-                          'byteps/common/compressor/strategy/multibit.cc',
-                          'byteps/common/compressor/strategy/onebit.cc',
-                          'byteps/common/compressor/strategy/randomk.cc',
-                          'byteps/common/compressor/strategy/topk.cc',
-                          'byteps/common/compressor/strategy/vanilla_error_feedback.cc']
+        'byteps/common/compressor/base_compressor.cc',
+        'byteps/common/compressor/error_feedback.cc',
+        'byteps/common/compressor/strategy/multibit.cc',
+        'byteps/common/compressor/strategy/onebit.cc',
+        'byteps/common/compressor/strategy/randomk.cc',
+        'byteps/common/compressor/strategy/topk.cc',
+        'byteps/common/compressor/strategy/vanilla_error_feedback.cc']
     server_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
         ['-DBYTEPS_BUILDING_SERVER']
     server_lib.extra_link_args = options['LINK_FLAGS']
@@ -531,7 +531,7 @@ def get_mx_flags(build_ext, cpp_flags):
     compile_flags = []
     for include_dir in mx_include_dirs:
         compile_flags.append('-I%s' % include_dir)
-    
+
     if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
         compile_flags.append('-DBYTEPS_ENABLE_CUDA')
 
@@ -680,8 +680,8 @@ def build_mx_extension(build_ext, options):
          'byteps/mxnet/tensor_util.cc',
          'byteps/mxnet/cuda_util.cc',
          'byteps/mxnet/adapter.cc']
-    mxnet_lib.extra_compile_args = {'g++' : options['COMPILE_FLAGS'] + \
-        mx_compile_flags, 'nvcc': ['-dc']}
+    mxnet_lib.extra_compile_args = {'g++': options['COMPILE_FLAGS'] +
+                                    mx_compile_flags, 'nvcc': ['-dc']}
     mxnet_lib.extra_link_args = options['LINK_FLAGS'] + mx_link_flags
     mxnet_lib.extra_objects = options['EXTRA_OBJECTS']
     mxnet_lib.library_dirs = options['LIBRARY_DIRS']
@@ -723,8 +723,8 @@ def check_torch_version():
                 'Your torch version %s is outdated.  '
                 'BytePS requires torch>=1.0.1' % torch.__version__)
     except ImportError:
-            print('import torch failed, is it installed?\n\n%s' %
-                  traceback.format_exc())
+        print('import torch failed, is it installed?\n\n%s' %
+              traceback.format_exc())
 
     # parse version
     version = parse_version(torch.__version__)
@@ -764,7 +764,7 @@ def build_torch_extension(build_ext, options, torch_version):
     # Export TORCH_VERSION equal to our representation of torch.__version__. Internally it's
     # used for backwards compatibility checks.
     updated_macros = set_macro(
-       updated_macros, 'TORCH_VERSION', str(torch_version))
+        updated_macros, 'TORCH_VERSION', str(torch_version))
 
     # Always set _GLIBCXX_USE_CXX11_ABI, since PyTorch can only detect whether it was set to 1.
     import torch
@@ -814,7 +814,8 @@ class custom_build_ext(build_ext):
                 if isinstance(extra_postargs, dict):
                     postargs = extra_postargs['nvcc']
                 super(obj, src, ext, cc_args, postargs, pp_opts)
-                super(obj, os.path.splitext(src)[0] + '.o', ext, cc_args, ['-dlink'], pp_opts)
+                super(os.path.splitext(obj)[0] + '_link' + '.o',
+                      os.path.splitext(src)[0] + '.o', ext, cc_args, ['-dlink'], pp_opts)
             else:
                 if isinstance(extra_postargs, dict):
                     postargs = extra_postargs['g++']
@@ -857,7 +858,7 @@ class custom_build_ext(build_ext):
                         pass
                 else:
                     make_option += 'ADD_CFLAGS=-D_GLIBCXX_USE_CXX11_ABI=' + \
-                                    str(int(torch_flag)) + ' '
+                        str(int(torch_flag)) + ' '
                     has_cxx_flag = True
                     glibcxx_flag = torch_flag
             except:
@@ -884,7 +885,7 @@ class custom_build_ext(build_ext):
         options = get_common_options(self)
         if has_cxx_flag:
             options['COMPILE_FLAGS'] += ['-D_GLIBCXX_USE_CXX11_ABI=' +
-                str(int(glibcxx_flag))]
+                                         str(int(glibcxx_flag))]
 
         built_plugins = []
         try:
@@ -926,7 +927,7 @@ class custom_build_ext(build_ext):
 
             if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
                 self.custom_for_nvcc()
-            
+
             # fix "libcuda.so.1 not found" issue
             cuda_home = os.environ.get('BYTEPS_CUDA_HOME', '/usr/local/cuda')
             cuda_stub_path = cuda_home + '/lib64/stubs'
