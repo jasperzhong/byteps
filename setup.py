@@ -538,7 +538,10 @@ def get_mx_flags(build_ext, cpp_flags):
 
     link_flags = []
     for lib_dir in mx_lib_dirs:
-        link_flags.append('-Wl,-rpath,%s' % lib_dir)
+        if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
+            link_flags.append('-linker-options=-rpath,%s' % lib_dir) 
+        else:
+            link_flags.append('-Wl,-rpath,%s' % lib_dir)
         link_flags.append('-L%s' % lib_dir)
 
     for lib in mx_libs:
@@ -824,6 +827,7 @@ class custom_build_ext(build_ext):
             self.compiler.compiler_so = default_compiler_so
         self.compiler._compile = _compile
         self.compiler.set_executable('linker_so', ['nvcc', '-shared'])
+        self.compiler.set_executable('compiler_cxx', '')
 
     def build_extensions(self):
         make_option = ""
