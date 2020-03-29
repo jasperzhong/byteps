@@ -60,11 +60,7 @@ BaseCompressor::~BaseCompressor() = default;
 
 void BaseCompressor::Init(size_t aligned_size) {
   _buf.reset(new char[aligned_size]);
-#ifndef BYTEPS_ENABLE_CUDA
-  _cpu_reducer.reset(new CpuReducer(nullptr));
-#else
-  _cpu_reducer.reset(new CpuReducer(aligned_size));
-#endif 
+  _cpu_reducer.reset(new CpuReducer(nullptr, aligned_size));
 }
 }  // namespace compressor
 }  // namespace common
