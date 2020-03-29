@@ -816,6 +816,7 @@ class custom_build_ext(build_ext):
                 super(obj, src, ext, cc_args, postargs, pp_opts)
                 super(os.path.splitext(obj)[0] + '_link' + '.o',
                       os.path.splitext(src)[0] + '.o', ext, cc_args, ['-dlink'], pp_opts)
+                self.extra_objects.append(os.path.splitext(obj)[0] + '_link' + '.o')
             else:
                 if isinstance(extra_postargs, dict):
                     postargs = extra_postargs['g++']
