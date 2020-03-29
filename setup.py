@@ -815,9 +815,6 @@ class custom_build_ext(build_ext):
                 if isinstance(extra_postargs, dict):
                     postargs = extra_postargs['nvcc']
                 super(obj, src, ext, cc_args, postargs, pp_opts)
-                super(os.path.splitext(obj)[0] + '_link' + '.o',
-                      os.path.splitext(src)[0] + '.o', ext, cc_args, ['-dlink'], pp_opts)
-                options["EXTRA_OBJECTS"].append(os.path.splitext(obj)[0] + '_link' + '.o')
             else:
                 if isinstance(extra_postargs, dict):
                     postargs = extra_postargs['g++']
@@ -826,6 +823,7 @@ class custom_build_ext(build_ext):
                 super(obj, src, ext, cc_args, postargs, pp_opts)
             self.compiler.compiler_so = default_compiler_so
         self.compiler._compile = _compile
+        self.compiler.set_executable('linker_so', ['nvcc', '-shared'])
 
     def build_extensions(self):
         make_option = ""
