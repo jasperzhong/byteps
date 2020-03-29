@@ -40,28 +40,47 @@ namespace common {
 
 class CpuReducer {
  public:
-  CpuReducer(std::shared_ptr<BytePSComm> comm);
+  CpuReducer(std::shared_ptr<BytePSComm> comm, size_t size = 0);
 
 #ifndef BYTEPS_BUILDING_SERVER
   bool isRoot();
   std::shared_ptr<BytePSComm> getComm() { return _comm; }
 #endif
 
-#ifndef BYTEPS_ENABLE_CUDA
   ~CpuReducer() {
     if (_comm) _comm.reset();
     BPS_LOG(DEBUG) << "Clear CpuReducer";
-  }
 
+#ifdef BYTEPS_ENABLE_CUDA
+    cudaFree(dev_dst);
+    cudaFree(dev_src1);
+    cudaFree(dev_src2);
+    cudaFree(dev_scalar);
+#endif
+  }
+  
+  DataType GetDataType(int dtype) { return static_cast<DataType>(dtype); }
+  int copy(void* dst, const void* src, size_t len);
+
+#ifndef BYTEPS_ENABLE_CUDA
   int sum(void* dst, const void* src, size_t len, DataType dtype,
           float alpha = 1.0);
   int sum(void* dst, const void* src1, const void* src2, size_t len,
           DataType dtype, float alpha = 1.0);
-  int copy(void* dst, const void* src, size_t len);
   int sign(void* dst, const void* src, size_t len, DataType dtype);
   float norm1(const void* src, size_t len, DataType dtype);
 
-  DataType GetDataType(int dtype) { return static_cast<DataType>(dtype); }
+#else
+  __global__ int sum(void* dst, const void* src, size_t len, DataType dtype,
+                     float alpha = 1.0);
+
+  __global__ int sum(void* dst, const void* src1, const void* src2, size_t len,
+                     DataType dtype, float alpha = 1.0);
+
+  __global__ int sign(void* dst, const void* src, size_t len, DataType dtype);
+
+  __global__ float norm1(const void* src, size_t len, DataType dtype);
+#endif
 
  private:
 #if __AVX__ && __F16C__
@@ -198,37 +217,6 @@ class CpuReducer {
 
   float _convert_half_to_full_precision(uint16_t h);
   uint16_t _convert_full_to_half_precision(float f);
-
-#else
-
-  CpuReducer(size_t size) {
-    _thread_per_block = 256;
-    _block_per_grid = (size / 4 + _thread_per_block - 1) / _thread_per_block;
-    cudaMalloc(&dev_dst, size);
-    cudaMalloc(&dev_src1, size);
-    cudaMalloc(&dev_src2, size);
-    cudaMalloc(&dev_scalar, 4);
-  };
-  ~CpuReducer() {
-    cudaFree(dev_dst);
-    cudaFree(dev_src1);
-    cudaFree(dev_src2);
-    cudaFree(dev_scalar);
-  }
-
-  // still keep cpu versions
-  int copy(void* dst, const void* src, size_t len);
-
-  __global__ int sum(void* dst, const void* src, size_t len, DataType dtype,
-                     float alpha = 1.0);
-
-  __global__ int sum(void* dst, const void* src1, const void* src2, size_t len,
-                     DataType dtype, float alpha = 1.0);
-
-  __global__ int sign(void* dst, const void* src, size_t len, DataType dtype);
-
-  __global__ float norm1(const void* src, size_t len, DataType dtype);
-#endif
 
   std::shared_ptr<BytePSComm> _comm;
   int _num_threads;

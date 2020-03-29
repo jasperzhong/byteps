@@ -17,8 +17,6 @@
 #include "global.h"
 #endif
 
-#include <omp.h>
-
 #include <cmath>
 
 #include "cpu_reducer.h"
@@ -26,7 +24,7 @@
 namespace byteps {
 namespace common {
 
-CpuReducer::CpuReducer(std::shared_ptr<BytePSComm> comm) {
+CpuReducer::CpuReducer(std::shared_ptr<BytePSComm> comm, size_t size) {
 #ifndef BYTEPS_BUILDING_SERVER
   std::vector<int> peers;
   auto pcie_size = BytePSGlobal::GetPcieSwitchSize();
@@ -46,6 +44,15 @@ CpuReducer::CpuReducer(std::shared_ptr<BytePSComm> comm) {
   } else {
     _num_threads = 4;
   }
+
+#ifdef BYTEPS_ENABLE_CUDA
+  _thread_per_block = 256;
+  _block_per_grid = (size / 4 + _thread_per_block - 1) / _thread_per_block;
+  cudaMalloc(&dev_dst, size);
+  cudaMalloc(&dev_src1, size);
+  cudaMalloc(&dev_src2, size);
+  cudaMalloc(&dev_scalar, 4);
+#endif
   return;
 }
 
@@ -57,6 +64,19 @@ bool CpuReducer::isRoot() {
   return (_comm->getRoot() == BytePSGlobal::GetLocalRank());
 }
 #endif
+
+int CpuReducer::copy(void* dst, const void* src, size_t len) {
+  auto in = reinterpret_cast<const float*>(src);
+  auto out = reinterpret_cast<float*>(dst);
+#pragma omp parallel for simd num_threads(_num_threads)
+  for (size_t i = 0; i < len / 4; ++i) {
+    out[i] = in[i];
+  }
+  if (len % 4) {
+    std::memcpy(out + len / 4, in + len / 4, len % 4);
+  }
+  return 0;
+}
 
 #ifndef BYTEPS_ENABLE_CUDA
 int CpuReducer::sum(void* dst, const void* src, size_t len, DataType dtype,
@@ -248,22 +268,7 @@ int CpuReducer::_sum_float16(void* dst, const void* src1, const void* src2,
 #endif
   return 0;
 }
-#endif 
 
-int CpuReducer::copy(void* dst, const void* src, size_t len) {
-  auto in = reinterpret_cast<const float*>(src);
-  auto out = reinterpret_cast<float*>(dst);
-#pragma omp parallel for simd num_threads(_num_threads)
-  for (size_t i = 0; i < len / 4; ++i) {
-    out[i] = in[i];
-  }
-  if (len % 4) {
-    std::memcpy(out + len / 4, in + len / 4, len % 4);
-  }
-  return 0;
-}
-
-#ifndef BYTEPS_ENABLE_CUDA
 int CpuReducer::sign(void* dst, const void* src, size_t len, DataType dtype) {
   switch (dtype) {
     case BYTEPS_FLOAT32:

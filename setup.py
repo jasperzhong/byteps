@@ -680,7 +680,7 @@ def build_mx_extension(build_ext, options):
          'byteps/mxnet/cuda_util.cc',
          'byteps/mxnet/adapter.cc']
     mxnet_lib.extra_compile_args = {'g++' : options['COMPILE_FLAGS'] + \
-        mx_compile_flags, 'nvcc': []}
+        mx_compile_flags, 'nvcc': ['–arch=sm_20', '-c']}
     mxnet_lib.extra_link_args = options['LINK_FLAGS'] + mx_link_flags
     mxnet_lib.extra_objects = options['EXTRA_OBJECTS']
     mxnet_lib.library_dirs = options['LIBRARY_DIRS']

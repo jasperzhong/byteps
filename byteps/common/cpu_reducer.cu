@@ -49,23 +49,23 @@ __global__ float CpuReducer::norm1(const void* src, size_t len,
   return ret;
 }
 
-__device__ void _sum(float* dst, const float* src, size_t len, float alpha) {
+__global__ void _sum(float* dst, const float* src, size_t len, float alpha) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i < len) dst[i] += src[i] * alpha;
 }
 
-__device__ void _sum(float* dst, const float* src1, const float* src2,
+__global__ void _sum(float* dst, const float* src1, const float* src2,
                      size_t len, float alpha) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i < len) dst[i] = src1[i] + src2[i] * alpha;
 }
 
-__device__ void _sign(float* dst, const float* src, size_t len) {
+__global__ void _sign(float* dst, const float* src, size_t len) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i < len) dst[i] = signbit(src[i]);
 }
 
-__device__ void _norm1(const float* src, float* out, size_t len) {
+__global__ void _norm1(const float* src, float* out, size_t len) {
   int tid = threadIdx.x;
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx >= len) return;
