@@ -814,7 +814,7 @@ class custom_build_ext(build_ext):
                 if isinstance(extra_postargs, dict):
                     postargs = extra_postargs['nvcc']
                 super(obj, src, ext, cc_args, postargs, pp_opts)
-                super(obj, os.path.splitext(src) + '.o', ext, cc_args, ['-dlink'], pp_opts)
+                super(obj, os.path.splitext(src)[0] + '.o', ext, cc_args, ['-dlink'], pp_opts)
             else:
                 if isinstance(extra_postargs, dict):
                     postargs = extra_postargs['g++']
