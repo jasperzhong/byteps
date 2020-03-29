@@ -58,7 +58,7 @@ class CpuReducer {
     cudaFree(dev_scalar);
 #endif
   }
-  
+
   DataType GetDataType(int dtype) { return static_cast<DataType>(dtype); }
   int copy(void* dst, const void* src, size_t len);
 
@@ -71,15 +71,15 @@ class CpuReducer {
   float norm1(const void* src, size_t len, DataType dtype);
 
 #else
-  __global__ int sum(void* dst, const void* src, size_t len, DataType dtype,
+  __global__ int sum(void* dst, const void* src, size_t len, int dtype,
                      float alpha = 1.0);
 
   __global__ int sum(void* dst, const void* src1, const void* src2, size_t len,
-                     DataType dtype, float alpha = 1.0);
+                     int dtype, float alpha = 1.0);
 
-  __global__ int sign(void* dst, const void* src, size_t len, DataType dtype);
+  __global__ int sign(void* dst, const void* src, size_t len, int dtype);
 
-  __global__ float norm1(const void* src, size_t len, DataType dtype);
+  __global__ float norm1(const void* src, size_t len, int dtype);
 #endif
 
  private:

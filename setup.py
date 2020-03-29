@@ -251,7 +251,6 @@ def get_common_options(build_ext):
                'byteps/common/ready_table.cc',
                'byteps/common/shared_memory.cc',
                'byteps/common/nccl_manager.cc',
-               'byteps/common/gpu_reducer.cu',
                'byteps/common/cpu_reducer.cc'] + [
                'byteps/common/compressor/base_compressor.cc',
                'byteps/common/compressor/error_feedback.cc',
@@ -260,6 +259,8 @@ def get_common_options(build_ext):
                'byteps/common/compressor/strategy/randomk.cc',
                'byteps/common/compressor/strategy/topk.cc',
                'byteps/common/compressor/strategy/vanilla_error_feedback.cc']
+    if int(os.environ("BYTEPS_ENABLE_CUDA", 0)):
+        SOURCES.append('byteps/common/gpu_reducer.cu')
     if "BYTEPS_USE_MPI" in os.environ and os.environ["BYTEPS_USE_MPI"] == "1":
         mpi_flags = get_mpi_flags()
         COMPILE_FLAGS = cpp_flags + \
@@ -680,7 +681,7 @@ def build_mx_extension(build_ext, options):
          'byteps/mxnet/cuda_util.cc',
          'byteps/mxnet/adapter.cc']
     mxnet_lib.extra_compile_args = {'g++' : options['COMPILE_FLAGS'] + \
-        mx_compile_flags, 'nvcc': []}
+        mx_compile_flags, 'nvcc': ['-std=c++11']}
     mxnet_lib.extra_link_args = options['LINK_FLAGS'] + mx_link_flags
     mxnet_lib.extra_objects = options['EXTRA_OBJECTS']
     mxnet_lib.library_dirs = options['LIBRARY_DIRS']
