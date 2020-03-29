@@ -287,6 +287,7 @@ def get_common_options(build_ext):
     # ps-lite
     EXTRA_OBJECTS = ['3rdparty/ps-lite/build/libps.a',
                      '3rdparty/ps-lite/deps/lib/libzmq.a']
+    
 
     return dict(MACROS=MACROS,
                 INCLUDES=INCLUDES,
@@ -803,7 +804,7 @@ def build_torch_extension(build_ext, options, torch_version):
 
 # run the customize_compiler
 class custom_build_ext(build_ext):
-    def custom_for_nvcc(self):
+    def custom_for_nvcc(self, options):
         self.compiler.src_extensions.append('.cu')
         default_compiler_so = self.compiler.compiler_so
         super = self.compiler._compile
@@ -816,7 +817,7 @@ class custom_build_ext(build_ext):
                 super(obj, src, ext, cc_args, postargs, pp_opts)
                 super(os.path.splitext(obj)[0] + '_link' + '.o',
                       os.path.splitext(src)[0] + '.o', ext, cc_args, ['-dlink'], pp_opts)
-                self.extra_objects.append(os.path.splitext(obj)[0] + '_link' + '.o')
+                options["EXTRA_OBJECTS"].append(os.path.splitext(obj)[0] + '_link' + '.o')
             else:
                 if isinstance(extra_postargs, dict):
                     postargs = extra_postargs['g++']
@@ -927,7 +928,7 @@ class custom_build_ext(build_ext):
         if not int(os.environ.get('BYTEPS_WITHOUT_MXNET', 0)):
 
             if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
-                self.custom_for_nvcc()
+                self.custom_for_nvcc(options)
 
             # fix "libcuda.so.1 not found" issue
             cuda_home = os.environ.get('BYTEPS_CUDA_HOME', '/usr/local/cuda')
