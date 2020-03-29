@@ -681,7 +681,7 @@ def build_mx_extension(build_ext, options):
          'byteps/mxnet/cuda_util.cc',
          'byteps/mxnet/adapter.cc']
     mxnet_lib.extra_compile_args = {'g++' : options['COMPILE_FLAGS'] + \
-        mx_compile_flags, 'nvcc': ['-arch=sm_75', '-dc']}
+        mx_compile_flags, 'nvcc': ['-dc']}
     mxnet_lib.extra_link_args = options['LINK_FLAGS'] + mx_link_flags
     mxnet_lib.extra_objects = options['EXTRA_OBJECTS']
     mxnet_lib.library_dirs = options['LIBRARY_DIRS']
@@ -813,12 +813,14 @@ class custom_build_ext(build_ext):
                 self.compiler.set_executable('compiler_so', 'nvcc')
                 if isinstance(extra_postargs, dict):
                     postargs = extra_postargs['nvcc']
+                super(obj, src, ext, cc_args, postargs, pp_opts)
+                super(obj, os.path.splitext(src) + '.o', ext, cc_args, ['-dlink'], pp_opts)
             else:
                 if isinstance(extra_postargs, dict):
                     postargs = extra_postargs['g++']
                 else:
                     postargs = extra_postargs
-            super(obj, src, ext, cc_args, postargs, pp_opts)
+                super(obj, src, ext, cc_args, postargs, pp_opts)
             self.compiler.compiler_so = default_compiler_so
         self.compiler._compile = _compile
 
