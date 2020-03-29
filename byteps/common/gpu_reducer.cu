@@ -5,7 +5,7 @@
 namespace byteps {
 namespace common {
 
-__global__ int CpuReducer::sum(void* dst, const void* src, size_t len,
+int CpuReducer::sum(void* dst, const void* src, size_t len,
                                int dtype, float alpha) {
   cudaMemcpy(dev_src1, src, len, cudaMemcpyHostToDevice);
 
@@ -16,7 +16,7 @@ __global__ int CpuReducer::sum(void* dst, const void* src, size_t len,
   return 0;
 }
 
-__global__ int CpuReducer::sum(void* dst, const void* src1, const void* src2,
+int CpuReducer::sum(void* dst, const void* src1, const void* src2,
                                size_t len, int dtype, float alpha) {
   cudaMemcpy(dev_src1, src1, len, cudaMemcpyHostToDevice);
   cudaMemcpy(dev_src2, src2, len, cudaMemcpyHostToDevice);
@@ -28,7 +28,7 @@ __global__ int CpuReducer::sum(void* dst, const void* src1, const void* src2,
   return 0;
 }
 
-__global__ int CpuReducer::sign(void* dst, const void* src, size_t len,
+int CpuReducer::sign(void* dst, const void* src, size_t len,
                                 int dtype) {
   cudaMemcpy(dev_src1, src, len, cudaMemcpyHostToDevice);
 
@@ -38,7 +38,7 @@ __global__ int CpuReducer::sign(void* dst, const void* src, size_t len,
   return 0;
 }
 
-__global__ float CpuReducer::norm1(const void* src, size_t len,
+float CpuReducer::norm1(const void* src, size_t len,
                                    int dtype) {
   cudaMemcpy(dev_src1, src, len, cudaMemcpyHostToDevice);
 

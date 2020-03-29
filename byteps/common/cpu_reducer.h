@@ -71,15 +71,14 @@ class CpuReducer {
   float norm1(const void* src, size_t len, DataType dtype);
 
 #else
-  __global__ int sum(void* dst, const void* src, size_t len, int dtype,
-                     float alpha = 1.0);
+  int sum(void* dst, const void* src, size_t len, int dtype, float alpha = 1.0);
 
-  __global__ int sum(void* dst, const void* src1, const void* src2, size_t len,
-                     int dtype, float alpha = 1.0);
+  int sum(void* dst, const void* src1, const void* src2, size_t len, int dtype,
+          float alpha = 1.0);
 
-  __global__ int sign(void* dst, const void* src, size_t len, int dtype);
+  int sign(void* dst, const void* src, size_t len, int dtype);
 
-  __global__ float norm1(const void* src, size_t len, int dtype);
+  float norm1(const void* src, size_t len, int dtype);
 #endif
 
  private:
