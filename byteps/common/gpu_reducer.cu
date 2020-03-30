@@ -1,5 +1,3 @@
-#ifdef BYTEPS_ENABLE_CUDA
-
 #include "cpu_reducer"
 
 namespace byteps {
@@ -32,7 +30,7 @@ int CpuReducer::sign(void* dst, const void* src, size_t len,
                                 int dtype) {
   cudaMemcpy(dev_src1, src, len, cudaMemcpyHostToDevice);
 
-  _sum<<<_block_per_grid, _thread_per_block>>>(dev_dst, dev_src1, len / 4);
+  _sign<<<_block_per_grid, _thread_per_block>>>(dev_dst, dev_src1, len / 4);
 
   cudaMemcpy(dst, dev_dst, len, cudaMemcpyDeviceToHost);
   return 0;
@@ -84,4 +82,3 @@ __global__ void _norm1(const float* src, float* out, size_t len) {
 
 }  // namespace common
 }  // namespace byteps
-#endif
