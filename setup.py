@@ -19,6 +19,8 @@ from setuptools.command.build_ext import build_ext
 from distutils.errors import CompileError, DistutilsError, DistutilsPlatformError, LinkError, DistutilsSetupError
 from distutils import log as distutils_logger
 from distutils.version import LooseVersion
+from distutils.ccompiler import CCompiler
+from distutils.spawn import spawn
 import traceback
 
 server_lib = Extension('byteps.server.c_lib', [])
@@ -687,15 +689,6 @@ def build_mx_extension(build_ext, options):
         mxnet_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
             mx_compile_flags
     mxnet_lib.extra_link_args = options['LINK_FLAGS'] + mx_link_flags
-    if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
-        for i, flag in enumerate(mxnet_lib.extra_link_args):
-            if "Wl," in flag:
-                mxnet_lib.extra_link_args[i] = flag.replace(
-                    "Wl,", "-linker-options=")
-            elif 'openmp' in flag:
-                mxnet_lib.extra_link_args[i] = ''
-        mxnet_lib.extra_link_args = list(
-            filter(lambda x: x, mxnet_lib.extra_link_args))
     mxnet_lib.extra_objects = options['EXTRA_OBJECTS']
     mxnet_lib.library_dirs = options['LIBRARY_DIRS']
     mxnet_lib.libraries = options['LIBRARIES']
@@ -835,8 +828,30 @@ class custom_build_ext(build_ext):
                 super(obj, src, ext, cc_args, postargs, pp_opts)
             self.compiler.compiler_so = default_compiler_so
         self.compiler._compile = _compile
-        self.compiler.set_executable('linker_so', ['nvcc', '-shared'])
-        self.compiler.set_executable('compiler_cxx', '')
+
+        def _link_shared_object(self,
+                                objects,
+                                output_filename,
+                                output_dir=None,
+                                libraries=None,
+                                library_dirs=None,
+                                runtime_library_dirs=None,
+                                export_symbols=None,
+                                debug=0,
+                                extra_preargs=None,
+                                extra_postargs=None,
+                                build_temp=None,
+                                target_lang=None):
+            self.compiler.spawn("nvcc -dlink gpu_reducer.o -o gpu_reducer_link.o")
+            path = os.path.split(objects[0]) + "gpu_reducer_link.o"
+            objects.append(path)
+            self.compiler.link(CCompiler.SHARED_OBJECT, objects,
+                  output_filename, output_dir,
+                  libraries, library_dirs, runtime_library_dirs,
+                  export_symbols, debug,
+                  extra_preargs, extra_postargs, build_temp, target_lang)
+        self.compiler.link_shared_object = _link_shared_object
+        
 
     def build_extensions(self):
         make_option = ""
