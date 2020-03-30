@@ -18,21 +18,25 @@ __global__ void sign_kernel(int* dst, const float* src, size_t len) {
   if (i < len) dst[i] = signbit(src[i]);
 }
 
-__global__ void norm1_kernel(float* src, float* out, size_t len) {
+__global__ void norm1_kernel(const float* src, float* out, size_t len) {
+  // max size 16KB
+  __shared__ float vec[4096];
+  
   int tid = threadIdx.x;
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx >= len) return;
 
-  float* data = src + blockIdx.x * blockDim.x;
+  vec[tid] = src[idx];
+  __syncthreads();
 
   for (int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
     if (tid < stride) {
-      data[tid] = abs(data[tid]) + abs(data[tid + stride]);
+      vec[tid] = abs(vec[tid]) + abs(vec[tid + stride]);
     }
     __syncthreads();
   }
 
-  if (tid == 0) atomicAdd(out, data[0]);
+  if (tid == 0) atomicAdd(out, vec[0]);
 }
 
 namespace byteps {
@@ -42,7 +46,7 @@ int CpuReducer::sum(void* dev_dst, const void* dev_src, size_t len, int dtype,
                     float alpha) {
   sum_kernel<<<_block_per_grid, _thread_per_block, 0, *_stream>>>(
       reinterpret_cast<float*>(dev_dst),
-      reinterpret_cast<float*>(const_cast<void*>(dev_src)), len / 4, alpha);
+      reinterpret_cast<const float*>(const_cast<void*>(dev_src)), len / 4, alpha);
   return 0;
 }
 
@@ -50,8 +54,8 @@ int CpuReducer::sum(void* dev_dst, const void* dev_src1, const void* dev_src2,
                     size_t len, int dtype, float alpha) {
   sum_kernel<<<_block_per_grid, _thread_per_block, 0, *_stream>>>(
       reinterpret_cast<float*>(dev_dst),
-      reinterpret_cast<float*>(const_cast<void*>(dev_src1)),
-      reinterpret_cast<float*>(const_cast<void*>(dev_src2)), len / 4, alpha);
+      reinterpret_cast<const float*>(const_cast<void*>(dev_src1)),
+      reinterpret_cast<const float*>(const_cast<void*>(dev_src2)), len / 4, alpha);
   return 0;
 }
 
@@ -59,13 +63,13 @@ int CpuReducer::sign(void* dev_dst, const void* dev_src, size_t len,
                      int dtype) {
   sign_kernel<<<_block_per_grid, _thread_per_block, 0, *_stream>>>(
       reinterpret_cast<int*>(dev_dst),
-      reinterpret_cast<float*>(const_cast<void*>(dev_src)), len / 4);
+      reinterpret_cast<const float*>(const_cast<void*>(dev_src)), len / 4);
   return len / 4;
 }
 
-int CpuReducer::norm1(void* dev_src, float* dev_out, size_t len, int dtype) {
+int CpuReducer::norm1(const void* dev_src, float* dev_out, size_t len, int dtype) {
   norm1_kernel<<<_block_per_grid, _thread_per_block, 0, *_stream>>>(
-      reinterpret_cast<float*>(dev_src), dev_out, len / 4);
+      reinterpret_cast<const float*>(const_cast<void*>(dev_src)), dev_out, len / 4);
 
   return 0;
 }
