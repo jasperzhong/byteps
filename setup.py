@@ -829,29 +829,29 @@ class custom_build_ext(build_ext):
             self.compiler.compiler_so = default_compiler_so
         self.compiler._compile = _compile
 
-        def _link_shared_object(self,
-                                objects,
-                                output_filename,
-                                output_dir=None,
-                                libraries=None,
-                                library_dirs=None,
-                                runtime_library_dirs=None,
-                                export_symbols=None,
-                                debug=0,
-                                extra_preargs=None,
-                                extra_postargs=None,
-                                build_temp=None,
-                                target_lang=None):
-            self.compiler.spawn("nvcc -dlink gpu_reducer.o -o gpu_reducer_link.o")
+        def _link_shared_object(
+                objects,
+                output_filename,
+                output_dir=None,
+                libraries=None,
+                library_dirs=None,
+                runtime_library_dirs=None,
+                export_symbols=None,
+                debug=0,
+                extra_preargs=None,
+                extra_postargs=None,
+                build_temp=None,
+                target_lang=None):
+            self.compiler.spawn(
+                "nvcc -dlink gpu_reducer.o -o gpu_reducer_link.o")
             path = os.path.split(objects[0]) + "gpu_reducer_link.o"
             objects.append(path)
             self.compiler.link(CCompiler.SHARED_OBJECT, objects,
-                  output_filename, output_dir,
-                  libraries, library_dirs, runtime_library_dirs,
-                  export_symbols, debug,
-                  extra_preargs, extra_postargs, build_temp, target_lang)
+                               output_filename, output_dir,
+                               libraries, library_dirs, runtime_library_dirs,
+                               export_symbols, debug,
+                               extra_preargs, extra_postargs, build_temp, target_lang)
         self.compiler.link_shared_object = _link_shared_object
-        
 
     def build_extensions(self):
         make_option = ""
