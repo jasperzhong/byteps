@@ -690,7 +690,7 @@ def build_mx_extension(build_ext, options):
     if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
         for i, flag in enumerate(mxnet_lib.extra_link_args):
             if "Wl," in flag:
-                mxnet_lib.extra_link_args[i] = flag.replace("Wl,", "linker-options=")
+                mxnet_lib.extra_link_args[i] = flag.replace("Wl,", "-linker-options=")
             elif 'openmp' in flag:
                 mxnet_lib.extra_link_args[i] = ''
         mxnet_lib.extra_link_args = list(filter(lambda x:x, mxnet_lib.extra_link_args))
