@@ -33,7 +33,18 @@ CompressorRegistry::Register reg(
 
 OnebitCompressor::OnebitCompressor(bool use_scale) : _use_scale(use_scale){};
 
-OnebitCompressor::~OnebitCompressor() = default;
+OnebitCompressor::~OnebitCompressor() {
+#ifdef BYTEPS_ENABLE_CUDA
+  cudaFree(_dev_out);
+#endif
+};
+
+void OnebitCompressor::Init(size_t aligned_size) {
+  BaseCompressor::Init(aligned_size);
+#ifdef BYTEPS_ENABLE_CUDA
+  cudaMalloc(&_dev_out, 4);
+#endif
+}
 
 template <typename T>
 size_t _Packing(T* data, size_t len) {
@@ -72,16 +83,33 @@ size_t Packing(void* data, size_t len, int dtype) {
 
 void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   float scale = 1.0;
+  float norm1 = 1.0;
+
   if (_use_scale) {
-    auto norm1 =
-        _cpu_reducer->norm1(grad.data, grad.size, static_cast<DataType>(dtype));
-    scale = norm1 / (grad.size / getDataTypeLength(dtype));
+#ifdef BYTEPS_ENABLE_CUDA
+    _cpu_reducer->norm1(grad.data, _dev_out, grad.size,
+                        static_cast<DataType>(dtype));
+    cudaMemcpyAsync(&norm1, _dev_out, 4, cudaMemcpyDeviceToHost, _stream);
+#else
+    _cpu_reducer->norm1(grad.data, &norm1, grad.size,
+                        static_cast<DataType>(dtype));
+#endif
   }
 
+#ifdef BYTEPS_ENABLE_CUDA
+  auto reduced_len = _cpu_reducer->sign(grad.data, grad.data, grad.size,
+                                        static_cast<DataType>(dtype));
+#else
   auto reduced_len = _cpu_reducer->sign(_buf.get(), grad.data, grad.size,
                                         static_cast<DataType>(dtype));
+#endif
 
+#ifdef BYTEPS_ENABLE_CUDA
+  cudaMemcpyAsync(_buf.get(), grad.data, grad.size, cudaMemcpyHostToDevice, _stream);
+  cudaStreamSynchronize(_stream);
+#endif
   auto compressed_size = Packing(_buf.get(), reduced_len, dtype);
+  scale = norm1 / (grad.size / getDataTypeLength(dtype));
 
   auto pf = reinterpret_cast<float*>(_buf.get() + compressed_size);
   *pf = scale;

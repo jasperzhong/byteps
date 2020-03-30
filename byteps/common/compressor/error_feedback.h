@@ -83,6 +83,10 @@ class ErrorFeedback : public BaseCompressor {
  protected:
   std::unique_ptr<char[]> _error;
 
+#ifdef BYTEPS_ENABLE_CUDA
+  char* _dev_error;
+#endif
+
  private:
   /*!
    * \brief compressor

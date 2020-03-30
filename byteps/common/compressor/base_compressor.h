@@ -79,6 +79,11 @@ class BaseCompressor {
    * \brief CPU reducer
    */
   std::unique_ptr<CpuReducer> _cpu_reducer;
+
+#ifdef BYTEPS_ENABLE_CUDA
+  char* _dev_buf;
+  cudaStream_t _stream;
+#endif
 };
 
 using kwargs_t = std::unordered_map<std::string, std::string>;

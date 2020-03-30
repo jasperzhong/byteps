@@ -38,61 +38,36 @@ __global__ void norm1_kernel(float* src, float* out, size_t len) {
 namespace byteps {
 namespace common {
 
-int CpuReducer::sum(void* dst, const void* src, size_t len, int dtype,
+int CpuReducer::sum(void* dev_dst, const void* dev_src, size_t len, int dtype,
                     float alpha) {
-  CUDA_CALL(
-      cudaMemcpyAsync(dev_src1, src, len, cudaMemcpyHostToDevice, stream));
-
-  sum_kernel<<<_block_per_grid, _thread_per_block, 0, stream>>>(
-      dev_dst, dev_src1, len / 4, alpha);
-
-  CUDA_CALL(
-      cudaMemcpyAsync(dst, dev_dst, len, cudaMemcpyDeviceToHost, stream));
-  CUDA_CALL(cudaStreamSynchronize(stream));
+  sum_kernel<<<_block_per_grid, _thread_per_block, 0, *_stream>>>(
+      reinterpret_cast<float*>(dev_dst),
+      reinterpret_cast<float*>(const_cast<void*>(dev_src)), len / 4, alpha);
   return 0;
 }
 
-int CpuReducer::sum(void* dst, const void* src1, const void* src2, size_t len,
-                    int dtype, float alpha) {
-  CUDA_CALL(
-      cudaMemcpyAsync(dev_src1, src1, len, cudaMemcpyHostToDevice, stream));
-  CUDA_CALL(
-      cudaMemcpyAsync(dev_src2, src2, len, cudaMemcpyHostToDevice, stream));
-
-  sum_kernel<<<_block_per_grid, _thread_per_block>>>(dev_dst, dev_src1,
-                                                     dev_src2, len / 4, alpha);
-
-  CUDA_CALL(
-      cudaMemcpyAsync(dst, dev_dst, len, cudaMemcpyDeviceToHost, stream));
-  CUDA_CALL(cudaStreamSynchronize(stream));
+int CpuReducer::sum(void* dev_dst, const void* dev_src1, const void* dev_src2,
+                    size_t len, int dtype, float alpha) {
+  sum_kernel<<<_block_per_grid, _thread_per_block, 0, *_stream>>>(
+      reinterpret_cast<float*>(dev_dst),
+      reinterpret_cast<float*>(const_cast<void*>(dev_src1)),
+      reinterpret_cast<float*>(const_cast<void*>(dev_src2)), len / 4, alpha);
   return 0;
 }
 
-int CpuReducer::sign(void* dst, const void* src, size_t len, int dtype) {
-  CUDA_CALL(
-      cudaMemcpyAsync(dev_src1, src, len, cudaMemcpyHostToDevice, stream));
-
-  sign_kernel<<<_block_per_grid, _thread_per_block>>>(dev_dst, dev_src1,
-                                                      len / 4);
-
-  CUDA_CALL(
-      cudaMemcpyAsync(dst, dev_dst, len, cudaMemcpyDeviceToHost, stream));
-  CUDA_CALL(cudaStreamSynchronize(stream));
-  return 0;
+int CpuReducer::sign(void* dev_dst, const void* dev_src, size_t len,
+                     int dtype) {
+  sign_kernel<<<_block_per_grid, _thread_per_block, 0, *_stream>>>(
+      reinterpret_cast<float*>(dev_dst),
+      reinterpret_cast<float*>(const_cast<void*>(dev_src)), len / 4);
+  return len / 4;
 }
 
-float CpuReducer::norm1(const void* src, size_t len, int dtype) {
-  CUDA_CALL(
-      cudaMemcpyAsync(dev_src1, src, len, cudaMemcpyHostToDevice, stream));
+int CpuReducer::norm1(void* dev_src, float* dev_out, size_t len, int dtype) {
+  norm1_kernel<<<_block_per_grid, _thread_per_block, 0, *_stream>>>(
+      reinterpret_cast<float*>(dev_src), dev_out, len / 4);
 
-  norm1_kernel<<<_block_per_grid, _thread_per_block>>>(dev_src1, dev_scalar,
-                                                       len / 4);
-
-  float ret = 0.0;
-  CUDA_CALL(
-      cudaMemcpyAsync(&ret, dev_scalar, 4, cudaMemcpyDeviceToHost, stream));
-  CUDA_CALL(cudaStreamSynchronize(stream));
-  return ret;
+  return 0;
 }
 
 }  // namespace common

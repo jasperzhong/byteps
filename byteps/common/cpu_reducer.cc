@@ -48,11 +48,6 @@ CpuReducer::CpuReducer(std::shared_ptr<BytePSComm> comm, size_t size) {
 #ifdef BYTEPS_ENABLE_CUDA
   _thread_per_block = 256;
   _block_per_grid = (size / 4 + _thread_per_block - 1) / _thread_per_block;
-  CUDA_CALL(cudaMalloc(&dev_dst, size));
-  CUDA_CALL(cudaMalloc(&dev_src1, size));
-  CUDA_CALL(cudaMalloc(&dev_src2, size));
-  CUDA_CALL(cudaMalloc(&dev_scalar, 4));
-  CUDA_CALL(cudaStreamCreate(&stream));
 #endif
   return;
 }
@@ -299,22 +294,22 @@ size_t CpuReducer::_sign(T1* dst, const T2* src, size_t len) {
   return len / sizeof(T1);
 }
 
-float CpuReducer::norm1(const void* src, size_t len, DataType dtype) {
+void CpuReducer::norm1(const void* src, float* out, size_t len,
+                       DataType dtype) {
   switch (dtype) {
     case BYTEPS_FLOAT32:
-      return _norm1(reinterpret_cast<const float*>(src), len);
+      return _norm1(reinterpret_cast<const float*>(src), out, len);
     case BYTEPS_FLOAT64:
-      return _norm1(reinterpret_cast<const double*>(src), len);
+      return _norm1(reinterpret_cast<const double*>(src), out, len);
     case BYTEPS_FLOAT16:
-      return _norm1_float16(src, len);
+      return _norm1_float16(src, out, len);
     default:
       BPS_CHECK(0) << "Unsupported data type: " << dtype;
   }
-  return 0;
 }
 
 template <typename T>
-float CpuReducer::_norm1(const T* src, size_t len) {
+void CpuReducer::_norm1(const T* src, float* out, size_t len) {
   float ret = 0;
   // maybe use std::reduce in the future
 
@@ -323,10 +318,10 @@ float CpuReducer::_norm1(const T* src, size_t len) {
     ret += std::fabs(src[i]);
   }
 
-  return ret;
+  *out = ret;
 }
 
-float CpuReducer::_norm1_float16(const void* src, size_t len) {
+void CpuReducer::_norm1_float16(const void* src, float* out, size_t len) {
   // cast src and dst to your float16 type
   auto in = reinterpret_cast<const unsigned short*>(src);
   len = len / (size_t)2;
@@ -344,7 +339,7 @@ float CpuReducer::_norm1_float16(const void* src, size_t len) {
   }
 
   // #endif
-  return ret;
+  *out = ret;
 }
 #endif
 }  // namespace common

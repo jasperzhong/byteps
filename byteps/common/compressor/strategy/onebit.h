@@ -39,9 +39,13 @@ namespace compressor {
  */
 class OnebitCompressor : public BaseCompressor {
  public:
-  OnebitCompressor(bool use_scale=false);
+  OnebitCompressor(bool use_scale = false);
   virtual ~OnebitCompressor();
-
+  /*!
+   * \brief Allocate encoding buffer for compression.
+   * \param aligned_size aligned size
+   */
+  void Init(size_t aligned_size);
   /*!
    * \brief Compress function
    *
@@ -69,6 +73,10 @@ class OnebitCompressor : public BaseCompressor {
 
  private:
   bool _use_scale;
+
+#ifdef BYTEPS_ENABLE_CUDA
+  float* dev_out;
+#endif
 };
 }  // namespace compressor
 }  // namespace common

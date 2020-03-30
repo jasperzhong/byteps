@@ -21,22 +21,43 @@ namespace compressor {
 ErrorFeedback::ErrorFeedback(std::unique_ptr<BaseCompressor> compressor_ptr)
     : _compressor_ptr(std::move(compressor_ptr)) {}
 
-ErrorFeedback::~ErrorFeedback() = default;
+ErrorFeedback::~ErrorFeedback() {
+#ifdef BYTEPS_ENABLE_CUDA
+  cudaFree(_dev_error);
+#endif
+};
 
 void ErrorFeedback::Init(size_t aligned_size) {
+  BaseCompressor::Init(aligned_size);
   _compressor_ptr->Init(aligned_size);
   _error.reset(new char[aligned_size]);
   memset(_error.get(), 0, aligned_size);
-  _cpu_reducer.reset(new CpuReducer(nullptr, aligned_size));
+#ifdef BYTEPS_ENABLE_CUDA
+  cudaMalloc(&_dev_error, aligned_size);
+  cudaMemset(_dev_error, 0, aligned_size);
+#endif
 }
 
 void ErrorFeedback::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
+  auto corrected = grad;
+#ifdef BYTEPS_ENABLE_CUDA
+  cudaMemcpyAsync(_dev_buf, grad.data, grad.size, cudaMemcpyHostToDevice,
+                  _stream);
+  corrected = {_dev_buf, grad.size};
+#endif
   // before: grad += error
-  UpdateGradient(grad, dtype);
-  // compress
-  _compressor_ptr->Compress(grad, dtype, compressed);
+  UpdateGradient(corrected, dtype);
 
-  UpdateError(grad, dtype, compressed);
+#ifdef BYTEPS_ENABLE_CUDA
+  cudaStreamSynchronize(_stream);
+#endif
+  // compress
+  _compressor_ptr->Compress(corrected, dtype, compressed);
+
+  UpdateError(corrected, dtype, compressed);
+#ifdef BYTEPS_ENABLE_CUDA
+  cudaStreamSynchronize(_stream);
+#endif
 }
 
 void ErrorFeedback::Decompress(ByteBuf compressed, int dtype,

@@ -46,8 +46,13 @@ VanillaErrorFeedbackCompressor::~VanillaErrorFeedbackCompressor() = default;
 // worker version decompressor
 void VanillaErrorFeedbackCompressor::UpdateGradient(ByteBuf grad, int dtype) {
   int local_size = atoi(getenv("BYTEPS_LOCAL_SIZE"));
+#ifdef BYTEPS_ENABLE_CUDA
+  this->_cpu_reducer->sum(grad.data, _dev_error, grad.data, grad.size,
+                          static_cast<DataType>(dtype), 1.0 / local_size);
+#else
   this->_cpu_reducer->sum(grad.data, _error.get(), grad.data, grad.size,
                           static_cast<DataType>(dtype), 1.0 / local_size);
+#endif
 }
 #else
 // server version decompressor
@@ -62,8 +67,16 @@ void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
                                                  ByteBuf compressed) {
   ByteBuf decompressed{_error.get(), corrected.size};
   Decompress(compressed, dtype, decompressed);
+
+#ifdef BYTEPS_ENABLE_CUDA
+  cudaMemcpyAsync(_dev_error, _error.get(), corrected.size,
+                  cudaMemcpyHostToDevice, _stream);
+  this->_cpu_reducer->sum(_dev_error, corrected.data, _dev_error,
+                          corrected.size, static_cast<DataType>(dtype), -1.0);
+#else
   this->_cpu_reducer->sum(_error.get(), corrected.data, decompressed.data,
                           corrected.size, static_cast<DataType>(dtype), -1.0);
+#endif
 }
 }  // namespace compressor
 }  // namespace common

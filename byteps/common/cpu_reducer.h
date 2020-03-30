@@ -50,14 +50,6 @@ class CpuReducer {
   ~CpuReducer() {
     if (_comm) _comm.reset();
     BPS_LOG(DEBUG) << "Clear CpuReducer";
-
-#ifdef BYTEPS_ENABLE_CUDA
-    CUDA_CALL(cudaFree(dev_dst));
-    CUDA_CALL(cudaFree(dev_src1));
-    CUDA_CALL(cudaFree(dev_src2));
-    CUDA_CALL(cudaFree(dev_scalar));
-    CUDA_CALL(cudaStreamDestroy(stream));
-#endif
   }
 
   DataType GetDataType(int dtype) { return static_cast<DataType>(dtype); }
@@ -69,7 +61,7 @@ class CpuReducer {
   int sum(void* dst, const void* src1, const void* src2, size_t len,
           DataType dtype, float alpha = 1.0);
   int sign(void* dst, const void* src, size_t len, DataType dtype);
-  float norm1(const void* src, size_t len, DataType dtype);
+  void norm1(const void* src, float* out, size_t len, DataType dtype);
 
 #else
   int sum(void* dst, const void* src, size_t len, int dtype, float alpha = 1.0);
@@ -79,7 +71,7 @@ class CpuReducer {
 
   int sign(void* dst, const void* src, size_t len, int dtype);
 
-  float norm1(const void* src, size_t len, int dtype);
+  int norm1(void* src, float* out, size_t len, int dtype);
 #endif
 
  private:
@@ -211,9 +203,9 @@ class CpuReducer {
   size_t _sign(T1* dst, const T2* src, size_t len);
 
   template <typename T>
-  float _norm1(const T* src, size_t len);
+  void _norm1(const T* src, float* out, size_t len);
 
-  float _norm1_float16(const void* src, size_t len);
+  void _norm1_float16(const void* src, float* out, size_t len);
 
   float _convert_half_to_full_precision(uint16_t h);
   uint16_t _convert_full_to_half_precision(float f);
@@ -222,10 +214,10 @@ class CpuReducer {
   int _num_threads;
 
 #ifdef BYTEPS_ENABLE_CUDA
+  void set_cuda_stream(cudaStream_t* stream) { _stream = stream; }
   int _thread_per_block;
   int _block_per_grid;
-  float *dev_dst, *dev_src1, *dev_src2, *dev_scalar;
-  cudaStream_t stream;
+  cudaStream_t* _stream;
 #endif
 };
 
