@@ -691,6 +691,8 @@ def build_mx_extension(build_ext, options):
         for i, flag in enumerate(mxnet_lib.extra_link_args):
             if "Wl," in flag:
                 mxnet_lib.extra_link_args[i] = flag.replace("Wl,", "linker-options=")
+            elif 'openmp' in flag:
+                del mxnet_lib.extra_link_args[i]
     mxnet_lib.extra_objects = options['EXTRA_OBJECTS']
     mxnet_lib.library_dirs = options['LIBRARY_DIRS']
     mxnet_lib.libraries = options['LIBRARIES']
