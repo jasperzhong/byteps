@@ -52,10 +52,11 @@ class CpuReducer {
     BPS_LOG(DEBUG) << "Clear CpuReducer";
 
 #ifdef BYTEPS_ENABLE_CUDA
-    cudaFree(dev_dst);
-    cudaFree(dev_src1);
-    cudaFree(dev_src2);
-    cudaFree(dev_scalar);
+    CUDA_CALL(cudaFree(dev_dst));
+    CUDA_CALL(cudaFree(dev_src1));
+    CUDA_CALL(cudaFree(dev_src2));
+    CUDA_CALL(cudaFree(dev_scalar));
+    CUDA_CALL(cudaStreamDestroy(stream));
 #endif
   }
 
@@ -224,6 +225,7 @@ class CpuReducer {
   int _thread_per_block;
   int _block_per_grid;
   float *dev_dst, *dev_src1, *dev_src2, *dev_scalar;
+  cudaStream_t stream;
 #endif
 };
 

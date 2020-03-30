@@ -48,10 +48,11 @@ CpuReducer::CpuReducer(std::shared_ptr<BytePSComm> comm, size_t size) {
 #ifdef BYTEPS_ENABLE_CUDA
   _thread_per_block = 256;
   _block_per_grid = (size / 4 + _thread_per_block - 1) / _thread_per_block;
-  cudaMalloc(&dev_dst, size);
-  cudaMalloc(&dev_src1, size);
-  cudaMalloc(&dev_src2, size);
-  cudaMalloc(&dev_scalar, 4);
+  CUDA_CALL(cudaMalloc(&dev_dst, size));
+  CUDA_CALL(cudaMalloc(&dev_src1, size));
+  CUDA_CALL(cudaMalloc(&dev_src2, size));
+  CUDA_CALL(cudaMalloc(&dev_scalar, 4));
+  CUDA_CALL(cudaStreamCreate(&stream));
 #endif
   return;
 }
