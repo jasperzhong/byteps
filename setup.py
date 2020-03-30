@@ -212,11 +212,11 @@ def get_link_flags(build_ext):
         flags_to_try = [ld_flags, libtool_flags]
     for link_flags in flags_to_try:
         try:
-            test_compile(build_ext, 'test_link_flags', extra_link_preargs=link_flags,
-                         code=textwrap.dedent('''\
-                    void test() {
-                    }
-                    '''))
+            # test_compile(build_ext, 'test_link_flags', extra_link_preargs=link_flags,
+            #              code=textwrap.dedent('''\
+            #         void test() {
+            #         }
+            #         '''))
 
             return link_flags
         except (CompileError, LinkError):
