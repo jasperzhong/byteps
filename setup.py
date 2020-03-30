@@ -682,7 +682,7 @@ def build_mx_extension(build_ext, options):
          'byteps/mxnet/adapter.cc']
     if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
         mxnet_lib.extra_compile_args = {'g++': options['COMPILE_FLAGS'] +
-                                        mx_compile_flags, 'nvcc': ['-dc']}
+                                        mx_compile_flags, 'nvcc': ['-dc', '-DBYTEPS_ENABLE_CUDA']}
     else:
         mxnet_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
             mx_compile_flags
@@ -690,10 +690,12 @@ def build_mx_extension(build_ext, options):
     if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
         for i, flag in enumerate(mxnet_lib.extra_link_args):
             if "Wl," in flag:
-                mxnet_lib.extra_link_args[i] = flag.replace("Wl,", "-linker-options=")
+                mxnet_lib.extra_link_args[i] = flag.replace(
+                    "Wl,", "-linker-options=")
             elif 'openmp' in flag:
                 mxnet_lib.extra_link_args[i] = ''
-        mxnet_lib.extra_link_args = list(filter(lambda x:x, mxnet_lib.extra_link_args))
+        mxnet_lib.extra_link_args = list(
+            filter(lambda x: x, mxnet_lib.extra_link_args))
     mxnet_lib.extra_objects = options['EXTRA_OBJECTS']
     mxnet_lib.library_dirs = options['LIBRARY_DIRS']
     mxnet_lib.libraries = options['LIBRARIES']
