@@ -1,4 +1,4 @@
-#include "cpu_reducer"
+#include "cpu_reducer.h"
 
 namespace byteps {
 namespace common {
