@@ -75,7 +75,7 @@ class OnebitCompressor : public BaseCompressor {
   bool _use_scale;
 
 #ifdef BYTEPS_ENABLE_CUDA
-  float* dev_out;
+  float* _dev_out;
 #endif
 };
 }  // namespace compressor
