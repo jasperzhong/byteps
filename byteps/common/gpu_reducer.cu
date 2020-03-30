@@ -1,8 +1,5 @@
 #include "cpu_reducer.h"
 
-namespace byteps {
-namespace common {
-
 __global__ void sum_kernel(float* dst, const float* src, size_t len,
                            float alpha) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -36,6 +33,9 @@ __global__ void norm1_kernel(float* src, float* out, size_t len) {
 
   if (tid == 0) atomicAdd(out, data[0]);
 }
+
+namespace byteps {
+namespace common {
 
 int CpuReducer::sum(void* dst, const void* src, size_t len, int dtype,
                     float alpha) {
