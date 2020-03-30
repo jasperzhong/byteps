@@ -46,7 +46,7 @@ void ErrorFeedback::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   corrected = {_dev_buf, grad.size};
 #endif
   // before: grad += error
-  UpdateGradient(corrected, dtype);
+  // UpdateGradient(corrected, dtype);
 
 #ifdef BYTEPS_ENABLE_CUDA
   cudaStreamSynchronize(_stream);
