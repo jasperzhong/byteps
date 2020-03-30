@@ -842,10 +842,10 @@ class custom_build_ext(build_ext):
                 extra_postargs=None,
                 build_temp=None,
                 target_lang=None):
-            self.compiler.spawn(
-                "nvcc -dlink gpu_reducer.o -o gpu_reducer_link.o")
-            path = os.path.split(objects[0]) + "gpu_reducer_link.o"
-            objects.append(path)
+            if os.path.exists("gpu_reducer_link.o"):
+                self.compiler.spawn("nvcc -dlink gpu_reducer.o -o gpu_reducer_link.o")
+                path = os.path.split(objects[0]) + "gpu_reducer_link.o"
+                objects.append(path)
             self.compiler.link(CCompiler.SHARED_OBJECT, objects,
                                output_filename, output_dir,
                                libraries, library_dirs, runtime_library_dirs,
