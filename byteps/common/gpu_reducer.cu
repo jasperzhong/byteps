@@ -13,7 +13,7 @@ __global__ void sum_kernel(float* dst, const float* src1, const float* src2,
   if (i < len) dst[i] = src1[i] + src2[i] * alpha;
 }
 
-__global__ void sign_kernel(float* dst, const float* src, size_t len) {
+__global__ void sign_kernel(int* dst, const float* src, size_t len) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i < len) dst[i] = signbit(src[i]);
 }
@@ -58,7 +58,7 @@ int CpuReducer::sum(void* dev_dst, const void* dev_src1, const void* dev_src2,
 int CpuReducer::sign(void* dev_dst, const void* dev_src, size_t len,
                      int dtype) {
   sign_kernel<<<_block_per_grid, _thread_per_block, 0, *_stream>>>(
-      reinterpret_cast<float*>(dev_dst),
+      reinterpret_cast<int*>(dev_dst),
       reinterpret_cast<float*>(const_cast<void*>(dev_src)), len / 4);
   return len / 4;
 }
