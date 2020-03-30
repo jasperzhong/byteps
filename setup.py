@@ -690,7 +690,7 @@ def build_mx_extension(build_ext, options):
     if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
         for i, flag in enumerate(mxnet_lib.extra_link_args):
             if "Wl," in flag:
-                 mxnet_lib.extra_link_args[i].replace("Wl,", "linker-options=")
+                mxnet_lib.extra_link_args[i] = flag.replace("Wl,", "linker-options=")
     mxnet_lib.extra_objects = options['EXTRA_OBJECTS']
     mxnet_lib.library_dirs = options['LIBRARY_DIRS']
     mxnet_lib.libraries = options['LIBRARIES']
