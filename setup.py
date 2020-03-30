@@ -201,10 +201,7 @@ def get_cpp_flags(build_ext):
 def get_link_flags(build_ext):
     last_err = None
     libtool_flags = ['-Wl,-exported_symbols_list,byteps.exp']
-    if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
-        ld_flags = ['-linker-options=-rpath,--version-script=byteps.lds']
-    else:
-        ld_flags = ['-Wl,--version-script=byteps.lds', '-fopenmp']
+    ld_flags = ['-Wl,--version-script=byteps.lds', '-fopenmp']
     flags_to_try = []
     if sys.platform == 'darwin':
         flags_to_try = [libtool_flags, ld_flags]
@@ -212,11 +209,11 @@ def get_link_flags(build_ext):
         flags_to_try = [ld_flags, libtool_flags]
     for link_flags in flags_to_try:
         try:
-            # test_compile(build_ext, 'test_link_flags', extra_link_preargs=link_flags,
-            #              code=textwrap.dedent('''\
-            #         void test() {
-            #         }
-            #         '''))
+            test_compile(build_ext, 'test_link_flags', extra_link_preargs=link_flags,
+                         code=textwrap.dedent('''\
+                    void test() {
+                    }
+                    '''))
 
             return link_flags
         except (CompileError, LinkError):
@@ -540,10 +537,7 @@ def get_mx_flags(build_ext, cpp_flags):
 
     link_flags = []
     for lib_dir in mx_lib_dirs:
-        if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
-            link_flags.append('-linker-options=-rpath,%s' % lib_dir)
-        else:
-            link_flags.append('-Wl,-rpath,%s' % lib_dir)
+        link_flags.append('-Wl,-rpath,%s' % lib_dir)
         link_flags.append('-L%s' % lib_dir)
 
     for lib in mx_libs:
@@ -693,6 +687,10 @@ def build_mx_extension(build_ext, options):
         mxnet_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
             mx_compile_flags
     mxnet_lib.extra_link_args = options['LINK_FLAGS'] + mx_link_flags
+    if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
+        for i, flag in enumerate(mxnet_lib.extra_link_args):
+            if "Wl," in flag:
+                 mxnet_lib.extra_link_args[i].replace("Wl,", "linker-options=")
     mxnet_lib.extra_objects = options['EXTRA_OBJECTS']
     mxnet_lib.library_dirs = options['LIBRARY_DIRS']
     mxnet_lib.libraries = options['LIBRARIES']
