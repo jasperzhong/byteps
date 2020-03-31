@@ -161,8 +161,8 @@ int CpuReducer::_sum_float16(void* dst, const void* src, size_t len,
   return 0;
 }
 
-
-int CpuReducer::sum2(void* dst, const void* src1, const void* src2, size_t len,
+#ifndef BYTEPS_ENABLE_CUDA
+int CpuReducer::sum(void* dst, const void* src1, const void* src2, size_t len,
                     DataType dtype, float alpha) {
   switch (dtype) {
     case BYTEPS_FLOAT32:
@@ -261,7 +261,6 @@ int CpuReducer::_sum_float16(void* dst, const void* src1, const void* src2,
   return 0;
 }
 
-#ifndef BYTEPS_ENABLE_CUDA
 
 void CpuReducer::norm1(const void* src, float* out, size_t len,
                        DataType dtype) {

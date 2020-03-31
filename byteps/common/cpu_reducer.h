@@ -56,8 +56,6 @@ class CpuReducer {
   int copy(void* dst, const void* src, size_t len);
   int sum(void* dst, const void* src, size_t len, DataType dtype,
           float alpha = 1.0);
-  int sum2(void* dst, const void* src1, const void* src2, size_t len,
-          DataType dtype, float alpha = 1.0);
 
 #ifndef BYTEPS_ENABLE_CUDA
 
