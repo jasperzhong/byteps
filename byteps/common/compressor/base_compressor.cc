@@ -69,7 +69,7 @@ void BaseCompressor::Init(size_t aligned_size) {
   cudaMalloc(&_dev_buf, aligned_size);
   cudaStreamCreate(&_stream);
   _cpu_reducer->set_cuda_stream(&_stream);
-  BPS_LOG(INFO) << "cuda malloc for compressor";
+  BPS_LOG(INFO) << "cuda malloc for compressor  size" << aligned_size;;
 #endif
 }
 }  // namespace compressor
