@@ -321,7 +321,6 @@ def build_server(build_ext, options):
     server_lib.extra_objects = options['EXTRA_OBJECTS']
     server_lib.library_dirs = options['LIBRARY_DIRS']
 
-
     if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
         server_lib.sources.append('byteps/common/gpu_reducer.cu')
         server_lib.extra_compile_args.append('-DBYTEPS_ENABLE_CUDA')
@@ -922,6 +921,9 @@ class custom_build_ext(build_ext):
             options['COMPILE_FLAGS'] += ['-D_GLIBCXX_USE_CXX11_ABI=' +
                                          str(int(glibcxx_flag))]
 
+
+        if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
+            self.custom_for_nvcc(options)
         built_plugins = []
         try:
             build_server(self, options)
@@ -959,9 +961,6 @@ class custom_build_ext(build_ext):
                 else:
                     raise
         if not int(os.environ.get('BYTEPS_WITHOUT_MXNET', 0)):
-
-            if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
-                self.custom_for_nvcc(options)
 
             # fix "libcuda.so.1 not found" issue
             cuda_home = os.environ.get('BYTEPS_CUDA_HOME', '/usr/local/cuda')
