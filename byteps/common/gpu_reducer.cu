@@ -73,21 +73,21 @@ int CpuReducer::sign(void* dev_dst, const void* dev_src, size_t len,
   return len / 4;
 }
 
-int CpuReducer::norm1(const void* dev_src, float* dev_out, size_t len,
-                      int dtype) {
-  int x = ((len / 4) + BLOCK_PER_GRID - 1) / BLOCK_PER_GRID;
-  --x;
-  x |= x >> 1;
-  x |= x >> 2;
-  x |= x >> 4;
-  x |= x >> 8;
-  x |= x >> 16;
-  ++x;
-  norm1_kernel<<<BLOCK_PER_GRID, x, 0, *_stream>>>(
-      reinterpret_cast<const float*>(const_cast<void*>(dev_src)), dev_out,
-      len / 4);
-  return 0;
-}
+// int CpuReducer::norm1(const void* dev_src, float* dev_out, size_t len,
+//                       int dtype) {
+//   int x = ((len / 4) + BLOCK_PER_GRID - 1) / BLOCK_PER_GRID;
+//   --x;
+//   x |= x >> 1;
+//   x |= x >> 2;
+//   x |= x >> 4;
+//   x |= x >> 8;
+//   x |= x >> 16;
+//   ++x;
+//   norm1_kernel<<<BLOCK_PER_GRID, x, 0, *_stream>>>(
+//       reinterpret_cast<const float*>(const_cast<void*>(dev_src)), dev_out,
+//       len / 4);
+//   return 0;
+// }
 
 }  // namespace common
 }  // namespace byteps
