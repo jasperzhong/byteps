@@ -46,8 +46,8 @@ CpuReducer::CpuReducer(std::shared_ptr<BytePSComm> comm, size_t size) {
   }
 
 #ifdef BYTEPS_ENABLE_CUDA
-  _thread_per_block = 256;
-  _block_per_grid = (size / 4 + _thread_per_block - 1) / _thread_per_block;
+  _block_per_grid = 256;
+  _thread_per_block = (size / 4 + _block_per_grid - 1) / _block_per_grid;
 #endif
   return;
 }
