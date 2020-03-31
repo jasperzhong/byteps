@@ -24,7 +24,7 @@ __global__ void norm1_kernel(const float* src, float* out, size_t len) {
   int tid = threadIdx.x;
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-  if (idx == 0) *out = 0;
+  // if (idx == 0) *out = 0;
   vec[tid] = (idx < len) ? src[idx] : 0;
   __syncthreads();
 
