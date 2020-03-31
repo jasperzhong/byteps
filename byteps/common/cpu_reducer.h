@@ -216,9 +216,6 @@ class CpuReducer {
   int _num_threads;
 
 #ifdef BYTEPS_ENABLE_CUDA
-  int _thread_per_block;
-  int _thread_per_block_round;
-  int _block_per_grid;
   cudaStream_t* _stream;
 #endif
 };

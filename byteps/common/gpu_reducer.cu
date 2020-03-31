@@ -40,10 +40,12 @@ __global__ void norm1_kernel(const float* src, float* out, size_t len) {
 
 namespace byteps {
 namespace common {
+constexpr int BLOCK_PER_GRID = 1024;
 
 int CpuReducer::sum(void* dev_dst, const void* dev_src, size_t len, int dtype,
                     float alpha) {
-  sum_kernel<<<_block_per_grid, _thread_per_block, 0, *_stream>>>(
+  int thread_per_block = ((len/4) + BLOCK_PER_GRID) / BLOCK_PER_GRID;
+  sum_kernel<<<BLOCK_PER_GRID, thread_per_block, 0, *_stream>>>(
       reinterpret_cast<float*>(dev_dst),
       reinterpret_cast<const float*>(const_cast<void*>(dev_src)), len / 4,
       alpha);
@@ -52,7 +54,8 @@ int CpuReducer::sum(void* dev_dst, const void* dev_src, size_t len, int dtype,
 
 int CpuReducer::sum(void* dev_dst, const void* dev_src1, const void* dev_src2,
                     size_t len, int dtype, float alpha) {
-  sum_kernel<<<_block_per_grid, _thread_per_block, 0, *_stream>>>(
+  int thread_per_block = ((len/4) + BLOCK_PER_GRID) / BLOCK_PER_GRID;
+  sum_kernel<<<BLOCK_PER_GRID, thread_per_block, 0, *_stream>>>(
       reinterpret_cast<float*>(dev_dst),
       reinterpret_cast<const float*>(const_cast<void*>(dev_src1)),
       reinterpret_cast<const float*>(const_cast<void*>(dev_src2)), len / 4,
@@ -62,7 +65,8 @@ int CpuReducer::sum(void* dev_dst, const void* dev_src1, const void* dev_src2,
 
 int CpuReducer::sign(void* dev_dst, const void* dev_src, size_t len,
                      int dtype) {
-  sign_kernel<<<_block_per_grid, _thread_per_block, 0, *_stream>>>(
+  int thread_per_block = ((len/4) + BLOCK_PER_GRID) / BLOCK_PER_GRID;
+  sign_kernel<<<BLOCK_PER_GRID, thread_per_block, 0, *_stream>>>(
       reinterpret_cast<int*>(dev_dst),
       reinterpret_cast<const float*>(const_cast<void*>(dev_src)), len / 4);
   return len / 4;
@@ -70,7 +74,9 @@ int CpuReducer::sign(void* dev_dst, const void* dev_src, size_t len,
 
 int CpuReducer::norm1(const void* dev_src, float* dev_out, size_t len,
                       int dtype) {
-  norm1_kernel<<<_block_per_grid, _thread_per_block_round, 0, *_stream>>>(
+  int thread_per_block = ((len/4) + BLOCK_PER_GRID) / BLOCK_PER_GRID;
+  thread_per_block = NextPow2(thread_per_block);
+  norm1_kernel<<<BLOCK_PER_GRID, thread_per_block, 0, *_stream>>>(
       reinterpret_cast<const float*>(const_cast<void*>(dev_src)), dev_out,
       len / 4);
   return 0;

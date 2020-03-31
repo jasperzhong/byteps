@@ -45,13 +45,6 @@ CpuReducer::CpuReducer(std::shared_ptr<BytePSComm> comm, size_t size) {
     _num_threads = 4;
   }
 
-#ifdef BYTEPS_ENABLE_CUDA
-  _block_per_grid = 1024;
-  _thread_per_block = (size / 4 + _block_per_grid - 1) / _block_per_grid;
-  _thread_per_block_round = NextPow2(_thread_per_block);
-  BPS_CHECK_LE(_thread_per_block_round, 1024)
-      << "threads num exceeds maximum 1024.";
-#endif
   return;
 }
 
