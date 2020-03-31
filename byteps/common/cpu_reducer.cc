@@ -260,7 +260,6 @@ int CpuReducer::_sum_float16(void* dst, const void* src1, const void* src2,
 #endif
   return 0;
 }
-#ifndef BYTEPS_ENABLE_CUDA
 void CpuReducer::norm1(const void* src, float* out, size_t len,
                        DataType dtype) {
   switch (dtype) {
@@ -308,6 +307,7 @@ void CpuReducer::_norm1_float16(const void* src, float* out, size_t len) {
   // #endif
   *out = ret;
 }
+#ifndef BYTEPS_ENABLE_CUDA
 
 int CpuReducer::sign(void* dst, const void* src, size_t len, DataType dtype) {
   switch (dtype) {
