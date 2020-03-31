@@ -41,15 +41,6 @@ __global__ void norm1_kernel(const float* src, float* out, size_t len) {
 namespace byteps {
 namespace common {
 constexpr int BLOCK_PER_GRID = 1024;
-inline int NextPow2(int x) {
-  --x;
-  x |= x >> 1;
-  x |= x >> 2;
-  x |= x >> 4;
-  x |= x >> 8;
-  x |= x >> 16;
-  return ++x;
-}
 // int CpuReducer::sum(void* dev_dst, const void* dev_src, size_t len, int
 // dtype,
 //                     float alpha) {

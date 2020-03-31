@@ -192,6 +192,16 @@ class CpuReducer {
     *dest = u;
   }
 
+  inline int NextPow2(int x) {
+    --x;
+    x |= x >> 1;
+    x |= x >> 2;
+    x |= x >> 4;
+    x |= x >> 8;
+    x |= x >> 16;
+    return ++x;
+  }
+
   template <typename T>
   int _sum(T* dst, const T* src, size_t len, float alpha);
 
