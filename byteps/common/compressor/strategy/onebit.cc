@@ -99,7 +99,7 @@ void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
 
 #ifdef BYTEPS_ENABLE_CUDA
   CUDA_CALL(cudaMemcpy(_buf.get(), grad.data, grad.size, cudaMemcpyDeviceToHost));
-  BPS_LOG(INFO) << "just to verfiy norm1=" << norm1;
+  BPS_LOG(INFO) << "just to verfiy norm1=" << norm1 << " len=" << grad.size / 4;
 #endif
 
 #ifdef BYTEPS_ENABLE_CUDA
