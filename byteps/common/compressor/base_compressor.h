@@ -82,6 +82,7 @@ class BaseCompressor {
 
 #ifdef BYTEPS_ENABLE_CUDA
   char* _dev_buf;
+  cudaStream_t _stream;
 #endif
 };
 

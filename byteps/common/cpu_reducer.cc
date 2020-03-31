@@ -315,7 +315,6 @@ void CpuReducer::_norm1_float16(const void* src, float* out, size_t len) {
   // #endif
   *out = ret;
 }
-#endif
 
 int CpuReducer::sign(void* dst, const void* src, size_t len, DataType dtype) {
   switch (dtype) {
@@ -345,5 +344,7 @@ size_t CpuReducer::_sign(T1* dst, const T2* src, size_t len) {
 
   return len / sizeof(T1);
 }
+#endif
+
 }  // namespace common
 }  // namespace byteps

@@ -54,13 +54,13 @@ class CpuReducer {
 
   DataType GetDataType(int dtype) { return static_cast<DataType>(dtype); }
   int copy(void* dst, const void* src, size_t len);
-  int sign(void* dst, const void* src, size_t len, DataType dtype);
 
 #ifndef BYTEPS_ENABLE_CUDA
   int sum(void* dst, const void* src, size_t len, DataType dtype,
           float alpha = 1.0);
   int sum(void* dst, const void* src1, const void* src2, size_t len,
           DataType dtype, float alpha = 1.0);
+  int sign(void* dst, const void* src, size_t len, DataType dtype);
   void norm1(const void* src, float* out, size_t len, DataType dtype);
 
 #else
@@ -69,10 +69,11 @@ class CpuReducer {
   int sum(void* dst, const void* src1, const void* src2, size_t len, int dtype,
           float alpha = 1.0);
 
-  // int sign(void* dst, const void* src, size_t len, int dtype);
+  int sign(void* dst, const void* src, size_t len, int dtype);
 
   int norm1(const void* src, float* out, size_t len, int dtype);
 
+  void set_cuda_stream(cudaStream_t* stream) {_stream = stream;}
 #endif
 
  private:
@@ -218,6 +219,7 @@ class CpuReducer {
   int _thread_per_block;
   int _thread_per_block_round;
   int _block_per_grid;
+  cudaStream_t* _stream;
 #endif
 };
 
