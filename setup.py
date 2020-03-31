@@ -211,11 +211,11 @@ def get_link_flags(build_ext):
         flags_to_try = [ld_flags, libtool_flags]
     for link_flags in flags_to_try:
         try:
-            # test_compile(build_ext, 'test_link_flags', extra_link_preargs=link_flags,
-            #              code=textwrap.dedent('''\
-            #         void test() {
-            #         }
-            #         '''))
+            test_compile(build_ext, 'test_link_flags', extra_link_preargs=link_flags,
+                         code=textwrap.dedent('''\
+                    void test() {
+                    }
+                    '''))
 
             return link_flags
         except (CompileError, LinkError):
@@ -859,12 +859,13 @@ class custom_build_ext(build_ext):
                 extra_postargs=None,
                 build_temp=None,
                 target_lang=None):
-            base_path = "build/temp.linux-x86_64-3.6/byteps/common"
-            if os.path.exists(os.path.join(base_path, "gpu_reducer.o")):
-                os.system(
-                    "cd %s; nvcc -dlink gpu_reducer.o -o gpu_reducer_link.o" % base_path)
-                path = os.path.join(base_path, "gpu_reducer_link.o")
-                objects.append(path)
+            if "test" not in objects[0]:
+                base_path = "build/temp.linux-x86_64-3.6/byteps/common"
+                if os.path.exists(os.path.join(base_path, "gpu_reducer.o")):
+                    os.system(
+                        "cd %s; nvcc -dlink gpu_reducer.o -o gpu_reducer_link.o" % base_path)
+                    path = os.path.join(base_path, "gpu_reducer_link.o")
+                    objects.append(path)
             self.compiler.link(CCompiler.SHARED_OBJECT, objects,
                                output_filename, output_dir,
                                libraries, library_dirs, runtime_library_dirs,
