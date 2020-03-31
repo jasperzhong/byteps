@@ -58,8 +58,13 @@ void VanillaErrorFeedbackCompressor::UpdateGradient(ByteBuf grad, int dtype) {
 // server version decompressor
 void VanillaErrorFeedbackCompressor::UpdateGradient(ByteBuf grad, int dtype) {
   int num_workers = atoi(getenv("DMLC_NUM_WORKER"));
+#ifdef BYTEPS_ENABLE_CUDA
+  this->_cpu_reducer->sum(grad.data, _dev_error, grad.data, grad.size,
+                          static_cast<DataType>(dtype), 1.0 / num_workers);
+#else
   this->_cpu_reducer->sum(grad.data, _error.get(), grad.data, grad.size,
                           static_cast<DataType>(dtype), 1.0 / num_workers);
+#endif
 }
 #endif
 
@@ -69,7 +74,8 @@ void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
   Decompress(compressed, dtype, decompressed);
 
 #ifdef BYTEPS_ENABLE_CUDA
-  cudaMemcpyAsync(_dev_error, _error.get(), corrected.size, cudaMemcpyHostToDevice, _stream);
+  cudaMemcpyAsync(_dev_error, _error.get(), corrected.size,
+                  cudaMemcpyHostToDevice, _stream);
   this->_cpu_reducer->sum(_dev_error, corrected.data, _dev_error,
                           corrected.size, static_cast<DataType>(dtype), -1.0);
 #else
