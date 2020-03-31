@@ -19,23 +19,24 @@ __global__ void sign_kernel(int* dst, const float* src, size_t len) {
 }
 
 __global__ void norm1_kernel(const float* src, float* out, size_t len) {
-  // max size 16KB
-  __shared__ float vec[1024];
+  // // max size 16KB
+  // __shared__ float vec[1024];
 
-  int tid = threadIdx.x;
-  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  // int tid = threadIdx.x;
+  // int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-  vec[tid] = (idx < len) ? src[idx] : 0;
-  __syncthreads();
+  // vec[tid] = (idx < len) ? src[idx] : 0;
+  // __syncthreads();
 
-  for (int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
-    if (tid < stride) {
-      vec[tid] = abs(vec[tid]) + abs(vec[tid + stride]);
-    }
-    __syncthreads();
-  }
+  // for (int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
+  //   if (tid < stride) {
+  //     vec[tid] = abs(vec[tid]) + abs(vec[tid + stride]);
+  //   }
+  //   __syncthreads();
+  // }
 
-  if (tid == 0) atomicAdd(out, vec[0]);
+  // if (tid == 0) atomicAdd(out, vec[0]);
+  *out = src[0];
 }
 
 namespace byteps {
