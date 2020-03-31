@@ -17,7 +17,7 @@
 #ifndef BYTEPS_COMMON_H
 #define BYTEPS_COMMON_H
 
-#ifndef BYTEPS_BUILDING_SERVER
+#if !defined(BYTEPS_BUILDING_SERVER) || defined(BYTEPS_ENABLE_CUDA)
 #include <cuda_runtime.h>
 #include <nccl.h>
 #endif
@@ -270,7 +270,7 @@ enum class RequestType {
 
 int GetCommandType(RequestType requestType, int d);
 
-#ifndef BYTEPS_BUILDING_SERVER
+#if !defined(BYTEPS_BUILDING_SERVER) || defined(BYTEPS_ENABLE_CUDA)
 ncclDataType_t getNcclDataType(DataType dtype);
 #endif
 

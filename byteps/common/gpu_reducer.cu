@@ -42,15 +42,15 @@ namespace byteps {
 namespace common {
 constexpr int BLOCK_PER_GRID = 1024;
 
-int CpuReducer::sum(void* dev_dst, const void* dev_src, size_t len, int dtype,
-                    float alpha) {
-  int thread_per_block = ((len/4) + BLOCK_PER_GRID) / BLOCK_PER_GRID;
-  sum_kernel<<<BLOCK_PER_GRID, thread_per_block, 0, *_stream>>>(
-      reinterpret_cast<float*>(dev_dst),
-      reinterpret_cast<const float*>(const_cast<void*>(dev_src)), len / 4,
-      alpha);
-  return 0;
-}
+// int CpuReducer::sum(void* dev_dst, const void* dev_src, size_t len, int dtype,
+//                     float alpha) {
+//   int thread_per_block = ((len/4) + BLOCK_PER_GRID) / BLOCK_PER_GRID;
+//   sum_kernel<<<BLOCK_PER_GRID, thread_per_block, 0, *_stream>>>(
+//       reinterpret_cast<float*>(dev_dst),
+//       reinterpret_cast<const float*>(const_cast<void*>(dev_src)), len / 4,
+//       alpha);
+//   return 0;
+// }
 
 int CpuReducer::sum(void* dev_dst, const void* dev_src1, const void* dev_src2,
                     size_t len, int dtype, float alpha) {

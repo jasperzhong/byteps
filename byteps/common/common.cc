@@ -100,7 +100,7 @@ int GetCommandType(RequestType requestType, int d) {
   return (((m + d) * (m + d + 1)) / 2) + d;
 }
 
-#ifndef BYTEPS_BUILDING_SERVER
+#if !defined(BYTEPS_BUILDING_SERVER) || defined(BYTEPS_ENABLE_CUDA)
 ncclDataType_t getNcclDataType(DataType dtype) {
   switch (dtype) {
     case BYTEPS_FLOAT32:

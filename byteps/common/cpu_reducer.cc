@@ -70,7 +70,6 @@ int CpuReducer::copy(void* dst, const void* src, size_t len) {
   return 0;
 }
 
-#ifndef BYTEPS_ENABLE_CUDA
 int CpuReducer::sum(void* dst, const void* src, size_t len, DataType dtype,
                     float alpha) {
   switch (dtype) {
@@ -162,6 +161,7 @@ int CpuReducer::_sum_float16(void* dst, const void* src, size_t len,
   return 0;
 }
 
+#ifndef BYTEPS_ENABLE_CUDA
 int CpuReducer::sum(void* dst, const void* src1, const void* src2, size_t len,
                     DataType dtype, float alpha) {
   switch (dtype) {
