@@ -265,34 +265,6 @@ int CpuReducer::_sum_float16(void* dst, const void* src1, const void* src2,
   return 0;
 }
 
-int CpuReducer::sign(void* dst, const void* src, size_t len, DataType dtype) {
-  switch (dtype) {
-    case BYTEPS_FLOAT32:
-      return _sign(reinterpret_cast<int32_t*>(dst),
-                   reinterpret_cast<const float*>(src), len);
-    case BYTEPS_FLOAT64:
-      return _sign(reinterpret_cast<int64_t*>(dst),
-                   reinterpret_cast<const double*>(src), len);
-    // case BYTEPS_FLOAT16:
-    //   return _sign(reinterpret_cast<int16_t*>(dst),
-    //                reinterpret_cast<const unsigned short*>(src), len);
-    default:
-      BPS_CHECK(0) << "Unsupported data type: " << dtype;
-  }
-  return 0;
-}
-
-template <typename T1, typename T2>
-size_t CpuReducer::_sign(T1* dst, const T2* src, size_t len) {
-  static_assert(sizeof(T1) == sizeof(T2), "T1 should be the same size as T2");
-
-#pragma omp parallel for simd num_threads(_num_threads)
-  for (size_t i = 0; i < len / sizeof(T1); ++i) {
-    dst[i] = src[i] < 0;
-  }
-
-  return len / sizeof(T1);
-}
 
 void CpuReducer::norm1(const void* src, float* out, size_t len,
                        DataType dtype) {
@@ -342,5 +314,36 @@ void CpuReducer::_norm1_float16(const void* src, float* out, size_t len) {
   *out = ret;
 }
 #endif
+
+
+
+int CpuReducer::sign(void* dst, const void* src, size_t len, DataType dtype) {
+  switch (dtype) {
+    case BYTEPS_FLOAT32:
+      return _sign(reinterpret_cast<int32_t*>(dst),
+                   reinterpret_cast<const float*>(src), len);
+    case BYTEPS_FLOAT64:
+      return _sign(reinterpret_cast<int64_t*>(dst),
+                   reinterpret_cast<const double*>(src), len);
+    // case BYTEPS_FLOAT16:
+    //   return _sign(reinterpret_cast<int16_t*>(dst),
+    //                reinterpret_cast<const unsigned short*>(src), len);
+    default:
+      BPS_CHECK(0) << "Unsupported data type: " << dtype;
+  }
+  return 0;
+}
+
+template <typename T1, typename T2>
+size_t CpuReducer::_sign(T1* dst, const T2* src, size_t len) {
+  static_assert(sizeof(T1) == sizeof(T2), "T1 should be the same size as T2");
+
+#pragma omp parallel for simd num_threads(_num_threads)
+  for (size_t i = 0; i < len / sizeof(T1); ++i) {
+    dst[i] = src[i] < 0;
+  }
+
+  return len / sizeof(T1);
+}
 }  // namespace common
 }  // namespace byteps

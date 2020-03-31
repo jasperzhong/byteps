@@ -97,18 +97,22 @@ void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   }
 
 #ifdef BYTEPS_ENABLE_CUDA
-  auto reduced_len = _cpu_reducer->sign(_dev_buf, grad.data, grad.size,
+  CUDA_CALL(cudaMemcpyAsync(_buf.get(), grad.data, grad.size, cudaMemcpyDeviceToHost, _stream));
+  CUDA_CALL(cudaStreamSynchronize(_stream));
+  BPS_LOG(INFO) << "just to verfiy norm1=" << norm1;
+#endif
+
+#ifdef BYTEPS_ENABLE_CUDA
+  // auto reduced_len = _cpu_reducer->sign(_dev_buf, grad.data, grad.size,
+  //                                       static_cast<DataType>(dtype));
+  auto reduced_len = _cpu_reducer->sign(_buf.get(), _buf.get(), grad.size,
                                         static_cast<DataType>(dtype));
 #else
   auto reduced_len = _cpu_reducer->sign(_buf.get(), grad.data, grad.size,
                                         static_cast<DataType>(dtype));
 #endif
 
-#ifdef BYTEPS_ENABLE_CUDA
-  CUDA_CALL(cudaMemcpyAsync(_buf.get(), _dev_buf, grad.size, cudaMemcpyDeviceToHost, _stream));
-  CUDA_CALL(cudaStreamSynchronize(_stream));
-  BPS_LOG(INFO) << "just to verfiy norm1=" << norm1;
-#endif
+
   auto compressed_size = Packing(_buf.get(), reduced_len, dtype);
   scale = norm1 / (grad.size / getDataTypeLength(dtype));
 
