@@ -317,7 +317,7 @@ def build_server(build_ext, options):
 
     # server_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
     #     ['-DBYTEPS_BUILDING_SERVER']
-    server_lib.extra_link_args = {'g++': options['LINK_FLAGS']}
+    server_lib.extra_link_args = options['LINK_FLAGS']
     server_lib.extra_objects = options['EXTRA_OBJECTS']
     server_lib.library_dirs = options['LIBRARY_DIRS']
 
