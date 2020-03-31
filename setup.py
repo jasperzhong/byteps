@@ -315,15 +315,26 @@ def build_server(build_ext, options):
         'byteps/common/compressor/strategy/topk.cc',
         'byteps/common/compressor/strategy/vanilla_error_feedback.cc']
 
-    server_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
-        ['-DBYTEPS_BUILDING_SERVER']
-    server_lib.extra_link_args = options['LINK_FLAGS']
+    # server_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
+    #     ['-DBYTEPS_BUILDING_SERVER']
+    server_lib.extra_link_args = {'g++': options['LINK_FLAGS']}
     server_lib.extra_objects = options['EXTRA_OBJECTS']
     server_lib.library_dirs = options['LIBRARY_DIRS']
 
     if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
         server_lib.sources.append('byteps/common/gpu_reducer.cu')
-        server_lib.extra_compile_args.append('-DBYTEPS_ENABLE_CUDA')
+        cuda_include_dirs, cuda_lib_dirs = get_cuda_dirs(
+            build_ext, options['COMPILE_FLAGS'])
+        options['MACROS'] += [('HAVE_CUDA', '1')]
+        options['INCLUDES'] += cuda_include_dirs
+        options['LIBRARY_DIRS'] += cuda_lib_dirs
+        options['LIBRARIES'] += ['cudart']
+        server_lib.extra_compile_args = {'g++': options['COMPILE_FLAGS'] +
+                                         ['-DBYTEPS_BUILDING_SERVER', '-DBYTEPS_ENABLE_CUDA'], 'nvcc':  ['-dc', '-DBYTEPS_ENABLE_CUDA']}
+    else:
+        server_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
+            ['-DBYTEPS_BUILDING_SERVER']
+
     # auto-detect rdma
     if has_rdma_header():
         server_lib.libraries = ['rdmacm', 'ibverbs', 'rt']
@@ -920,7 +931,6 @@ class custom_build_ext(build_ext):
         if has_cxx_flag:
             options['COMPILE_FLAGS'] += ['-D_GLIBCXX_USE_CXX11_ABI=' +
                                          str(int(glibcxx_flag))]
-
 
         if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
             self.custom_for_nvcc(options)
