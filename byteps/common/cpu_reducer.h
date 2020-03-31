@@ -73,7 +73,6 @@ class CpuReducer {
 
   int norm1(const void* src, float* out, size_t len, int dtype);
 
-  void set_cuda_stream(cudaStream_t* stream) { _stream = stream; }
 #endif
 
  private:
@@ -218,7 +217,6 @@ class CpuReducer {
 #ifdef BYTEPS_ENABLE_CUDA
   int _thread_per_block;
   int _block_per_grid;
-  cudaStream_t* _stream;
 #endif
 };
 
