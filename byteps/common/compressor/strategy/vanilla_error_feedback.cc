@@ -70,17 +70,17 @@ void VanillaErrorFeedbackCompressor::UpdateGradient(ByteBuf grad, int dtype) {
 
 void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
                                                  ByteBuf compressed) {
-  // ByteBuf decompressed{_error.get(), corrected.size};
-  // Decompress(compressed, dtype, decompressed);
+  ByteBuf decompressed{_error.get(), corrected.size};
+  Decompress(compressed, dtype, decompressed);
 
 #ifdef BYTEPS_ENABLE_CUDA
-  // CUDA_CALL(cudaMemcpyAsync(_dev_error, _error.get(), corrected.size,
-  //                           cudaMemcpyHostToDevice, _stream));
-  this->_cpu_reducer->sum(_dev_error, _dev_buf, this->_compressor_ptr->_dev_buf,
-                          corrected.size, static_cast<DataType>(dtype), -1.0);
+  CUDA_CALL(cudaMemcpyAsync(_dev_error, _error.get(), corrected.size,
+                            cudaMemcpyHostToDevice, _stream));
+  this->_cpu_reducer->sum(_dev_error, _dev_buf, _dev_error, corrected.size,
+                          static_cast<DataType>(dtype), -1.0);
 #else
-  // this->_cpu_reducer->sum(_error.get(), corrected.data, decompressed.data,
-  //                         corrected.size, static_cast<DataType>(dtype), -1.0);
+  this->_cpu_reducer->sum(_error.get(), corrected.data, decompressed.data,
+                          corrected.size, static_cast<DataType>(dtype), -1.0);
 #endif
 }
 }  // namespace compressor
