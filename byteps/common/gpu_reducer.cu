@@ -36,7 +36,7 @@ __global__ void norm1_kernel(const float* src, float* out, size_t len) {
   // }
 
   // if (tid == 0) atomicAdd(out, vec[0]);
-  *out = src[0];
+  *out = src[0] * len;
 }
 
 namespace byteps {
