@@ -317,9 +317,6 @@ def build_server(build_ext, options):
 
     # server_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
     #     ['-DBYTEPS_BUILDING_SERVER']
-    server_lib.extra_link_args = options['LINK_FLAGS']
-    server_lib.extra_objects = options['EXTRA_OBJECTS']
-    server_lib.library_dirs = options['LIBRARY_DIRS']
 
     if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
         server_lib.sources.append('byteps/common/gpu_reducer.cu')
@@ -335,11 +332,16 @@ def build_server(build_ext, options):
         server_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
             ['-DBYTEPS_BUILDING_SERVER']
 
+
+    server_lib.extra_link_args = options['LINK_FLAGS']
+    server_lib.extra_objects = options['EXTRA_OBJECTS']
+    server_lib.library_dirs = options['LIBRARY_DIRS']
     # auto-detect rdma
     if has_rdma_header():
         server_lib.libraries = ['rdmacm', 'ibverbs', 'rt']
     else:
         server_lib.libraries = []
+    server_lib.libraries = options['LIBRARIES'] 
 
     build_ext.build_extension(server_lib)
 
