@@ -54,7 +54,7 @@ void ErrorFeedback::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   // compress
   _compressor_ptr->Compress(corrected, dtype, compressed);
 
-  UpdateError(corrected, dtype, compressed);
+  // UpdateError(corrected, dtype, compressed);
 #ifdef BYTEPS_ENABLE_CUDA
   CUDA_CALL(cudaStreamSynchronize(_stream));
 #endif
