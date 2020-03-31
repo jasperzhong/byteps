@@ -110,7 +110,6 @@ void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   CUDA_CALL(cudaMemcpyAsync(_buf.get(), _dev_buf, grad.size,
                             cudaMemcpyDeviceToHost, _stream));
   CUDA_CALL(cudaStreamSynchronize(_stream));
-  BPS_LOG(INFO) << "just to verfiy norm1=" << norm1 << " len=" << grad.size / 4;
 #endif
   auto compressed_size = Packing(_buf.get(), reduced_len, dtype);
   scale = norm1 / (grad.size / getDataTypeLength(dtype));
