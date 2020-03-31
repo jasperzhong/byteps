@@ -74,10 +74,16 @@ void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
   Decompress(compressed, dtype, decompressed);
 
 #ifdef BYTEPS_ENABLE_CUDA
-  CUDA_CALL(cudaMemcpyAsync(_dev_error, _error.get(), corrected.size,
-                            cudaMemcpyHostToDevice, _stream));
-  this->_cpu_reducer->sum(_dev_error, _dev_buf, _dev_error, corrected.size,
+  // CUDA_CALL(cudaMemcpyAsync(_dev_error, _error.get(), corrected.size,
+  //                           cudaMemcpyHostToDevice, _stream));
+  // this->_cpu_reducer->sum(_dev_error, _dev_buf, _dev_error, corrected.size,
+  //                         static_cast<DataType>(dtype), -1.0);
+  CUDA_CALL(
+      cudaMemcpy(_buf, corrected.data, corrected.size, cudaMemcpyDeviceToHost));
+  this->_cpu_reducer->sum2(_error.get(), _buf, decompressed.data, corrected.size,
                           static_cast<DataType>(dtype), -1.0);
+  CUDA_CALL(
+      cudaMemcpy(_dev_error, _error.get(), corrected.size, cudaMemcpyHostToDevice));
 #else
   this->_cpu_reducer->sum(_error.get(), corrected.data, decompressed.data,
                           corrected.size, static_cast<DataType>(dtype), -1.0);
