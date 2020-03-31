@@ -281,6 +281,16 @@ inline size_t Align(size_t size, int dtype) {
       (getDataTypeLength(dtype) * getDataTypeLength(dtype)) * 8;
   return size + (min_size - size % min_size) % min_size;
 }
+
+inline int NextPow2(int x) {
+  --x;
+  x |= x >> 1;
+  x |= x >> 2;
+  x |= x >> 4;
+  x |= x >> 8;
+  x |= x >> 16;
+  return ++x;
+}
 }  // namespace common
 }  // namespace byteps
 
