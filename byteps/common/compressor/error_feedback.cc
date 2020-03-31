@@ -49,20 +49,13 @@ void ErrorFeedback::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   // before: grad += error
   UpdateGradient(corrected, dtype);
 #ifdef BYTEPS_ENABLE_CUDA
-  float test1;
-  CUDA_CALL(cudaMemcpyAsync(&test1, _dev_buf, 4,
-                            cudaMemcpyDeviceToHost, _stream));
   CUDA_CALL(cudaStreamSynchronize(_stream));
 #endif
   // compress
   _compressor_ptr->Compress(corrected, dtype, compressed);
 
-  // UpdateError(corrected, dtype, compressed);
+  UpdateError(corrected, dtype, compressed);
 #ifdef BYTEPS_ENABLE_CUDA
-  float test2;
-  CUDA_CALL(cudaMemcpyAsync(&test2, _dev_buf, 4,
-                            cudaMemcpyDeviceToHost, _stream));
-  BPS_LOG(INFO) << "test1=" << test1 << " test2=" << test2;
   CUDA_CALL(cudaStreamSynchronize(_stream));
 #endif
 }

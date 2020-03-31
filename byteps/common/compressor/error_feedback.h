@@ -86,12 +86,12 @@ class ErrorFeedback : public BaseCompressor {
 #ifdef BYTEPS_ENABLE_CUDA
   char* _dev_error;
 #endif
-
- private:
   /*!
    * \brief compressor
    */
   std::unique_ptr<BaseCompressor> _compressor_ptr;
+ private:
+
 };
 }  // namespace compressor
 }  // namespace common
