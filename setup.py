@@ -859,7 +859,7 @@ class custom_build_ext(build_ext):
                 extra_postargs=None,
                 build_temp=None,
                 target_lang=None):
-            base_path = os.path.split(objects[0])[0]
+            base_path = "build/temp.linux-x86_64-3.6/byteps/common"
             if os.path.exists(os.path.join(base_path, "gpu_reducer.o")):
                 os.system(
                     "cd %s; nvcc -dlink gpu_reducer.o -o gpu_reducer_link.o" % base_path)
