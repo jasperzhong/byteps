@@ -43,6 +43,7 @@ void OnebitCompressor::Init(size_t aligned_size) {
   BaseCompressor::Init(aligned_size);
 #ifdef BYTEPS_ENABLE_CUDA
   cudaMalloc(&_dev_out, 4);
+  cudaMemset(_dev_out, 0, 4);
 #endif
 }
 

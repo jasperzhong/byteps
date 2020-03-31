@@ -214,10 +214,6 @@ class CpuReducer {
   std::shared_ptr<BytePSComm> _comm;
   int _num_threads;
 
-#ifdef BYTEPS_ENABLE_CUDA
-  int _thread_per_block;
-  int _block_per_grid;
-#endif
 };
 
 }  // namespace common
