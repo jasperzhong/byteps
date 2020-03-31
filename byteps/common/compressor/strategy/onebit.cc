@@ -88,7 +88,6 @@ void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
 
   if (_use_scale) {
 #ifdef BYTEPS_ENABLE_CUDA
-    CUDA_CALL(cudaMemsetAsync(_dev_out, 0, 4, _stream));
     _cpu_reducer->norm1(grad.data, _dev_out, grad.size,
                         static_cast<DataType>(dtype));
     CUDA_CALL(
