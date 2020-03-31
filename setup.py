@@ -314,12 +314,17 @@ def build_server(build_ext, options):
         'byteps/common/compressor/strategy/randomk.cc',
         'byteps/common/compressor/strategy/topk.cc',
         'byteps/common/compressor/strategy/vanilla_error_feedback.cc']
+
     server_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
         ['-DBYTEPS_BUILDING_SERVER']
     server_lib.extra_link_args = options['LINK_FLAGS']
     server_lib.extra_objects = options['EXTRA_OBJECTS']
     server_lib.library_dirs = options['LIBRARY_DIRS']
 
+
+    if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
+        server_lib.sources.append('byteps/common/gpu_reducer.cu')
+        server_lib.extra_compile_args.append('-DBYTEPS_ENABLE_CUDA')
     # auto-detect rdma
     if has_rdma_header():
         server_lib.libraries = ['rdmacm', 'ibverbs', 'rt']
