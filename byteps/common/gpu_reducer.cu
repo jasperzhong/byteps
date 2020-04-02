@@ -42,26 +42,25 @@ __global__ void norm1_kernel(const float* src, float* out, size_t len) {
 constexpr int PACKING_SIZE = 32;
 __global__ void packing(int* data, size_t chunk_size) {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  if (idx < chunk_size) {
+  if (idx >= chunk_size) return;
 #pragma unroll
-    for (int i = 1; i < PACKING_SIZE; ++i) {
-      data[idx] <<= 1;
-      data[idx] |= data[i * chunk_size + idx] & 0x01;
-    }
+  for (int i = 1; i < PACKING_SIZE; ++i) {
+    data[idx] <<= 1;
+    data[idx] |= data[i * chunk_size + idx] & 0x01;
   }
 }
 
-__global__ void unpacking(float* dst, const int* src, float* scale, size_t chunk_size) {
+__global__ void unpacking(float* dst, const int* src, float* scale,
+                          size_t chunk_size) {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  if (idx < chunk_size) {
-    unsigned int mask = 1;
-    float tmp = *scale;
+  if (idx >= chunk_size) return;
+  float tmp = *scale;
+  unsigned int mask = 1;
 #pragma unroll
-    for (int i = PACKING_SIZE - 1; i >= 0; --i) {
-      int sign_bit = (src[idx] & mask) >> (PACKING_SIZE - i - 1);
-      int sign = -((sign_bit << 1) - 1);
-      dst[i * chunk_size + idx] = sign * tmp;
-    }
+  for (int i = PACKING_SIZE - 1; i >= 0; --i) {
+    int sign_bit = (src[idx] & mask) >> (PACKING_SIZE - i - 1);
+    int sign = -((sign_bit << 1) - 1);
+    dst[i * chunk_size + idx] = sign * tmp;
   }
 }
 
