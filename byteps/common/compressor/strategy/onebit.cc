@@ -180,16 +180,15 @@ size_t OnebitCompressor::Unpacking(void* dst, const void* src, size_t len,
 // worker version decompressor
 void OnebitCompressor::Decompress(ByteBuf compressed, int dtype,
                                   ByteBuf& decompressed) {
-#ifdef BYTEPS_ENABLE_CUDA
-  if (compressed.data == decompressed.data) {
-    // CPU
-    Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
-  } else {
-    UnpackingCuda(decompressed.data, compressed.data, compressed.size, dtype);
-  }
-#else
-  Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
-#endif
+// #ifdef BYTEPS_ENABLE_CUDA
+//   if (compressed.data == decompressed.data) {
+//     Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
+//   } else {
+//     UnpackingCuda(decompressed.data, compressed.data, compressed.size, dtype);
+//   }
+// #else
+//   Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
+// #endif
 }
 
 #else
