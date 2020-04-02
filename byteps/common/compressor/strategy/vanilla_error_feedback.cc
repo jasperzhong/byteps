@@ -72,7 +72,8 @@ void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
                                                  ByteBuf compressed) {
 #ifdef BYTEPS_ENABLE_CUDA
   ByteBuf decompressed{_dev_error, corrected.size};
-  // Decompress(compressed, dtype, decompressed);
+  Decompress({this->_compressor_ptr->_dev_buf, corrected.size}, dtype,
+             decompressed);
   this->_cpu_reducer->sum(_dev_error, corrected.data, _dev_error,
                           corrected.size, static_cast<DataType>(dtype), -1.0);
 #else
