@@ -109,7 +109,7 @@ void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   auto compressed_size = Packing(_buf.get(), reduced_len, dtype);
 #endif
   scale = norm1 / (grad.size / getDataTypeLength(dtype));
-  auto pf = reinterpret_cast<float*>(_buf.get()) + compressed_size;
+  auto pf = reinterpret_cast<float*>(&_buf[compressed_size]);
   *pf = scale;
 
   compressed.data = _buf.get();
@@ -123,7 +123,7 @@ size_t OnebitCompressor::_Unpacking(T1* dst, const T2* src, size_t size) {
   auto chunk_size = (size - sizeof(float)) / sizeof(T2);
 
   float scale;
-  auto pf = reinterpret_cast<const float*>(src + chunk_size);
+  auto pf = reinterpret_cast<const float*>(&src[chunk_size]);
   scale = *pf;
 
   unsigned int mask = 1;
@@ -178,7 +178,7 @@ void OnebitCompressor::Decompress(ByteBuf compressed, int dtype,
   if (compressed.data == decompressed.data) {
     Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
   } else {
-    UnpackingCuda(decompressed.data, compressed.data,
+    UnpackingCuda(decompressed.data, decompressed.size, compressed.data,
                   compressed.size, _dev_out, dtype);
   }
 #else
