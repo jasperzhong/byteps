@@ -95,7 +95,7 @@ int CpuReducer::sign(void* dev_dst, const void* dev_src, size_t len,
   return len / 4;
 }
 
-float CpuReducer::norm1(const void* dev_src, float* dev_dst, float* dst,
+float CpuReducer::norm1(const void* dev_src, void* dev_dst, void* dst,
                         size_t len, int dtype) {
   int x = ((len / 4) + BLOCK_PER_GRID - 1) / BLOCK_PER_GRID;
   --x;
@@ -107,14 +107,15 @@ float CpuReducer::norm1(const void* dev_src, float* dev_dst, float* dst,
   ++x;
 
   norm1_kernel<<<BLOCK_PER_GRID, x>>>(
-      reinterpret_cast<const float*>(const_cast<void*>(dev_src)), dev_dst,
-      len / 4);
+      reinterpret_cast<const float*>(const_cast<void*>(dev_src)),
+      reinterpret_cast<float*>(dev_dst), len / 4);
 
   cudaMemcpy(dst, dev_dst, BLOCK_PER_GRID * 4, cudaMemcpyDeviceToHost);
 
   float ret = 0;
+  auto p_dst = reinterpret_cast<float*>(dst);
   for (int i = 0; i < BLOCK_PER_GRID; ++i) {
-    ret += dst[i];
+    ret += p_dst[i];
   }
 
   return ret;

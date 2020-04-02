@@ -73,7 +73,7 @@ class CpuReducer {
 
   int sign(void* dst, const void* src, size_t len, int dtype);
 
-  float norm1(const void* dev_src, float* dev_dst, float* dst, size_t len,
+  float norm1(const void* dev_src, void* dev_dst, void* dst, size_t len,
               int dtype);
 
   void set_cuda_stream(cudaStream_t* stream) { _stream = stream; }
