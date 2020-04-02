@@ -35,13 +35,6 @@ OnebitCompressor::OnebitCompressor(bool use_scale) : _use_scale(use_scale){};
 
 OnebitCompressor::~OnebitCompressor() = default;
 
-void OnebitCompressor::Init(size_t aligned_size) {
-  BaseCompressor::Init(aligned_size);
-#ifdef BYTEPS_ENABLE_CUDA
-  _dev_out = reinterpret_cast<float*>(_dev_buf) + aligned_size / 128;
-#endif
-}
-
 template <typename T>
 size_t OnebitCompressor::_Packing(T* data, size_t len) {
   constexpr int PACKING_SIZE = sizeof(T) * 8;
@@ -83,8 +76,8 @@ void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
 
   if (_use_scale) {
 #ifdef BYTEPS_ENABLE_CUDA
-    _cpu_reducer->norm1(grad.data, _dev_out, grad.size,
-                        static_cast<DataType>(dtype));
+    norm1 = _cpu_reducer->norm1(grad.data, _dev_buf, _buf.get(), grad.size,
+                                static_cast<DataType>(dtype));
 #else
     _cpu_reducer->norm1(grad.data, &norm1, grad.size,
                         static_cast<DataType>(dtype));
@@ -101,11 +94,15 @@ void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
 
 #ifdef BYTEPS_ENABLE_CUDA
   auto compressed_size = PackingCuda(_dev_buf, reduced_len, dtype);
-  CUDA_CALL(cudaMemcpy(_buf.get(), _dev_buf, compressed_size+4,
+  CUDA_CALL(cudaMemcpy(_buf.get(), _dev_buf, compressed_size,
                        cudaMemcpyDeviceToHost));
 #else
   auto compressed_size = Packing(_buf.get(), reduced_len, dtype);
 #endif
+
+  scale = norm1 / (grad.size / getDataTypeLength(dtype));
+  auto pf = reinterpret_cast<float*>(_buf.get() + compressed_size);
+  *pf = scale;
 
   compressed.data = _buf.get();
   compressed.size = compressed_size + sizeof(float);
@@ -118,7 +115,7 @@ size_t OnebitCompressor::_Unpacking(T1* dst, const T2* src, size_t size) {
   auto chunk_size = (size - sizeof(float)) / sizeof(T2);
 
   float scale;
-  auto pf = reinterpret_cast<const float*>(&src[chunk_size]);
+  auto pf = reinterpret_cast<const float*>(src + chunk_size);
   scale = *pf;
 
   unsigned int mask = 1;
@@ -173,8 +170,7 @@ void OnebitCompressor::Decompress(ByteBuf compressed, int dtype,
   if (compressed.data == decompressed.data) {
     Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
   } else {
-    UnpackingCuda(decompressed.data, decompressed.size, compressed.data,
-                  compressed.size, _dev_out, dtype);
+    UnpackingCuda(decompressed.data, compressed.data, compressed.size, dtype);
   }
 #else
   Unpacking(decompressed.data, compressed.data, compressed.size, dtype);

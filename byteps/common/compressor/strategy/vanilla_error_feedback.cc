@@ -74,8 +74,11 @@ void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
   ByteBuf decompressed{_dev_error, corrected.size};
   Decompress({this->_compressor_ptr->_dev_buf, compressed.size}, dtype,
              decompressed);
+  auto scale =
+      *reinterpret_cast<float*>(compressed.data + (compressed.size - 4));
   this->_cpu_reducer->sum(_dev_error, corrected.data, _dev_error,
-                          corrected.size, static_cast<DataType>(dtype), -1.0);
+                          corrected.size, static_cast<DataType>(dtype),
+                          -1.0 * scale);
 #else
   ByteBuf decompressed{_error.get(), corrected.size};
   Decompress(compressed, dtype, decompressed);

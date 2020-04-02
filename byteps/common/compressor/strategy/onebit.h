@@ -42,11 +42,6 @@ class OnebitCompressor : public BaseCompressor {
   OnebitCompressor(bool use_scale = false);
   virtual ~OnebitCompressor();
   /*!
-   * \brief Allocate encoding buffer for compression.
-   * \param aligned_size aligned size
-   */
-  void Init(size_t aligned_size);
-  /*!
    * \brief Compress function
    *
    * compress and pack into byte array.
@@ -83,13 +78,9 @@ class OnebitCompressor : public BaseCompressor {
   size_t _Unpacking(T1* dst, const T2* src, size_t size);
 
   size_t PackingCuda(void* data, size_t len, int dtype);
-  size_t UnpackingCuda(void* dst, size_t src_len, const void* src, size_t len, float* scale, int dtype);
+  size_t UnpackingCuda(void* dst, const void* src, size_t len, int dtype);
 
   bool _use_scale;
-
-#ifdef BYTEPS_ENABLE_CUDA
-  float* _dev_out;
-#endif
 };
 }  // namespace compressor
 }  // namespace common
