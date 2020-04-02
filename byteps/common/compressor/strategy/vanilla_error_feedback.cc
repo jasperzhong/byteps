@@ -76,6 +76,7 @@ void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
              decompressed);
   auto scale =
       *reinterpret_cast<float*>(compressed.data + (compressed.size - 4));
+  BPS_LOG(INFO) << "scale2=" << norm1;
   this->_cpu_reducer->sum(_dev_error, corrected.data, _dev_error,
                           corrected.size, static_cast<DataType>(dtype),
                           -1.0 * scale);

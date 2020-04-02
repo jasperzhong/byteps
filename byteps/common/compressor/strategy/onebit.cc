@@ -101,8 +101,9 @@ void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
 #endif
 
   scale = norm1 / (grad.size / getDataTypeLength(dtype));
-  auto pf = reinterpret_cast<float*>(_buf.get()) + compressed_size;
+  auto pf = reinterpret_cast<float*>(_buf.get() + compressed_size);
   *pf = scale;
+  BPS_LOG(INFO) << "scale1=" << norm1;
 
   compressed.data = _buf.get();
   compressed.size = compressed_size + sizeof(float);
@@ -117,6 +118,8 @@ size_t OnebitCompressor::_Unpacking(T1* dst, const T2* src, size_t size) {
   float scale;
   auto pf = reinterpret_cast<const float*>(src + chunk_size);
   scale = *pf;
+  BPS_LOG(INFO) << "scale3=" << norm1;
+
 
   unsigned int mask = 1;
   for (int i = PACKING_SIZE - 1; i >= 0; --i) {
