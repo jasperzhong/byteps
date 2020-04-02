@@ -38,7 +38,7 @@ OnebitCompressor::~OnebitCompressor() = default;
 void OnebitCompressor::Init(size_t aligned_size) {
   BaseCompressor::Init(aligned_size);
 #ifdef BYTEPS_ENABLE_CUDA
-  _dev_out = reinterpret_cast<float*>(dev_buf) + aligned_size / 128;
+  _dev_out = reinterpret_cast<float*>(_dev_buf) + aligned_size / 128;
 #endif
 }
 
