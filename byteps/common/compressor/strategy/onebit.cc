@@ -101,7 +101,7 @@ void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
 #endif
 
   scale = norm1 / (grad.size / getDataTypeLength(dtype));
-  auto pf = reinterpret_cast<float*>(_buf.get() + compressed_size);
+  auto pf = reinterpret_cast<float*>(_buf.get()) + compressed_size;
   *pf = scale;
 
   compressed.data = _buf.get();
