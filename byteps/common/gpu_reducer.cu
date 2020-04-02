@@ -36,7 +36,7 @@ __global__ void norm1_kernel(const float* src, float* out, size_t len) {
     __syncthreads();
   }
 
-  if (tid == 0) atomicAdd(out, vec[0]);
+  if (tid == 0) atomicAdd(out, vec[0] / len);
 }
 
 constexpr int PACKING_SIZE = 32;

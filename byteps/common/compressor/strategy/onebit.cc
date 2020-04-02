@@ -38,8 +38,7 @@ OnebitCompressor::~OnebitCompressor() = default;
 void OnebitCompressor::Init(size_t aligned_size) {
   BaseCompressor::Init(aligned_size);
 #ifdef BYTEPS_ENABLE_CUDA
-  cudaMalloc(&_dev_out, 4);
-  cudaMemset(_dev_out, 0, 4);
+  _dev_out = reinterpret_cast<float*>(_dev_buf) + aligned_size / 128;
 #endif
 }
 
@@ -86,7 +85,6 @@ void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
 #ifdef BYTEPS_ENABLE_CUDA
     _cpu_reducer->norm1(grad.data, _dev_out, grad.size,
                         static_cast<DataType>(dtype));
-    CUDA_CALL(cudaMemcpy(&norm1, _dev_out, 4, cudaMemcpyDeviceToHost));
 #else
     _cpu_reducer->norm1(grad.data, &norm1, grad.size,
                         static_cast<DataType>(dtype));
@@ -103,15 +101,11 @@ void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
 
 #ifdef BYTEPS_ENABLE_CUDA
   auto compressed_size = PackingCuda(_dev_buf, reduced_len, dtype);
-  CUDA_CALL(cudaMemcpy(_buf.get(), _dev_buf, compressed_size,
+  CUDA_CALL(cudaMemcpy(_buf.get(), _dev_buf, compressed_size+4,
                        cudaMemcpyDeviceToHost));
-  BPS_LOG(INFO) << "norm1=" << norm1 << " compressed_size=" << compressed_size << " size=" << grad.size;
 #else
   auto compressed_size = Packing(_buf.get(), reduced_len, dtype);
 #endif
-  scale = norm1 / (grad.size / getDataTypeLength(dtype));
-  auto pf = reinterpret_cast<float*>(&_buf[compressed_size]);
-  *pf = scale;
 
   compressed.data = _buf.get();
   compressed.size = compressed_size + sizeof(float);
