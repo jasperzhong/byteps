@@ -53,7 +53,7 @@ __global__ void packing(int* data, size_t chunk_size) {
 __global__ void unpacking(float* dst, const int* src, size_t chunk_size) {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx < chunk_size) {
-    float scale = *reinterpret_cast<float*>(src + chunk_size);
+    float scale = *reinterpret_cast<const float*>(src + chunk_size);
     unsigned int mask = 1;
     for (int i = PACKING_SIZE - 1; i >= 0; --i) {
       int sign_bit = (src[idx] & mask) >> (PACKING_SIZE - i - 1);
