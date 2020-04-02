@@ -51,7 +51,7 @@ void ErrorFeedback::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   // compress
   _compressor_ptr->Compress(corrected, dtype, compressed);
 
-  UpdateError(corrected, dtype, compressed);
+  // UpdateError(corrected, dtype, compressed);
 }
 
 void ErrorFeedback::Decompress(ByteBuf compressed, int dtype,
