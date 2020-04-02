@@ -105,6 +105,7 @@ void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   auto compressed_size = PackingCuda(_dev_buf, reduced_len, dtype);
   CUDA_CALL(cudaMemcpy(_buf.get(), _dev_buf, compressed_size,
                        cudaMemcpyDeviceToHost));
+  BPS_LOG(INFO) << "norm1=" << norm1 << " compressed_size=" << compressed_size << " size=" << grad.size;
 #else
   auto compressed_size = Packing(_buf.get(), reduced_len, dtype);
 #endif
