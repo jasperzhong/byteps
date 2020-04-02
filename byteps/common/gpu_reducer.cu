@@ -43,6 +43,7 @@ constexpr int PACKING_SIZE = 32;
 __global__ void packing(int* data, size_t chunk_size) {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx < chunk_size) {
+#pragma unroll
     for (int i = 1; i < PACKING_SIZE; ++i) {
       data[idx] <<= 1;
       data[idx] |= data[i * chunk_size + idx] & 0x01;
@@ -55,6 +56,7 @@ __global__ void unpacking(float* dst, const int* src, size_t chunk_size) {
   if (idx < chunk_size) {
     float scale = *reinterpret_cast<const float*>(src + chunk_size);
     unsigned int mask = 1;
+#pragma unroll
     for (int i = PACKING_SIZE - 1; i >= 0; --i) {
       int sign_bit = (src[idx] & mask) >> (PACKING_SIZE - i - 1);
       int sign = -((sign_bit << 1) - 1);
