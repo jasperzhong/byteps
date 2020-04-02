@@ -72,6 +72,19 @@ class OnebitCompressor : public BaseCompressor {
                   ByteBuf& decompressed) override;
 
  private:
+  size_t Packing(void* data, size_t len, int dtype);
+
+  template <typename T>
+  size_t _Packing(T* data, size_t len);
+
+  size_t Unpacking(void* dst, const void* src, size_t len, int dtype);
+
+  template <typename T1, typename T2>
+  size_t _Unpacking(T1* dst, const T2* src, size_t size);
+
+  size_t PackingCuda(void* data, size_t len, int dtype);
+  size_t UnpackingCuda(void* dst, const void* src, size_t len, int dtype);
+
   bool _use_scale;
 
 #ifdef BYTEPS_ENABLE_CUDA

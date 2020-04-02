@@ -1,3 +1,4 @@
+#include "compressor/strategy/onebit.h"
 #include "cpu_reducer.h"
 #include "logging.h"
 
@@ -36,6 +37,30 @@ __global__ void norm1_kernel(const float* src, float* out, size_t len) {
   }
 
   if (tid == 0) atomicAdd(out, vec[0]);
+}
+
+constexpr int PACKING_SIZE = 32;
+__global__ void packing(int* data, size_t chunk_size) {
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (idx < chunk_size) {
+    for (int i = 1; i < PACKING_SIZE; ++i) {
+      data[idx] <<= 1;
+      data[idx] |= data[i * chunk_size + idx] & 0x01;
+    }
+  }
+}
+
+__global__ void unpacking(float* dst, const int* src, float scale,
+                          size_t chunk_size) {
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (idx < chunk_size) {
+    unsigned int mask = 1;
+    for (int i = PACKING_SIZE - 1; i >= 0; --i) {
+      int sign_bit = (src[idx] & mask) >> (PACKING_SIZE - i - 1);
+      int sign = -((sign_bit << 1) - 1);
+      dst[i * chunk_size + idx] = sign * scale;
+    }
+  }
 }
 
 namespace byteps {
@@ -88,5 +113,28 @@ int CpuReducer::norm1(const void* dev_src, float* dev_out, size_t len,
   return 0;
 }
 
+namespace compressor {
+
+size_t OnebitCompressor::PackingCuda(void* data, size_t len, int dtype) {
+  size_t padding_len = (PACKING_SIZE - (len % PACKING_SIZE)) % PACKING_SIZE;
+  size_t chunk_size = (len + padding_len) / PACKING_SIZE;
+
+  int thread_per_block = (chunk_size + BLOCK_PER_GRID - 1) / BLOCK_PER_GRID;
+  packing<<<BLOCK_PER_GRID, thread_per_block>>>(data, chunk_size);
+  return chunk_size * 4;
+}
+
+size_t OnebitCompressor::UnpackingCuda(void* dst, const void* src, size_t len,
+                                       int dtype) {
+  auto chunk_size = (len - sizeof(float)) / 4;
+  float scale;
+  auto pf = reinterpret_cast<const float*>(src + chunk_size);
+  scale = *pf;
+
+  int thread_per_block = (chunk_size + BLOCK_PER_GRID - 1) / BLOCK_PER_GRID;
+  unpacking<<<BLOCK_PER_GRID, thread_per_block>>>(dst, src, scale, chunk_size);
+  return chunk_size;
+}
+}  // namespace compressor
 }  // namespace common
 }  // namespace byteps

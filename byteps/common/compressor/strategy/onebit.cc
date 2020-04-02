@@ -48,7 +48,7 @@ void OnebitCompressor::Init(size_t aligned_size) {
 }
 
 template <typename T>
-size_t _Packing(T* data, size_t len) {
+size_t OnebitCompressor::_Packing(T* data, size_t len) {
   constexpr int PACKING_SIZE = sizeof(T) * 8;
   size_t padding_len = (PACKING_SIZE - (len % PACKING_SIZE)) % PACKING_SIZE;
   size_t chunk_size = (len + padding_len) / PACKING_SIZE;
@@ -63,7 +63,7 @@ size_t _Packing(T* data, size_t len) {
   return chunk_size * sizeof(T);
 }
 
-size_t Packing(void* data, size_t len, int dtype) {
+size_t OnebitCompressor::Packing(void* data, size_t len, int dtype) {
   switch (dtype) {
     case BYTEPS_INT8:
     case BYTEPS_UINT8:
@@ -106,10 +106,13 @@ void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
 #endif
 
 #ifdef BYTEPS_ENABLE_CUDA
-  CUDA_CALL(
-      cudaMemcpy(_buf.get(), _dev_buf, grad.size, cudaMemcpyDeviceToHost));
-#endif
+  auto compressed_size = PackingCuda(_dev_buf, reduced_len, dtype);
+  CUDA_CALL(cudaMemcpy(_buf.get(), _dev_buf, compressed_size,
+                       cudaMemcpyDeviceToHost));
+#else
   auto compressed_size = Packing(_buf.get(), reduced_len, dtype);
+#endif
+
   scale = norm1 / (grad.size / getDataTypeLength(dtype));
 
   auto pf = reinterpret_cast<float*>(_buf.get() + compressed_size);
@@ -120,7 +123,7 @@ void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
 }
 
 template <typename T1, typename T2>
-size_t _Unpacking(T1* dst, const T2* src, size_t size) {
+size_t OnebitCompressor::_Unpacking(T1* dst, const T2* src, size_t size) {
   static_assert(sizeof(T1) == sizeof(T2), "T1 should be the same size as T2");
   constexpr int PACKING_SIZE = sizeof(T2) * 8;
   auto chunk_size = (size - sizeof(float)) / sizeof(T2);
@@ -142,7 +145,8 @@ size_t _Unpacking(T1* dst, const T2* src, size_t size) {
   return chunk_size;
 }
 
-size_t Unpacking(void* dst, const void* src, size_t len, int dtype) {
+size_t OnebitCompressor::Unpacking(void* dst, const void* src, size_t len,
+                                   int dtype) {
   switch (dtype) {
     case BYTEPS_INT8:
       return _Unpacking(reinterpret_cast<int8_t*>(dst),
@@ -176,15 +180,22 @@ size_t Unpacking(void* dst, const void* src, size_t len, int dtype) {
 // worker version decompressor
 void OnebitCompressor::Decompress(ByteBuf compressed, int dtype,
                                   ByteBuf& decompressed) {
-  BPS_CHECK(decompressed.data);
+#ifdef BYTEPS_ENABLE_CUDA
+  if (compressed.data == decompressed.data) {
+    // CPU
+    Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
+  } else {
+    UnpackingCuda(decompressed.data, compressed.data, compressed.size, dtype);
+  }
+#else
   Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
+#endif
 }
 
 #else
 
 void OnebitCompressor::Decompress(ByteBuf compressed, int dtype,
                                   ByteBuf& decompressed) {
-  float scale;
   if (decompressed.data == nullptr) decompressed.data = _buf.get();
   Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
 }
