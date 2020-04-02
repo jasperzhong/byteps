@@ -52,7 +52,7 @@ __global__ void packing(int* data, size_t chunk_size) {
 }
 
 __global__ void unpacking(float* dst, size_t src_len, const int* src,
-                          size_t len, size_t chunk_size) {
+                          size_t chunk_size) {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx < chunk_size) {
     float scale = *reinterpret_cast<const float*>(src + chunk_size);
