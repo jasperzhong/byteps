@@ -120,7 +120,8 @@ size_t OnebitCompressor::PackingCuda(void* data, size_t len, int dtype) {
   size_t chunk_size = (len + padding_len) / PACKING_SIZE;
 
   int thread_per_block = (chunk_size + BLOCK_PER_GRID - 1) / BLOCK_PER_GRID;
-  packing<<<BLOCK_PER_GRID, thread_per_block>>>(data, chunk_size);
+  packing<<<BLOCK_PER_GRID, thread_per_block>>>(reinterpret_cast<int*>(data),
+                                                chunk_size);
   return chunk_size * 4;
 }
 
@@ -132,7 +133,9 @@ size_t OnebitCompressor::UnpackingCuda(void* dst, const void* src, size_t len,
   scale = *pf;
 
   int thread_per_block = (chunk_size + BLOCK_PER_GRID - 1) / BLOCK_PER_GRID;
-  unpacking<<<BLOCK_PER_GRID, thread_per_block>>>(dst, src, scale, chunk_size);
+  unpacking<<<BLOCK_PER_GRID, thread_per_block>>>(reinterpret_cast<float*>(dst),
+                                                  reinterpret_cast<const int*>(const_cast<void*>(src)),
+                                                  scale, chunk_size);
   return chunk_size;
 }
 }  // namespace compressor
