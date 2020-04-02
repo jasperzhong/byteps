@@ -36,7 +36,7 @@ __global__ void norm1_kernel(const float* src, float* out, size_t len) {
     __syncthreads();
   }
 
-  if (tid == 0) atomicAdd(out, vec[0] / len);
+  if (tid == 0) atomicAdd(out, vec[0]);
 }
 
 constexpr int PACKING_SIZE = 32;
@@ -51,10 +51,11 @@ __global__ void packing(int* data, size_t chunk_size) {
   }
 }
 
-__global__ void unpacking(float* dst, const int* src, size_t chunk_size) {
+__global__ void unpacking(float* dst, size_t src_len, const int* src, size_t len, size_t chunk_size) {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx < chunk_size) {
     float scale = *reinterpret_cast<const float*>(src + chunk_size);
+    scale /= src_len / 4;
     unsigned int mask = 1;
 #pragma unroll
     for (int i = PACKING_SIZE - 1; i >= 0; --i) {
@@ -127,13 +128,13 @@ size_t OnebitCompressor::PackingCuda(void* data, size_t len, int dtype) {
   return chunk_size * 4;
 }
 
-size_t OnebitCompressor::UnpackingCuda(void* dst, const void* src, size_t len,
+size_t OnebitCompressor::UnpackingCuda(void* dst, size_t src_len, const void* src, size_t len,
                                        int dtype) {
   auto chunk_size = (len - sizeof(float)) / 4;
   int thread_per_block = (chunk_size + BLOCK_PER_GRID - 1) / BLOCK_PER_GRID;
   unpacking<<<BLOCK_PER_GRID, thread_per_block>>>(
       reinterpret_cast<float*>(dst),
-      reinterpret_cast<const int*>(const_cast<void*>(src)), chunk_size);
+      reinterpret_cast<const int*>(const_cast<void*>(src)), src_len, chunk_size);
   return chunk_size;
 }
 }  // namespace compressor

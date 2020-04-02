@@ -83,7 +83,7 @@ class OnebitCompressor : public BaseCompressor {
   size_t _Unpacking(T1* dst, const T2* src, size_t size);
 
   size_t PackingCuda(void* data, size_t len, int dtype);
-  size_t UnpackingCuda(void* dst, const void* src, size_t len, int dtype);
+  size_t UnpackingCuda(void* dst, size_t src_len, const void* src, size_t len, int dtype);
 
   bool _use_scale;
 
