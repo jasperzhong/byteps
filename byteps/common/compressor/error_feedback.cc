@@ -33,6 +33,7 @@ void ErrorFeedback::Init(size_t aligned_size) {
   memset(_error.get(), 0, aligned_size);
 #ifdef BYTEPS_ENABLE_CUDA
   _stream = _compressor_ptr->get_stream();
+  BPS_CHECK_NE(_stream, nullptr);
   cudaMalloc(&_dev_error, aligned_size);
   cudaMemset(_dev_error, 0, aligned_size);
   BPS_LOG(INFO) << "cuda malloc for error-feedback size" << aligned_size;
