@@ -172,7 +172,9 @@ void OnebitCompressor::Decompress(ByteBuf compressed, int dtype,
   if (compressed.data == decompressed.data) {
     Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
   } else {
-    UnpackingCuda(decompressed.data, compressed.data, compressed.size, dtype);
+    Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
+
+    // UnpackingCuda(decompressed.data, compressed.data, compressed.size, dtype);
   }
 #else
   Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
