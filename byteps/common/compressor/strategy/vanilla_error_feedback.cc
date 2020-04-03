@@ -74,9 +74,21 @@ void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
   ByteBuf decompressed{_dev_error, corrected.size};
   Decompress({this->_compressor_ptr->_dev_buf, compressed.size}, dtype,
              decompressed);
+  CUDA_CALL(cudaMemcpy(_error.get(), _dev_error, corrected.size, cudaMemcpyDeviceToHost));
+  <auto pf = reinterpret_cast<float*>(_error.get());
+  BPS_LOG(INFO) << "decompressed: "
+                << pf[0] << " "
+                << pf[1] << " "
+                << pf[2] << " "
+                << pf[3] << " "
+                << pf[4] << " "
+                << pf[5] << " "
+                << pf[6] << " "
+                << pf[7] << " "
+                << pf[8] << " "
+                << pf[9] << " ";
   auto scale =
       *reinterpret_cast<float*>(compressed.data + (compressed.size - 4));
-  BPS_LOG(INFO) << "scale2=" << scale;
   this->_cpu_reducer->sum(_dev_error, corrected.data, _dev_error,
                           corrected.size, static_cast<DataType>(dtype),
                           -1.0 * scale);
