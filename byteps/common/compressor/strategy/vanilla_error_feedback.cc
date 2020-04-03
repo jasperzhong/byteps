@@ -82,7 +82,7 @@ void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
              decompressed);
   CUDA_CALL(cudaMemcpy(_error.get(), _dev_error, corrected.size, cudaMemcpyDeviceToHost));
   auto pf = reinterpret_cast<float*>(_error.get());
-  float sum = 0;(
+  float sum = 0;
   for (int i = 0; i < corrected.size / 4; ++i) {
     sum += pf[i];
   }
