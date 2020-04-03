@@ -131,19 +131,19 @@ def main():
     CIFAR100_TRAIN_STD = [0.2673342858792401,
                       0.2564384629170883, 0.27615047132568404]
 
- transform_train = transforms.Compose([
-      gcv_transforms.RandomCrop(32, pad=4),
-      transforms.RandomFlipLeftRight(),
-      transforms.ToTensor(),
-      transforms.Normalize(CIFAR100_TRAIN_MEAN,
+    transform_train = transforms.Compose([
+        gcv_transforms.RandomCrop(32, pad=4),
+        transforms.RandomFlipLeftRight(),
+        transforms.ToTensor(),
+        transforms.Normalize(CIFAR100_TRAIN_MEAN,
                             CIFAR100_TRAIN_STD)
-      ])
+        ])
 
-  transform_test = transforms.Compose([
-       transforms.ToTensor(),
-       transforms.Normalize(CIFAR100_TRAIN_MEAN,
-                             CIFAR100_TRAIN_STD)
-       ])
+    transform_test = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(CIFAR100_TRAIN_MEAN,
+                                CIFAR100_TRAIN_STD)
+        ])
 
    def test(ctx, val_data):
         metric = mx.metric.Accuracy()
