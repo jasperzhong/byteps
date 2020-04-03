@@ -83,7 +83,7 @@ def allocate_cpu(local_size, reserve=0):
         cpu_nums -= reserve
         default_quota = 6
         while default_quota >= 1 and default_quota * local_size > cpu_nums:
-            default_quota //= 2
+            default_quota -= 2
         root_quota = cpu_nums - default_quota * (local_size - 1)
         node_size = len(nodes[0])
         while root_quota >= 1 and root_quota > node_size:
@@ -92,7 +92,7 @@ def allocate_cpu(local_size, reserve=0):
     nodes = get_numa_info()
     quota_list = _get_quota(nodes, local_size, reserve)
     ret = []
-    for quota in quota_list:
+    for quota in quota_list[1:]:
         while True:
             allocation = _get_allocation(nodes, quota)
             if allocation:
@@ -100,8 +100,7 @@ def allocate_cpu(local_size, reserve=0):
                 break
             else:
                 quota -= 2
-
-    return ret[1:]
+    return ret
 
 
 def worker(local_rank, local_size, command, allocation):
@@ -144,7 +143,7 @@ def launch_bps():
         else:
             local_size = 1
         t = [None] * local_size
-        
+
         reserve = os.environ.get("BYTEPS_RESERVE_CORES", 0)
         allocations = allocate_cpu(local_size, reserve)
         for i in range(local_size):
