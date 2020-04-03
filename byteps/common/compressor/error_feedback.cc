@@ -23,6 +23,7 @@ ErrorFeedback::ErrorFeedback(std::unique_ptr<BaseCompressor> compressor_ptr)
 
 ErrorFeedback::~ErrorFeedback() {
 #ifdef BYTEPS_ENABLE_CUDA
+  _stream = nullptr;
   cudaFree(_dev_error);
 #endif
 };
