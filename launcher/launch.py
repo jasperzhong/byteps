@@ -51,7 +51,7 @@ def get_numa_info():
     return ret
 
 
-def allocate_cpu(local_size):
+def allocate_cpu(local_size, reserve=0):
     def _get_allocation(nodes, quota):
         if quota < 1:
             raise ValueError("quota should be no less than 1")
@@ -74,11 +74,13 @@ def allocate_cpu(local_size):
                 del node[idx]
             return ret
         return ret
-    def _get_quota(nodes, local_size):
+
+    def _get_quota(nodes, local_size, reserve):
         if len(nodes) > 1:
             cpu_nums = reduce(lambda x, y: (len(x) + len(y)), nodes)
         else:
             cpu_nums = len(nodes[0])
+        cpu_nums -= reserve
         default_quota = 6
         while default_quota >= 1 and default_quota * local_size > cpu_nums:
             default_quota //= 2
@@ -86,20 +88,20 @@ def allocate_cpu(local_size):
         node_size = len(nodes[0])
         while root_quota >= 1 and root_quota > node_size:
             root_quota -= 6
-        return [default_quota] * (local_size - 1) + [root_quota]
+        return [reserve] + [default_quota] * (local_size - 1) + [root_quota]
     nodes = get_numa_info()
-    quota_list = _get_quota(nodes, local_size)
+    quota_list = _get_quota(nodes, local_size, reserve)
     ret = []
     for quota in quota_list:
         while True:
-            allocation =  _get_allocation(nodes, quota)
+            allocation = _get_allocation(nodes, quota)
             if allocation:
                 ret.append(allocation)
                 break
             else:
                 quota -= 2
-            
-    return ret
+
+    return ret[1:]
 
 
 def worker(local_rank, local_size, command, allocation):
@@ -111,18 +113,11 @@ def worker(local_rank, local_size, command, allocation):
             command = "python " + command
         command = "gdb -ex 'run' -ex 'bt' -batch --args " + command
 
-    if local_rank == local_size - 1:
-        numa = "numactl --physcpubind "
-        for cpu_set in allocation:
-            numa += "{}-{},".format(cpu_set[0], cpu_set[-1])
-        numa = numa.strip(',') + ' '
-        command = numa + command
-    else:
-        numa = "numactl --physcpubind "
-        for cpu_set in allocation:
-            numa += "{}-{},".format(cpu_set[0], cpu_set[-1])
-        numa = numa.strip(',') + ' '
-        command = numa + command
+    numa = "numactl --physcpubind "
+    for cpu_set in allocation:
+        numa += "{}-{},".format(cpu_set[0], cpu_set[-1])
+    numa = numa.strip(',') + ' '
+    command = numa + command
 
     if os.environ.get("BYTEPS_TRACE_ON", "") == "1":
         print("\n!!!Enable profiling for WORKER_ID: %s and local_rank: %d!!!" %
@@ -149,8 +144,9 @@ def launch_bps():
         else:
             local_size = 1
         t = [None] * local_size
-
-        allocations = allocate_cpu(local_size)
+        
+        reserve = os.environ.get("BYTEPS_RESERVE_CORES", 0)
+        allocations = allocate_cpu(local_size, reserve)
         for i in range(local_size):
             command = ' '.join(sys.argv[1:])
             t[i] = threading.Thread(target=worker, args=[
