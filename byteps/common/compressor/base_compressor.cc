@@ -59,6 +59,10 @@ BaseCompressor::BaseCompressor() = default;
 BaseCompressor::~BaseCompressor() {
 #ifdef BYTEPS_ENABLE_CUDA
   cudaFree(_dev_buf);
+  if (_stream) {
+    cudaStreamDestroy(*_stream);
+    delete _stream;
+  }
 #endif
 };
 
@@ -67,8 +71,9 @@ void BaseCompressor::Init(size_t aligned_size) {
   _cpu_reducer.reset(new CpuReducer(nullptr, aligned_size));
 #ifdef BYTEPS_ENABLE_CUDA
   cudaMalloc(&_dev_buf, aligned_size);
-  cudaStreamCreate(&_stream);
-  _cpu_reducer->set_cuda_stream(&_stream);
+  _stream = new cudaStream_t;
+  cudaStreamCreate(_stream);
+  _cpu_reducer->set_cuda_stream(_stream);
   BPS_LOG(INFO) << "cuda malloc for compressor  size" << aligned_size;;
 #endif
 }

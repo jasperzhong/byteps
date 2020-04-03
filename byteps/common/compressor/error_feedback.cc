@@ -32,6 +32,7 @@ void ErrorFeedback::Init(size_t aligned_size) {
   _error.reset(new char[aligned_size]);
   memset(_error.get(), 0, aligned_size);
 #ifdef BYTEPS_ENABLE_CUDA
+  _stream = _compressor_ptr->get_stream();
   cudaMalloc(&_dev_error, aligned_size);
   cudaMemset(_dev_error, 0, aligned_size);
   BPS_LOG(INFO) << "cuda malloc for error-feedback size" << aligned_size;
@@ -42,8 +43,7 @@ void ErrorFeedback::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   auto corrected = grad;
 #ifdef BYTEPS_ENABLE_CUDA
   CUDA_CALL(cudaMemcpyAsync(_dev_buf, grad.data, grad.size,
-                            cudaMemcpyHostToDevice,
-                            _compressor_ptr->get_stream()));
+                            cudaMemcpyHostToDevice, *_stream));
   corrected = {_dev_buf, grad.size};
 #endif
   // before: grad += error
@@ -54,7 +54,7 @@ void ErrorFeedback::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
 
   UpdateError(corrected, dtype, compressed);
 #ifdef BYTEPS_ENABLE_CUDA
-  cudaStreamSynchronize(_compressor_ptr->get_stream());
+  cudaStreamSynchronize(*_stream);
 #endif
 }
 
