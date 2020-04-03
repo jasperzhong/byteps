@@ -60,6 +60,7 @@ __global__ void unpacking(float* dst, const int* src, size_t chunk_size) {
     int sign_bit = (src[idx] & mask) >> (PACKING_SIZE - i - 1);
     int sign = -((sign_bit << 1) - 1);
     dst[i * chunk_size + idx] = sign;
+    mask <<= 1;
   }
 }
 

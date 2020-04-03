@@ -15,10 +15,9 @@
 
 #include "vanilla_error_feedback.h"
 
-#include "../../logging.h"
-
 #include <bitset>
 
+#include "../../logging.h"
 
 namespace byteps {
 namespace common {
@@ -74,18 +73,9 @@ void VanillaErrorFeedbackCompressor::UpdateGradient(ByteBuf grad, int dtype) {
 void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
                                                  ByteBuf compressed) {
 #ifdef BYTEPS_ENABLE_CUDA
-  ByteBuf decompressed{_error.get(), corrected.size};
-  Decompress(compressed, dtype, decompressed);
-  // Decompress({this->_compressor_ptr->_dev_buf, compressed.size}, dtype,
-  //            decompressed);
-  // CUDA_CALL(cudaMemcpy(_error.get(), _dev_error, corrected.size, cudaMemcpyDeviceToHost));
-  auto pf = reinterpret_cast<float*>(_error.get());
-  float sum = 0;
-  for (int i = 0; i < corrected.size / 4; ++i) {
-    sum += pf[i];
-  }
-  BPS_LOG(INFO) << "decompressed sum=" << sum << " len=" << corrected.size / 4;
-
+  ByteBuf decompressed{_dev_error, corrected.size};
+  Decompress({this->_compressor_ptr->_dev_buf, compressed.size}, dtype,
+             decompressed);
   auto scale =
       *reinterpret_cast<float*>(compressed.data + (compressed.size - 4));
   this->_cpu_reducer->sum(_dev_error, corrected.data, _dev_error,
