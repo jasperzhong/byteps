@@ -45,7 +45,7 @@ def parse_args():
     parser.add_argument('--lr-decay-period', type=int, default=0,
                         help='period in epoch for learning rate decays. default is 0 (has no effect).')
     parser.add_argument('--lr-decay-epoch', type=str, default='40,60',
-                        help='epochs at which learning rate decays. default is 40,60.')
+                        help='epochs at which learning rate decays. default is 100,150.')
     parser.add_argument('--drop-rate', type=float, default=0.0,
                         help='dropout rate for wide resnet. default is 0.')
     parser.add_argument('--mode', type=str,
@@ -125,21 +125,27 @@ def main():
 
     plot_path = opt.save_plot_dir
 
-    transform_train = transforms.Compose([
-        gcv_transforms.RandomCrop(32, pad=4),
-        transforms.RandomFlipLeftRight(),
-        transforms.ToTensor(),
-        transforms.Normalize([0.4914, 0.4822, 0.4465],
-                             [0.2023, 0.1994, 0.2010])
-    ])
+    # from https://github.com/weiaicunzai/pytorch-cifar/blob/master/conf/global_settings.py
+    CIFAR100_TRAIN_MEAN = [0.5070751592371323,
+                       0.48654887331495095, 0.4409178433670343]
+    CIFAR100_TRAIN_STD = [0.2673342858792401,
+                      0.2564384629170883, 0.27615047132568404]
 
-    transform_test = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize([0.4914, 0.4822, 0.4465],
-                             [0.2023, 0.1994, 0.2010])
-    ])
+ transform_train = transforms.Compose([
+      gcv_transforms.RandomCrop(32, pad=4),
+      transforms.RandomFlipLeftRight(),
+      transforms.ToTensor(),
+      transforms.Normalize(CIFAR100_TRAIN_MEAN,
+                            CIFAR100_TRAIN_STD)
+      ])
 
-    def test(ctx, val_data):
+  transform_test = transforms.Compose([
+       transforms.ToTensor(),
+       transforms.Normalize(CIFAR100_TRAIN_MEAN,
+                             CIFAR100_TRAIN_STD)
+       ])
+
+   def test(ctx, val_data):
         metric = mx.metric.Accuracy()
         for i, batch in enumerate(val_data):
             data = gluon.utils.split_and_load(
