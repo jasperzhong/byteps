@@ -80,7 +80,7 @@ void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
   Decompress({_error.get(), compressed.size}, dtype, {_error.get(), decompressed.size});
   // Decompress({this->_compressor_ptr->_dev_buf, compressed.size}, dtype,
   //            decompressed);
-  CUDA_CALL(cudaMemcpy(_error.get(), _dev_error, corrected.size, cudaMemcpyDeviceToHost));
+  // CUDA_CALL(cudaMemcpy(_error.get(), _dev_error, corrected.size, cudaMemcpyDeviceToHost));
   auto pf = reinterpret_cast<float*>(_error.get());
   float sum = 0;
   for (int i = 0; i < corrected.size / 4; ++i) {
