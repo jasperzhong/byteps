@@ -72,7 +72,7 @@ class BaseCompressor {
  public:
 #ifdef BYTEPS_ENABLE_CUDA
   char* get_dev_buf() { return _dev_buf; }
-  cudaStream_t get_stream() { return _stream; }
+  cudaStream_t& get_stream() { return _stream; }
 #endif
   std::unique_ptr<CpuReducer>& get_reducer() { return _cpu_reducer; };
 
