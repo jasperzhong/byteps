@@ -139,8 +139,6 @@ size_t OnebitCompressor::UnpackingCuda(void* dst, const void* src, size_t len,
                                        int dtype) {
   auto chunk_size = (len - sizeof(float)) / 4;
   int thread_per_block = (chunk_size + BLOCK_PER_GRID - 1) / BLOCK_PER_GRID;
-  std::cout << "UnpackingCuda: chunk_size=" << chunk_size << " len=" << len
-            << " threads=" << thread_per_block << std::endl;
   unpacking<<<BLOCK_PER_GRID, thread_per_block>>>(
       reinterpret_cast<float*>(dst),
       reinterpret_cast<const int*>(const_cast<void*>(src)), chunk_size);
