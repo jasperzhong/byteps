@@ -78,7 +78,7 @@ void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
       *reinterpret_cast<float*>(compressed.data + (compressed.size - 4));
   this->_cpu_reducer->sum(_dev_error, corrected.data, _dev_error,
                           corrected.size, static_cast<DataType>(dtype),
-                          -1.0 * scale);
+                          0.0);
 #else
   ByteBuf decompressed{_error.get(), corrected.size};
   Decompress(compressed, dtype, decompressed);
