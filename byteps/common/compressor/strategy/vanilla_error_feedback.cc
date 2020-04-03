@@ -49,10 +49,10 @@ VanillaErrorFeedbackCompressor::~VanillaErrorFeedbackCompressor() = default;
 void VanillaErrorFeedbackCompressor::UpdateGradient(ByteBuf grad, int dtype) {
   int local_size = atoi(getenv("BYTEPS_LOCAL_SIZE"));
 #ifdef BYTEPS_ENABLE_CUDA
-  this->_cpu_reducer->sum(grad.data, _dev_error, grad.data, grad.size,
+  this->_compressor_ptr->get_reducer()->sum(grad.data, _dev_error, grad.data, grad.size,
                           static_cast<DataType>(dtype), 1.0 / local_size);
 #else
-  this->_cpu_reducer->sum(grad.data, _error.get(), grad.data, grad.size,
+  this->_compressor_ptr->get_reducer()->sum(grad.data, _error.get(), grad.data, grad.size,
                           static_cast<DataType>(dtype), 1.0 / local_size);
 #endif
 }
@@ -61,10 +61,10 @@ void VanillaErrorFeedbackCompressor::UpdateGradient(ByteBuf grad, int dtype) {
 void VanillaErrorFeedbackCompressor::UpdateGradient(ByteBuf grad, int dtype) {
   int num_workers = atoi(getenv("DMLC_NUM_WORKER"));
 #ifdef BYTEPS_ENABLE_CUDA
-  this->_cpu_reducer->sum(grad.data, _dev_error, grad.data, grad.size,
+  this->_compressor_ptr->get_reducer()->sum(grad.data, _dev_error, grad.data, grad.size,
                           static_cast<DataType>(dtype), 1.0 / num_workers);
 #else
-  this->_cpu_reducer->sum(grad.data, _error.get(), grad.data, grad.size,
+  this->_compressor_ptr->get_reducer()->sum(grad.data, _error.get(), grad.data, grad.size,
                           static_cast<DataType>(dtype), 1.0 / num_workers);
 #endif
 }
@@ -74,17 +74,17 @@ void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
                                                  ByteBuf compressed) {
 #ifdef BYTEPS_ENABLE_CUDA
   ByteBuf decompressed{_dev_error, corrected.size};
-  Decompress({this->_compressor_ptr->_dev_buf, compressed.size}, dtype,
+  Decompress({this->_compressor_ptr->get_dev_buf(), compressed.size}, dtype,
              decompressed);
   auto scale =
       *reinterpret_cast<float*>(compressed.data + (compressed.size - 4));
-  this->_cpu_reducer->sum(_dev_error, corrected.data, _dev_error,
+  this->_compressor_ptr->get_reducer()->sum(_dev_error, corrected.data, _dev_error,
                           corrected.size, static_cast<DataType>(dtype),
                           -1.0 * scale);
 #else
   ByteBuf decompressed{_error.get(), corrected.size};
   Decompress(compressed, dtype, decompressed);
-  this->_cpu_reducer->sum(_error.get(), corrected.data, decompressed.data,
+  this->_compressor_ptr->get_reducer()->sum(_error.get(), corrected.data, decompressed.data,
                           corrected.size, static_cast<DataType>(dtype), -1.0);
 #endif
 }

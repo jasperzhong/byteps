@@ -69,10 +69,12 @@ class BaseCompressor {
   virtual void Decompress(ByteBuf compressed, int dtype,
                           ByteBuf& decompressed) = 0;
 
+ public:
 #ifdef BYTEPS_ENABLE_CUDA
-  char* _dev_buf;
-  cudaStream_t _stream;
+  char* get_dev_buf() { return _dev_buf; }
+  cudaStream_t get_stream() { return _stream; }
 #endif
+  std::unique_ptr<CpuReducer>& get_reducer() { return _cpu_reducer; };
 
  protected:
   /*!
@@ -84,6 +86,11 @@ class BaseCompressor {
    * \brief CPU reducer
    */
   std::unique_ptr<CpuReducer> _cpu_reducer;
+
+#ifdef BYTEPS_ENABLE_CUDA
+  char* _dev_buf;
+  cudaStream_t _stream;
+#endif
 };
 
 using kwargs_t = std::unordered_map<std::string, std::string>;
