@@ -114,7 +114,7 @@ float CpuReducer::norm1(const void* dev_src, void* dev_dst, void* dst,
       reinterpret_cast<float*>(dev_dst), len / 4);
 
   cudaMemcpyAsync(dst, dev_dst, BLOCK_PER_GRID * 4, cudaMemcpyDeviceToHost, *_stream);
-  cudaStreamSynchronize(_stream);
+  cudaStreamSynchronize(*_stream);
 
   float ret = 0;
   auto p_dst = reinterpret_cast<float*>(dst);
