@@ -145,7 +145,7 @@ def main():
                                 CIFAR100_TRAIN_STD)
         ])
 
-   def test(ctx, val_data):
+    def test(ctx, val_data):
         metric = mx.metric.Accuracy()
         for i, batch in enumerate(val_data):
             data = gluon.utils.split_and_load(
