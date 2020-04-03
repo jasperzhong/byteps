@@ -74,10 +74,11 @@ void VanillaErrorFeedbackCompressor::UpdateGradient(ByteBuf grad, int dtype) {
 void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
                                                  ByteBuf compressed) {
 #ifdef BYTEPS_ENABLE_CUDA
-  ByteBuf decompressed{_dev_error, corrected.size};
+  ByteBuf decompressed{_error.get(), corrected.size};
   CUDA_CALL(cudaMemcpy(_error.get(), this->_compressor_ptr->_dev_buf, compressed.size, cudaMemcpyDeviceToHost));
   BPS_LOG(INFO) << "compressed2: " << std::bitset<32>(reinterpret_cast<int*>(_error.get())[0]);
-  Decompress({_error.get(), compressed.size}, dtype, {_error.get(), decompressed.size});
+  
+  Decompress({_error.get(), compressed.size}, dtype, decompressed);
   // Decompress({this->_compressor_ptr->_dev_buf, compressed.size}, dtype,
   //            decompressed);
   // CUDA_CALL(cudaMemcpy(_error.get(), _dev_error, corrected.size, cudaMemcpyDeviceToHost));
