@@ -144,7 +144,7 @@ def launch_bps():
             local_size = 1
         t = [None] * local_size
 
-        reserve = os.environ.get("BYTEPS_RESERVE_CORES", 0)
+        reserve = int(os.environ.get("BYTEPS_RESERVE_CORES", 0))
         allocations = allocate_cpu(local_size, reserve)
         for i in range(local_size):
             command = ' '.join(sys.argv[1:])
