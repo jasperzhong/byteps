@@ -101,7 +101,7 @@ void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
 #else
   auto compressed_size = Packing(_buf.get(), reduced_len, dtype);
 #endif
-  BPS_LOG(INFO) << "compressed: " << std::bitset<32>(_buf.get());
+  BPS_LOG(INFO) << "compressed: " << std::bitset<32>(reinterpret_cast<int*>(_buf.get())[0]);
   scale = norm1 / (grad.size / getDataTypeLength(dtype));
   auto pf = reinterpret_cast<float*>(_buf.get() + compressed_size);
   *pf = scale;
