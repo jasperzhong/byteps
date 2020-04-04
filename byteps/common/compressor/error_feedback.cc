@@ -58,15 +58,7 @@ void ErrorFeedback::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
 
 void ErrorFeedback::Decompress(ByteBuf compressed, int dtype,
                                ByteBuf& decompressed) {
-#ifdef BYTEPS_ENABLE_CUDA
-  CUDA_CALL(cudaMemcpy(_dev_buf, compressed.data, compressed.size,
-                       cudaMemcpyHostToDevice));
-  _compressor_ptr->Decompress(compressed, dtype, compressed);
-  CUDA_CALL(cudaMemcpy(decompressed.data, _dev_buf, decompressed.size,
-                       cudaMemcpyDeviceToHost));
-#else
   _compressor_ptr->Decompress(compressed, dtype, decompressed);
-#endif
 }
 }  // namespace compressor
 }  // namespace common

@@ -169,7 +169,15 @@ size_t OnebitCompressor::Unpacking(void* dst, const void* src, size_t len,
 void OnebitCompressor::Decompress(ByteBuf compressed, int dtype,
                                   ByteBuf& decompressed) {
 #ifdef BYTEPS_ENABLE_CUDA
-  UnpackingCuda(decompressed.data, compressed.data, compressed.size, dtype);
+  if (compressed.data == decompressed.data) {
+    CUDA_CALL(cudaMemcpy(_dev_buf, compressed.data, compressed.size,
+                         cudaMemcpyHostToDevice));
+    UnpackingCuda(_dev_buf, _dev_buf, compressed.size, dtype);
+    CUDA_CALL(decompressed.data, _dev_buf, decompressed.size,
+              cudaMemcpyDeviceToHost);
+  } else {
+    UnpackingCuda(decompressed.data, compressed.data, compressed.size, dtype);
+  }
 #else
   Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
 #endif
@@ -179,8 +187,19 @@ void OnebitCompressor::Decompress(ByteBuf compressed, int dtype,
 
 void OnebitCompressor::Decompress(ByteBuf compressed, int dtype,
                                   ByteBuf& decompressed) {
+#ifdef BYTEPS_ENABLE_CUDA
+  if (decompressed.data == nullptr) {
+    decompressed.data = _buf.get();
+    CUDA_CALL(cudaMemcpy(_dev_buf, compressed.data, compressed.size,
+                         cudaMemcpyHostToDevice));
+    UnpackingCuda(_dev_buf, _dev_buf, compressed.size, dtype);
+    CUDA_CALL(decompressed.data, _dev_buf, decompressed.size,
+              cudaMemcpyDeviceToHost);
+  }
+#else
   if (decompressed.data == nullptr) decompressed.data = _buf.get();
-  UnpackingCuda(decompressed.data, compressed.data, compressed.size, dtype);
+  Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
+#endif
 }
 #endif
 
