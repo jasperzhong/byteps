@@ -81,7 +81,7 @@ constexpr int BLOCK_PER_GRID = 1024;
 int CpuReducer::sum(void* dev_dst, const void* dev_src1, const void* dev_src2,
                     size_t len, int dtype, float alpha) {
   int thread_per_block = ((len / 4) + BLOCK_PER_GRID - 1) / BLOCK_PER_GRID;
-  sum_kernel<<<BLOCK_PER_GRID, thread_per_block, 0, *_stream>>>(
+  sum_kernel<<<BLOCK_PER_GRID, thread_per_block>>>(
       reinterpret_cast<float*>(dev_dst),
       reinterpret_cast<const float*>(const_cast<void*>(dev_src1)),
       reinterpret_cast<const float*>(const_cast<void*>(dev_src2)), len / 4,
@@ -92,7 +92,7 @@ int CpuReducer::sum(void* dev_dst, const void* dev_src1, const void* dev_src2,
 int CpuReducer::sign(void* dev_dst, const void* dev_src, size_t len,
                      int dtype) {
   int thread_per_block = ((len / 4) + BLOCK_PER_GRID - 1) / BLOCK_PER_GRID;
-  sign_kernel<<<BLOCK_PER_GRID, thread_per_block, 0, *_stream>>>(
+  sign_kernel<<<BLOCK_PER_GRID, thread_per_block>>>(
       reinterpret_cast<int*>(dev_dst),
       reinterpret_cast<const float*>(const_cast<void*>(dev_src)), len / 4);
   return len / 4;
@@ -109,12 +109,11 @@ float CpuReducer::norm1(const void* dev_src, void* dev_dst, void* dst,
   x |= x >> 16;
   ++x;
 
-  norm1_kernel<<<BLOCK_PER_GRID, x, 0, *_stream>>>(
+  norm1_kernel<<<BLOCK_PER_GRID, x>>>(
       reinterpret_cast<const float*>(const_cast<void*>(dev_src)),
       reinterpret_cast<float*>(dev_dst), len / 4);
 
-  cudaMemcpyAsync(dst, dev_dst, BLOCK_PER_GRID * 4, cudaMemcpyDeviceToHost, *_stream);
-  cudaStreamSynchronize(*_stream);
+  cudaMemcpy(dst, dev_dst, BLOCK_PER_GRID * 4, cudaMemcpyDeviceToHost);
 
   float ret = 0;
   auto p_dst = reinterpret_cast<float*>(dst);
@@ -132,7 +131,7 @@ size_t OnebitCompressor::PackingCuda(void* data, size_t len, int dtype) {
   size_t chunk_size = (len + padding_len) / PACKING_SIZE;
 
   int thread_per_block = (chunk_size + BLOCK_PER_GRID - 1) / BLOCK_PER_GRID;
-  packing<<<BLOCK_PER_GRID, thread_per_block, 0, *_stream>>>(reinterpret_cast<int*>(data),
+  packing<<<BLOCK_PER_GRID, thread_per_block>>>(reinterpret_cast<int*>(data),
                                                 chunk_size);
   return chunk_size * 4;
 }
@@ -141,7 +140,7 @@ size_t OnebitCompressor::UnpackingCuda(void* dst, const void* src, size_t len,
                                        int dtype) {
   auto chunk_size = (len - sizeof(float)) / 4;
   int thread_per_block = (chunk_size + BLOCK_PER_GRID - 1) / BLOCK_PER_GRID;
-  unpacking<<<BLOCK_PER_GRID, thread_per_block, 0, *_stream>>>(
+  unpacking<<<BLOCK_PER_GRID, thread_per_block>>>(
       reinterpret_cast<float*>(dst),
       reinterpret_cast<const int*>(const_cast<void*>(src)), chunk_size);
   return chunk_size;

@@ -44,8 +44,7 @@ void ErrorFeedback::Init(size_t aligned_size) {
 void ErrorFeedback::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   auto corrected = grad;
 #ifdef BYTEPS_ENABLE_CUDA
-  CUDA_CALL(cudaMemcpyAsync(_dev_buf, grad.data, grad.size,
-                            cudaMemcpyHostToDevice, *_stream));
+  CUDA_CALL(cudaMemcpy(_dev_buf, grad.data, grad.size, cudaMemcpyHostToDevice));
   corrected = {_dev_buf, grad.size};
 #endif
   // before: grad += error
@@ -55,9 +54,6 @@ void ErrorFeedback::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   _compressor_ptr->Compress(corrected, dtype, compressed);
 
   UpdateError(corrected, dtype, compressed);
-#ifdef BYTEPS_ENABLE_CUDA
-  cudaStreamSynchronize(*_stream);
-#endif
 }
 
 void ErrorFeedback::Decompress(ByteBuf compressed, int dtype,
