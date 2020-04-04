@@ -169,11 +169,7 @@ size_t OnebitCompressor::Unpacking(void* dst, const void* src, size_t len,
 void OnebitCompressor::Decompress(ByteBuf compressed, int dtype,
                                   ByteBuf& decompressed) {
 #ifdef BYTEPS_ENABLE_CUDA
-  if (compressed.data == decompressed.data) {
-    Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
-  } else {
-    UnpackingCuda(decompressed.data, compressed.data, compressed.size, dtype);
-  }
+  UnpackingCuda(decompressed.data, compressed.data, compressed.size, dtype);
 #else
   Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
 #endif
@@ -183,12 +179,8 @@ void OnebitCompressor::Decompress(ByteBuf compressed, int dtype,
 
 void OnebitCompressor::Decompress(ByteBuf compressed, int dtype,
                                   ByteBuf& decompressed) {
-  if (decompressed.data == nullptr) {
-    decompressed.data = _buf.get();
-    Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
-  } else {
-    UnpackingCuda(decompressed.data, compressed.data, compressed.size, dtype);
-  }
+  if (decompressed.data == nullptr) decompressed.data = _buf.get();
+  UnpackingCuda(decompressed.data, compressed.data, compressed.size, dtype);
 }
 #endif
 
