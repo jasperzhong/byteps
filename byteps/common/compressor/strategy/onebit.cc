@@ -169,6 +169,7 @@ size_t OnebitCompressor::Unpacking(void* dst, const void* src, size_t len,
 void OnebitCompressor::Decompress(ByteBuf compressed, int dtype,
                                   ByteBuf& decompressed) {
 #ifdef BYTEPS_ENABLE_CUDA
+  CUDA_CALL(cudaSetDevice(_device));
   if (compressed.data == decompressed.data) {
     CUDA_CALL(cudaMemcpy(_dev_buf, compressed.data, compressed.size,
                          cudaMemcpyHostToDevice));
@@ -188,6 +189,7 @@ void OnebitCompressor::Decompress(ByteBuf compressed, int dtype,
 void OnebitCompressor::Decompress(ByteBuf compressed, int dtype,
                                   ByteBuf& decompressed) {
 #ifdef BYTEPS_ENABLE_CUDA
+  CUDA_CALL(cudaSetDevice(_device));
   if (decompressed.data == nullptr) {
     decompressed.data = _buf.get();
     CUDA_CALL(cudaMemcpy(_dev_buf, compressed.data, compressed.size,
