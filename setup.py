@@ -319,19 +319,19 @@ def build_server(build_ext, options):
     # server_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
     #     ['-DBYTEPS_BUILDING_SERVER']
 
-    # if 
-    #     # server_lib.sources.append('byteps/common/gpu_reducer.cu')
-    #     cuda_include_dirs, cuda_lib_dirs = get_cuda_dirs(
-    #         build_ext, options['COMPILE_FLAGS'])
-    #     options['MACROS'] += [('HAVE_CUDA', '1')]
-    #     options['INCLUDES'] += cuda_include_dirs
-    #     options['LIBRARY_DIRS'] += cuda_lib_dirs
-    #     options['LIBRARIES'] += ['cudart']
-    #     server_lib.extra_compile_args = {'g++': options['COMPILE_FLAGS'] +
-    #                                      ['-DBYTEPS_BUILDING_SERVER', '-DBYTEPS_ENABLE_CUDA'], 'nvcc':  ['-dc', '-DBYTEPS_ENABLE_CUDA']}
-    # else:
-    server_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
-        ['-DBYTEPS_BUILDING_SERVER']
+    if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
+        server_lib.sources.append('byteps/common/gpu_reducer.cu')
+        cuda_include_dirs, cuda_lib_dirs = get_cuda_dirs(
+            build_ext, options['COMPILE_FLAGS'])
+        options['MACROS'] += [('HAVE_CUDA', '1')]
+        options['INCLUDES'] += cuda_include_dirs
+        options['LIBRARY_DIRS'] += cuda_lib_dirs
+        options['LIBRARIES'] += ['cudart']
+        server_lib.extra_compile_args = {'g++': options['COMPILE_FLAGS'] +
+                                         ['-DBYTEPS_BUILDING_SERVER', '-DBYTEPS_ENABLE_CUDA'], 'nvcc':  ['-dc', '-DBYTEPS_ENABLE_CUDA']}
+    else:
+        server_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
+            ['-DBYTEPS_BUILDING_SERVER']
 
 
     server_lib.extra_link_args = options['LINK_FLAGS']
@@ -342,7 +342,7 @@ def build_server(build_ext, options):
         server_lib.libraries = ['rdmacm', 'ibverbs', 'rt']
     else:
         server_lib.libraries = []
-    # server_lib.libraries = options['LIBRARIES'] 
+    server_lib.libraries = options['LIBRARIES'] 
 
     build_ext.build_extension(server_lib)
 
@@ -936,7 +936,8 @@ class custom_build_ext(build_ext):
             options['COMPILE_FLAGS'] += ['-D_GLIBCXX_USE_CXX11_ABI=' +
                                          str(int(glibcxx_flag))]
 
-        
+        if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
+            self.custom_for_nvcc(options)
         
         built_plugins = []
         try:
@@ -975,8 +976,6 @@ class custom_build_ext(build_ext):
                 else:
                     raise
         if not int(os.environ.get('BYTEPS_WITHOUT_MXNET', 0)):
-            if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
-                self.custom_for_nvcc(options)
             # fix "libcuda.so.1 not found" issue
             cuda_home = os.environ.get('BYTEPS_CUDA_HOME', '/usr/local/cuda')
             cuda_stub_path = cuda_home + '/lib64/stubs'
