@@ -149,9 +149,7 @@ def main():
 
     num_gpus = opt.num_gpus
     # batch_size *= max(1, num_gpus)
-    gpus = mx.test_utils.list_gpus()
-    assert(len(gpus) == num_gpus)
-    context = mx.gpu(0) if num_gpus > 0 else mx.cpu(
+    context = mx.gpu(bps.local_rank()) if num_gpus > 0 else mx.cpu(
         bps.local_rank())
     num_workers = opt.num_workers
     nworker = bps.size()

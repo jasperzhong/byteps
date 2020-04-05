@@ -108,7 +108,6 @@ def allocate_cpu(local_size, reserve=0):
 
 def worker(local_rank, local_size, command, allocation):
     my_env = os.environ.copy()
-    my_env["CUDA_VISIBLE_DEVICES"] = str(local_rank)
     my_env["BYTEPS_LOCAL_RANK"] = str(local_rank)
     my_env["BYTEPS_LOCAL_SIZE"] = str(local_size)
     if int(os.getenv("BYTEPS_ENABLE_GDB", 0)):

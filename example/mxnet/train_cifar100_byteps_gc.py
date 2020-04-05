@@ -95,9 +95,7 @@ def main():
 
     num_gpus = opt.num_gpus
     # batch_size *= max(1, num_gpus)
-    gpus = mx.test_utils.list_gpus()
-    assert(len(gpus) == num_gpus)
-    context = mx.gpu(0) if num_gpus > 0 else mx.cpu(
+    context = mx.gpu(bps.local_rank()) if num_gpus > 0 else mx.cpu(
         bps.local_rank())
     num_workers = opt.num_workers
     nworker = bps.size()
@@ -129,23 +127,23 @@ def main():
 
     # from https://github.com/weiaicunzai/pytorch-cifar/blob/master/conf/global_settings.py
     CIFAR100_TRAIN_MEAN = [0.5070751592371323,
-                           0.48654887331495095, 0.4409178433670343]
+                       0.48654887331495095, 0.4409178433670343]
     CIFAR100_TRAIN_STD = [0.2673342858792401,
-                          0.2564384629170883, 0.27615047132568404]
+                      0.2564384629170883, 0.27615047132568404]
 
     transform_train = transforms.Compose([
         gcv_transforms.RandomCrop(32, pad=4),
         transforms.RandomFlipLeftRight(),
         transforms.ToTensor(),
         transforms.Normalize(CIFAR100_TRAIN_MEAN,
-                             CIFAR100_TRAIN_STD)
-    ])
+                            CIFAR100_TRAIN_STD)
+        ])
 
     transform_test = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(CIFAR100_TRAIN_MEAN,
-                             CIFAR100_TRAIN_STD)
-    ])
+                                CIFAR100_TRAIN_STD)
+        ])
 
     def test(ctx, val_data):
         metric = mx.metric.Accuracy()

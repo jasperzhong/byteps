@@ -70,11 +70,17 @@ void BaseCompressor::Init(size_t aligned_size) {
   _buf.reset(new char[aligned_size]);
   _cpu_reducer.reset(new CpuReducer(nullptr, aligned_size));
 #ifdef BYTEPS_ENABLE_CUDA
+  int device = 0;
+  if (getenv("BYTEPS_LOCAL_SIZE")) {
+    device = atoi(getenv("BYTEPS_LOCAL_SIZE")) - 1;
+  }
+  CUDA_CALL(cudaSetDevice(local_size));
   cudaMalloc(&_dev_buf, aligned_size);
   _stream = new cudaStream_t;
   cudaStreamCreate(_stream);
   _cpu_reducer->set_cuda_stream(_stream);
-  BPS_LOG(INFO) << "cuda malloc for compressor  size" << aligned_size;;
+  BPS_LOG(INFO) << "cuda malloc for compressor  size" << aligned_size;
+  ;
 #endif
 }
 }  // namespace compressor
