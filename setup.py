@@ -319,19 +319,19 @@ def build_server(build_ext, options):
     # server_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
     #     ['-DBYTEPS_BUILDING_SERVER']
 
-    if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
-        # server_lib.sources.append('byteps/common/gpu_reducer.cu')
-        cuda_include_dirs, cuda_lib_dirs = get_cuda_dirs(
-            build_ext, options['COMPILE_FLAGS'])
-        options['MACROS'] += [('HAVE_CUDA', '1')]
-        options['INCLUDES'] += cuda_include_dirs
-        options['LIBRARY_DIRS'] += cuda_lib_dirs
-        options['LIBRARIES'] += ['cudart']
-        server_lib.extra_compile_args = {'g++': options['COMPILE_FLAGS'] +
-                                         ['-DBYTEPS_BUILDING_SERVER', '-DBYTEPS_ENABLE_CUDA'], 'nvcc':  ['-dc', '-DBYTEPS_ENABLE_CUDA']}
-    else:
-        server_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
-            ['-DBYTEPS_BUILDING_SERVER']
+    # if 
+    #     # server_lib.sources.append('byteps/common/gpu_reducer.cu')
+    #     cuda_include_dirs, cuda_lib_dirs = get_cuda_dirs(
+    #         build_ext, options['COMPILE_FLAGS'])
+    #     options['MACROS'] += [('HAVE_CUDA', '1')]
+    #     options['INCLUDES'] += cuda_include_dirs
+    #     options['LIBRARY_DIRS'] += cuda_lib_dirs
+    #     options['LIBRARIES'] += ['cudart']
+    #     server_lib.extra_compile_args = {'g++': options['COMPILE_FLAGS'] +
+    #                                      ['-DBYTEPS_BUILDING_SERVER', '-DBYTEPS_ENABLE_CUDA'], 'nvcc':  ['-dc', '-DBYTEPS_ENABLE_CUDA']}
+    # else:
+    server_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
+        ['-DBYTEPS_BUILDING_SERVER']
 
 
     server_lib.extra_link_args = options['LINK_FLAGS']
