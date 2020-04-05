@@ -342,7 +342,7 @@ def build_server(build_ext, options):
         server_lib.libraries = ['rdmacm', 'ibverbs', 'rt']
     else:
         server_lib.libraries = []
-    server_lib.libraries = options['LIBRARIES'] 
+    # server_lib.libraries = options['LIBRARIES'] 
 
     build_ext.build_extension(server_lib)
 
