@@ -115,12 +115,12 @@ def worker(local_rank, local_size, command, allocation):
             command = "python " + command
         command = "gdb -ex 'run' -ex 'bt' -batch --args " + command
 
-    numa = "numactl --physcpubind "
-    for cpu_set in allocation:
-        numa += "{}-{},".format(cpu_set[0], cpu_set[-1])
-    numa = numa.strip(',') + ' '
-    command = numa + command
-    print(command)
+    # numa = "numactl --physcpubind "
+    # for cpu_set in allocation:
+    #     numa += "{}-{},".format(cpu_set[0], cpu_set[-1])
+    # numa = numa.strip(',') + ' '
+    # command = numa + command
+    # print(command)
 
     if os.environ.get("BYTEPS_TRACE_ON", "") == "1":
         print("\n!!!Enable profiling for WORKER_ID: %s and local_rank: %d!!!" %
