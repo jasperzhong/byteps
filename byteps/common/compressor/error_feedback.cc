@@ -37,7 +37,8 @@ void ErrorFeedback::Init(size_t aligned_size) {
   if (getenv("BYTEPS_LOCAL_SIZE")) {
     device = atoi(getenv("BYTEPS_LOCAL_SIZE")) - 1;
   }
-  CUDA_CALL(cudaSetDevice(device));
+  _device = device;
+  CUDA_CALL(cudaSetDevice(_device));
   _stream = _compressor_ptr->get_stream();
   cudaMalloc(&_dev_buf, aligned_size);
   cudaMalloc(&_dev_error, aligned_size);
@@ -49,6 +50,7 @@ void ErrorFeedback::Init(size_t aligned_size) {
 void ErrorFeedback::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   auto corrected = grad;
 #ifdef BYTEPS_ENABLE_CUDA
+  CUDA_CALL(cudaSetDevice(_device));
   CUDA_CALL(cudaMemcpy(_dev_buf, grad.data, grad.size, cudaMemcpyHostToDevice));
   corrected = {_dev_buf, grad.size};
 #endif
