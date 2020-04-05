@@ -86,7 +86,7 @@ def allocate_cpu(local_size, reserve=0):
         root_quota = cpu_nums - default_quota * (local_size - 1)
         node_size = len(nodes[0])
         while root_quota >= 1 and root_quota > node_size:
-            root_quota -= 6
+            root_quota -= 4
         return [reserve] + [default_quota] * (local_size - 1) + [root_quota]
     nodes = get_numa_info()
     quota_list = _get_quota(nodes, local_size, reserve)
@@ -101,6 +101,7 @@ def allocate_cpu(local_size, reserve=0):
                 else:
                     quota -= 2
             else:
+                ret.append(None)
                 break
     return ret[1:]
 
