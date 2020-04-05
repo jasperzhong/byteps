@@ -320,7 +320,7 @@ def build_server(build_ext, options):
     #     ['-DBYTEPS_BUILDING_SERVER']
 
     if int(os.environ.get("BYTEPS_ENABLE_CUDA", 0)):
-        server_lib.sources.append('byteps/common/gpu_reducer.cu')
+        # server_lib.sources.append('byteps/common/gpu_reducer.cu')
         cuda_include_dirs, cuda_lib_dirs = get_cuda_dirs(
             build_ext, options['COMPILE_FLAGS'])
         options['MACROS'] += [('HAVE_CUDA', '1')]
