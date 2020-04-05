@@ -74,7 +74,7 @@ void BaseCompressor::Init(size_t aligned_size) {
   if (getenv("BYTEPS_LOCAL_SIZE")) {
     device = atoi(getenv("BYTEPS_LOCAL_SIZE")) - 1;
   }
-  CUDA_CALL(cudaSetDevice(local_size));
+  CUDA_CALL(cudaSetDevice(device));
   cudaMalloc(&_dev_buf, aligned_size);
   _stream = new cudaStream_t;
   cudaStreamCreate(_stream);
