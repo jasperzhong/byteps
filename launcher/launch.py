@@ -100,6 +100,8 @@ def allocate_cpu(local_size, reserve=0):
                     break
                 else:
                     quota -= 2
+            else:
+                break
     return ret[1:]
 
 
