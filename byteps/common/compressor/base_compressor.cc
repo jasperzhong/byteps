@@ -70,7 +70,7 @@ void BaseCompressor::Init(size_t aligned_size) {
   _buf.reset(new char[aligned_size]);
   _cpu_reducer.reset(new CpuReducer(nullptr, aligned_size));
 #ifdef BYTEPS_ENABLE_CUDA
-  int device = 0;
+  int device = 1;
   if (getenv("BYTEPS_LOCAL_SIZE")) {
     device = atoi(getenv("BYTEPS_LOCAL_SIZE")) - 1;
   }
