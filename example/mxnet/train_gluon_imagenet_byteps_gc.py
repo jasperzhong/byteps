@@ -53,7 +53,7 @@ def parse_args():
                         help='momentum value for optimizer, default is 0.9.')
     parser.add_argument('--wd', type=float, default=0.0001,
                         help='weight decay rate. default is 0.0001.')
-    parser.add_argument('--lr-mode', type=str, default='step',
+    parser.add_argument('--lr-mode', type=str, defabest_val_scoreult='step',
                         help='learning rate scheduler mode. options are step, poly and cosine.')
     parser.add_argument('--lr-decay', type=float, default=0.1,
                         help='decay rate of learning rate. default is 0.1.')
@@ -167,9 +167,9 @@ def main():
     num_batches = num_training_samples // (batch_size*nworker)
 
     lr_scheduler = LRSequential([
-        LRScheduler('linear', base_lr=opt.lr, target_lr=opt.lr * nworker / ngpus,
+        LRScheduler('linear', base_lr=opt.lr, target_lr=opt.lr * nworker / ngpus / 2,
                     nepochs=opt.warmup_epochs, iters_per_epoch=num_batches),
-        LRScheduler(opt.lr_mode, base_lr=opt.lr * nworker / ngpus, target_lr=0,
+        LRScheduler(opt.lr_mode, base_lr=opt.lr * nworker / ngpus / 2, target_lr=0,
                     nepochs=opt.num_epochs - opt.warmup_epochs,
                     iters_per_epoch=num_batches,
                     step_epoch=lr_decay_epoch,
