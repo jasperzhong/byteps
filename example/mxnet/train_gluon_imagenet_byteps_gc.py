@@ -257,7 +257,8 @@ def main():
             contrast=jitter_param,
             pca_noise=lighting_param,
             num_parts=nworker,
-            part_index=rank
+            part_index=rank,
+            seed=2020
         )
         val_data = mx.io.ImageRecordIter(
             path_imgrec=rec_val,
@@ -275,7 +276,8 @@ def main():
             std_g=std_rgb[1],
             std_b=std_rgb[2],
             num_parts=nworker,
-            part_index=rank
+            part_index=rank,
+            seed=2020
         )
         return train_data, val_data, batch_fn
 
