@@ -264,7 +264,7 @@ def main():
             path_imgrec=rec_val,
             path_imgidx=rec_val_idx,
             preprocess_threads=num_workers,
-            shuffle=False,
+            shuffle=True,
             batch_size=batch_size,
 
             resize=resize,
