@@ -29,6 +29,7 @@ ErrorFeedback::~ErrorFeedback() {
 };
 
 void ErrorFeedback::Init(size_t aligned_size) {
+  _pre_lr = _cur_lr = 0.08;
   _compressor_ptr->Init(aligned_size);
   _error.reset(new char[aligned_size]);
   memset(_error.get(), 0, aligned_size);

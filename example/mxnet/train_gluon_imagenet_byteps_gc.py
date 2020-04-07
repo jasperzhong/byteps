@@ -409,6 +409,10 @@ def main():
         if opt.compress_momentum:
             del optimizer_params['momentum']
 
+        lr = opt.lr * nworker / ngpus / 2
+        with open("lr-%s".format(bps.local_rank()), "w") as f:
+            f.write(str(lr))
+        
         trainer = bps.DistributedTrainer(
             params, optimizer, optimizer_params)
         if opt.resume_states is not '':
@@ -428,12 +432,16 @@ def main():
 
         best_val_score = 1
 
+        
         for epoch in range(opt.resume_epoch, opt.num_epochs):
             tic = time.time()
             if opt.use_rec:
                 train_data.reset()
             train_metric.reset()
             btic = time.time()
+
+            with open("lr-%s".format(bps.local_rank()), "w") as f:
+                f.write(str(trainer.learning_rate))
 
             for i, batch in enumerate(train_data):
                 data, label = batch_fn(batch, ctx)

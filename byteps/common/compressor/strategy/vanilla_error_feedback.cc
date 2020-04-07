@@ -15,7 +15,7 @@
 
 #include "vanilla_error_feedback.h"
 
-#include <bitset>
+#include <fstream>
 
 #include "../../logging.h"
 
@@ -48,25 +48,43 @@ VanillaErrorFeedbackCompressor::~VanillaErrorFeedbackCompressor() = default;
 // worker version decompressor
 void VanillaErrorFeedbackCompressor::UpdateGradient(ByteBuf grad, int dtype) {
   int local_size = atoi(getenv("BYTEPS_LOCAL_SIZE"));
+  std::ifstream fin("lr-0");
+  if (fin.is_open()) {
+    fin >> _cur_lr;
+  }
+  fin.close();
+  BPS_LOG(INFO) << "pre_lr=" << _pre_lr << " cur_lr=" << _cur_lr;
 #ifdef BYTEPS_ENABLE_CUDA
-  this->_compressor_ptr->get_reducer()->sum(grad.data, _dev_error, grad.data, grad.size,
-                          static_cast<DataType>(dtype), 1.0 / local_size);
+  this->_compressor_ptr->get_reducer()->sum(
+      grad.data, _dev_error, grad.data, grad.size, static_cast<DataType>(dtype),
+      (_pre_lr / _cur_lr) / local_size);
 #else
-  this->_compressor_ptr->get_reducer()->sum(grad.data, _error.get(), grad.data, grad.size,
-                          static_cast<DataType>(dtype), 1.0 / local_size);
+  this->_compressor_ptr->get_reducer()->sum(
+      grad.data, _error.get(), grad.data, grad.size,
+      static_cast<DataType>(dtype), (_pre_lr / _cur_lr) / local_size);
 #endif
+  _pre_lr = _cur_lr;
 }
 #else
 // server version decompressor
 void VanillaErrorFeedbackCompressor::UpdateGradient(ByteBuf grad, int dtype) {
   int num_workers = atoi(getenv("DMLC_NUM_WORKER"));
+  std::ifstream fin("lr-0");
+  if (fin.is_open()) {
+    fin >> _cur_lr;
+  }
+  fin.close();
+  BPS_LOG(INFO) << "pre_lr=" << _pre_lr << " cur_lr=" << _cur_lr;
 #ifdef BYTEPS_ENABLE_CUDA
-  this->_compressor_ptr->get_reducer()->sum(grad.data, _dev_error, grad.data, grad.size,
-                          static_cast<DataType>(dtype), 1.0 / num_workers);
+  this->_compressor_ptr->get_reducer()->sum(
+      grad.data, _dev_error, grad.data, grad.size, static_cast<DataType>(dtype),
+      (_pre_lr / _cur_lr) / num_workers);
 #else
-  this->_compressor_ptr->get_reducer()->sum(grad.data, _error.get(), grad.data, grad.size,
-                          static_cast<DataType>(dtype), 1.0 / num_workers);
+  this->_compressor_ptr->get_reducer()->sum(
+      grad.data, _error.get(), grad.data, grad.size,
+      static_cast<DataType>(dtype), (_pre_lr / _cur_lr) / num_workers);
 #endif
+  _pre_lr = _cur_lr;
 }
 #endif
 
@@ -78,14 +96,15 @@ void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
              decompressed);
   auto scale =
       *reinterpret_cast<float*>(compressed.data + (compressed.size - 4));
-  this->_compressor_ptr->get_reducer()->sum(_dev_error, corrected.data, _dev_error,
-                          corrected.size, static_cast<DataType>(dtype),
-                          -1.0 * scale);
+  this->_compressor_ptr->get_reducer()->sum(
+      _dev_error, corrected.data, _dev_error, corrected.size,
+      static_cast<DataType>(dtype), -1.0 * scale);
 #else
   ByteBuf decompressed{_error.get(), corrected.size};
   Decompress(compressed, dtype, decompressed);
-  this->_compressor_ptr->get_reducer()->sum(_error.get(), corrected.data, decompressed.data,
-                          corrected.size, static_cast<DataType>(dtype), -1.0);
+  this->_compressor_ptr->get_reducer()->sum(_error.get(), corrected.data,
+                                            decompressed.data, corrected.size,
+                                            static_cast<DataType>(dtype), -1.0);
 #endif
 }
 }  // namespace compressor

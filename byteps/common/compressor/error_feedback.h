@@ -90,8 +90,9 @@ class ErrorFeedback : public BaseCompressor {
    * \brief compressor
    */
   std::unique_ptr<BaseCompressor> _compressor_ptr;
- private:
 
+  float _pre_lr;
+  float _cur_lr;
 };
 }  // namespace compressor
 }  // namespace common
