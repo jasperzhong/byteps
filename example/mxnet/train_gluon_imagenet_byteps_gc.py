@@ -440,7 +440,7 @@ def main():
             train_metric.reset()
             btic = time.time()
 
-            with open("lr-%s".format(bps.local_rank()), "w") as f:
+            with open("lr-{}".format(bps.local_rank()), "w") as f:
                 f.write(str(trainer.learning_rate))
 
             for i, batch in enumerate(train_data):
