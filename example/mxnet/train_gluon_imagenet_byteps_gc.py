@@ -409,12 +409,15 @@ def main():
         if opt.compress_momentum:
             del optimizer_params['momentum']
 
+        if opt.wd > 0:
+            del optimizer_params['wd']
+
         lr = opt.lr * nworker / ngpus / 2
         with open("lr-%s".format(bps.local_rank()), "w") as f:
             f.write(str(lr))
         
         trainer = bps.DistributedTrainer(
-            params, optimizer, optimizer_params)
+            params, optimizer, optimizer_params, wd=opt.wd)
         if opt.resume_states is not '':
             trainer.load_states(opt.resume_states)
 

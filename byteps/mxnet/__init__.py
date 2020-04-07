@@ -183,12 +183,12 @@ class DistributedTrainer(mx.gluon.Trainer):
         constructor for a list of additional supported arguments.
     """
 
-    def __init__(self, params, optimizer, optimizer_params=None, root_rank=0):
+    def __init__(self, params, optimizer, optimizer_params=None, root_rank=0, wd=1e-4):
         if isinstance(optimizer, DistributedOptimizer):
             optimizer = optimizer._optimizer
             warnings.warn("DistributedTrainer does not take DistributedOptimizer "
                           "as its optimizer. We have unwrapped it for you.")
-        
+        self.wd = wd
         param_list = []
         if isinstance(params, mx.gluon.ParameterDict):
             for key in sorted(list(params.keys())):
@@ -220,9 +220,8 @@ class DistributedTrainer(mx.gluon.Trainer):
                     param.list_grad()[0])
                 byteps_push_pull(compressed, is_average=False,
                                  name="gradient_" + str(i), priority=-i)
-                param._grad[0] = self.compressors[i].decompress(compressed, ctx) 
-                
-        
+                param._grad[0] = self.compressors[i].decompress(
+                    compressed, self.wd, param._data[0], ctx)
 
     def _init_params(self):
         tensors = []

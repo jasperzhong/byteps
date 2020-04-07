@@ -48,10 +48,12 @@ class NesterovMomentum(Compressor):
         self.compressor = compressor
         self.mu = mu
         self.mom = None
+        self.mom2 = None
 
     def compress(self, tensor):
         if self.mom is None:
             self.mom = nd.zeros_like(tensor)
+            self.mom2 = nd.zeros_like(tensor)
         # self.mom *= self.mu
         # self.mom += tensor
         # tensor += self.mu * self.mom
@@ -60,7 +62,11 @@ class NesterovMomentum(Compressor):
         tensor += self.mom
         return self.compressor.compress(tensor)
 
-    def decompress(self, tensor, ctx):
+    def decompress(self, tensor, wd, x, ctx):
+        tmp = wd * x
+        self.mom2 += tmp
+        nd._internal._mul_scalar(self.mom2, self.mu, out=self.mom2)
+        tensor += self.mom2 + tmp
         return self.compressor.decompress(tensor, ctx)
 
 
