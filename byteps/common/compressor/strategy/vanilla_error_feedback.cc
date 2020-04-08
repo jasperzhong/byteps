@@ -57,11 +57,12 @@ void VanillaErrorFeedbackCompressor::UpdateGradient(ByteBuf grad, int dtype) {
 #ifdef BYTEPS_ENABLE_CUDA
   this->_compressor_ptr->get_reducer()->sum(
       grad.data, _dev_error, grad.data, grad.size, static_cast<DataType>(dtype),
-      (_pre_lr / _cur_lr) / local_size);
+      (_pre_lr / _cur_lr),
+      1.0 / local_size);
 #else
   this->_compressor_ptr->get_reducer()->sum(
       grad.data, _error.get(), grad.data, grad.size,
-      static_cast<DataType>(dtype), (_pre_lr / _cur_lr) / local_size);
+      static_cast<DataType>(dtype), 1.0 / local_size);
 #endif
   _pre_lr = _cur_lr;
 }
@@ -78,11 +79,12 @@ void VanillaErrorFeedbackCompressor::UpdateGradient(ByteBuf grad, int dtype) {
 #ifdef BYTEPS_ENABLE_CUDA
   this->_compressor_ptr->get_reducer()->sum(
       grad.data, _dev_error, grad.data, grad.size, static_cast<DataType>(dtype),
-      (_pre_lr / _cur_lr) / num_workers);
+      (_pre_lr / _cur_lr),
+      1.0 / num_workers);
 #else
   this->_compressor_ptr->get_reducer()->sum(
       grad.data, _error.get(), grad.data, grad.size,
-      static_cast<DataType>(dtype), (_pre_lr / _cur_lr) / num_workers);
+      static_cast<DataType>(dtype), 1.0 / num_workers);
 #endif
   _pre_lr = _cur_lr;
 }

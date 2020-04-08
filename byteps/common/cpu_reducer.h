@@ -60,7 +60,7 @@ class CpuReducer {
 #ifndef BYTEPS_ENABLE_CUDA
 
   int sum(void* dst, const void* src1, const void* src2, size_t len,
-          DataType dtype, float alpha = 1.0);
+          DataType dtype, float alpha = 1.0, float beta=1.0);
   int sign(void* dst, const void* src, size_t len, DataType dtype);
   void norm1(const void* src, float* out, size_t len, DataType dtype);
 

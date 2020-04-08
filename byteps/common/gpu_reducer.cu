@@ -11,9 +11,9 @@ __global__ void sum_kernel(float* dst, const float* src, size_t len,
 }
 
 __global__ void sum_kernel(float* dst, const float* src1, const float* src2,
-                           size_t len, float alpha) {
+                           size_t len, float alpha, float beta) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
-  if (i < len) dst[i] = src1[i] + src2[i] * alpha;
+  if (i < len) dst[i] = alpha*src1[i] + beta*src2[i];
 }
 
 __global__ void sign_kernel(int* dst, const float* src, size_t len) {
@@ -79,13 +79,13 @@ constexpr int BLOCK_PER_GRID = 1024;
 // }
 
 int CpuReducer::sum(void* dev_dst, const void* dev_src1, const void* dev_src2,
-                    size_t len, int dtype, float alpha) {
+                    size_t len, int dtype, float alpha, float beta) {
   int thread_per_block = ((len / 4) + BLOCK_PER_GRID - 1) / BLOCK_PER_GRID;
   sum_kernel<<<BLOCK_PER_GRID, thread_per_block>>>(
       reinterpret_cast<float*>(dev_dst),
       reinterpret_cast<const float*>(const_cast<void*>(dev_src1)),
       reinterpret_cast<const float*>(const_cast<void*>(dev_src2)), len / 4,
-      alpha);
+      alpha, beta);
   return 0;
 }
 
