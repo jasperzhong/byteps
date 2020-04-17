@@ -214,6 +214,9 @@ class DistributedTrainer(mx.gluon.Trainer):
                 byteps_declare_tensor("gradient_" + str(i), **byteps_params)
 
     def _allreduce_grads(self):
+        with open("lr-{}".format(local_rank()), "w") as f:
+            f.write(str(self.learning_rate))
+
         for i, param in enumerate(self._params):
             if param.grad_req != 'null':
                 compressed, ctx = self.compressors[i].compress(
