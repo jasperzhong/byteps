@@ -413,7 +413,7 @@ def main():
             del optimizer_params['wd']
 
         lr = opt.lr * nworker / ngpus / 2
-        with open("lr-%s".format(bps.local_rank()), "w") as f:
+        with open("lr-{}".format(bps.local_rank()), "w") as f:
             f.write(str(lr))
         
         trainer = bps.DistributedTrainer(
