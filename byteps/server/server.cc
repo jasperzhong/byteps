@@ -233,8 +233,9 @@ void BytePSHandler(const ps::KVMeta& req_meta,
       CHECK_NE(compressor_ptr, nullptr);
       auto stored = GetStore(key);
       int num_gpus = 8;
+      static int cnt = 0;
       compressor_ptr->Init(byteps::common::Align(stored->len, stored->dtype),
-                           updates.request.size() % num_gpus);
+                           cnt++ % num_gpus);
       compressor_map_[key] = std::move(compressor_ptr);
       if (log_key_info_) {
         LOG(INFO) << "register compressor for key=" << key;
