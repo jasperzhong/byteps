@@ -71,7 +71,6 @@ void BaseCompressor::Init(size_t aligned_size, int device) {
   _cpu_reducer.reset(new CpuReducer(nullptr, aligned_size));
 #ifdef BYTEPS_ENABLE_CUDA
 // TODO: set for server
-  int device = 1;  // should be 0 if only one gpu
   if (getenv("BYTEPS_LOCAL_SIZE")) {
     device = atoi(getenv("BYTEPS_LOCAL_SIZE")) - 1;
   }
