@@ -26,6 +26,8 @@ using namespace ps;
 std::vector<PriorityQueue*> engine_queues_;
 std::vector<std::thread*> engine_threads_;
 
+int cnt = 0;
+
 BytePSArray* GetStore(uint64_t key) {
   std::lock_guard<std::mutex> lock(store_mu_);
   return &store_[key];
@@ -233,7 +235,6 @@ void BytePSHandler(const ps::KVMeta& req_meta,
       CHECK_NE(compressor_ptr, nullptr);
       auto stored = GetStore(key);
       int num_gpus = 8;
-      static int cnt = 0;
       compressor_ptr->Init(byteps::common::Align(stored->len, stored->dtype),
                            cnt++ % num_gpus);
       compressor_map_[key] = std::move(compressor_ptr);
