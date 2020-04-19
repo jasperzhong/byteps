@@ -26,7 +26,7 @@ using namespace ps;
 std::vector<PriorityQueue*> engine_queues_;
 std::vector<std::thread*> engine_threads_;
 
-int cnt = 0;
+int cnt = 1;
 
 BytePSArray* GetStore(uint64_t key) {
   std::lock_guard<std::mutex> lock(store_mu_);
