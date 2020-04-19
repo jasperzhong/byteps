@@ -48,7 +48,7 @@ class BaseCompressor {
    * \brief Allocate encoding buffer for compression.
    * \param aligned_size aligned size
    */
-  virtual void Init(size_t aligned_size);
+  virtual void Init(size_t aligned_size, int device=0);
 
   /*!
    * \brief Compress function
