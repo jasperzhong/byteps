@@ -66,7 +66,7 @@ BaseCompressor::~BaseCompressor() {
 #endif
 };
 
-void BaseCompressor::Init(size_t aligned_size) {
+void BaseCompressor::Init(size_t aligned_size, int device) {
   _buf.reset(new char[aligned_size]);
   _cpu_reducer.reset(new CpuReducer(nullptr, aligned_size));
 #ifdef BYTEPS_ENABLE_CUDA
