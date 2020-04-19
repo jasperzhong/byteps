@@ -34,9 +34,6 @@ void ErrorFeedback::Init(size_t aligned_size, int device) {
   _error.reset(new char[aligned_size]);
   memset(_error.get(), 0, aligned_size);
 #ifdef BYTEPS_ENABLE_CUDA
-  if (getenv("BYTEPS_LOCAL_SIZE")) {
-    device = atoi(getenv("BYTEPS_LOCAL_SIZE")) - 1;
-  }
   _device = device;
   CUDA_CALL(cudaSetDevice(_device));
   _stream = _compressor_ptr->get_stream();

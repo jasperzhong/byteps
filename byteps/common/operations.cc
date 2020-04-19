@@ -327,7 +327,8 @@ void InitTensor(BPSContext &context, size_t size, int dtype, void *cpubuff) {
       if (!context.kwargs.empty()) {
         auto compressor_ptr =
             compressor::CompressorRegistry::Create(context.kwargs);
-        compressor_ptr->Init(Align(len, dtype));
+        int num_gpus = 8 - 1;
+        compressor_ptr->Init(Align(len, dtype), (context.declared_key % num_gpus) + 1);
         context.compressor_list.push_back(std::move(compressor_ptr));
       }
     }
