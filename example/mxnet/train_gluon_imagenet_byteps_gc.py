@@ -167,9 +167,9 @@ def main():
     num_batches = num_training_samples // (batch_size*nworker)
 
     lr_scheduler = LRSequential([
-        LRScheduler('linear', base_lr=opt.lr, target_lr=opt.lr * nworker / ngpus / 2,
+        LRScheduler('linear', base_lr=opt.warmup_lr, target_lr=opt.lr * nworker / ngpus,
                     nepochs=opt.warmup_epochs, iters_per_epoch=num_batches),
-        LRScheduler(opt.lr_mode, base_lr=opt.lr * nworker / ngpus / 2, target_lr=0,
+        LRScheduler(opt.lr_mode, base_lr=opt.lr * nworker / ngpus, target_lr=0,
                     nepochs=opt.num_epochs - opt.warmup_epochs,
                     iters_per_epoch=num_batches,
                     step_epoch=lr_decay_epoch,
@@ -412,7 +412,7 @@ def main():
         if opt.wd > 0:
             del optimizer_params['wd']
 
-        lr = opt.lr * nworker / ngpus / 2
+        lr = opt.lr * nworker / ngpus
         with open("lr-{}".format(bps.local_rank()), "w") as f:
             f.write(str(lr))
         
