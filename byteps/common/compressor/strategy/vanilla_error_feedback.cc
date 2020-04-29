@@ -60,7 +60,7 @@ void VanillaErrorFeedbackCompressor::Init(size_t aligned_size) {
 }
 
 void VanillaErrorFeedbackCompressor::UpdateGradient(ByteBuf grad, int dtype) {
-  _cur_lr = *reinterpret_cast<float*>(_mm);
+  // _cur_lr = *reinterpret_cast<float*>(_mm);
   BPS_LOG(INFO) << "lr=" << _cur_lr;
   this->_cpu_reducer->sum(grad.data, _error.get(), grad.size,
                           static_cast<DataType>(dtype), (_pre_lr / _cur_lr));
