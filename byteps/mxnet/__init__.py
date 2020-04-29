@@ -197,12 +197,10 @@ class DistributedTrainer(mx.gluon.Trainer):
 
         super(DistributedTrainer, self).__init__(
             param_list, optimizer, optimizer_params=optimizer_params, kvstore=None)
-
-        if os.path.exists("lr.s"):
-            os.remove("lr.s")
         
-        self._f = open("lr.s", "wb")
-        self._f.truncate(8)
+        if local_rank() == 0:
+            self._f = open("lr.s", "wb")
+            self._f.truncate(8)
         # _scale is used to check and set rescale_grad for optimizer in Trainer.step()
         # function. Normalizing it by BytePS size, which is equivalent to performing
         # average in push_pull, has better performance.
