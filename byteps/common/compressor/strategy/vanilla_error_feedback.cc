@@ -45,22 +45,23 @@ VanillaErrorFeedbackCompressor::VanillaErrorFeedbackCompressor(
     : ErrorFeedback(std::move(compressor_ptr)) {}
 
 VanillaErrorFeedbackCompressor::~VanillaErrorFeedbackCompressor() {
-  munmap(_mm, 4);
-  close(_fd);
+  // munmap(_mm, 4);
+  // close(_fd);
+  fin.close();
 }
 
 void VanillaErrorFeedbackCompressor::Init(size_t aligned_size) {
   ErrorFeedback::Init(aligned_size);
   _pre_lr = 0.0;
-  _fd = open("lr.s", O_RDONLY);
-  BPS_CHECK(_fd > 0) << "open lr.s failed, errno=" << strerror(errno);
-  void* ptr = mmap(0, 4, PROT_READ, MAP_SHARED, _fd, 0);
-  BPS_CHECK_NE(ptr, MAP_FAILED) << "mmap failed, errno=" << strerror(errno);
-  _mm = ptr;
+  fin.open("lr.s", std::ios::in);
+  // BPS_CHECK(_fd > 0) << "open lr.s failed, errno=" << strerror(errno);
+  // void* ptr = mmap(0, 4, PROT_READ, MAP_SHARED, _fd, 0);
+  // BPS_CHECK_NE(ptr, MAP_FAILED) << "mmap failed, errno=" << strerror(errno);
+  // _mm = ptr;
 }
 
 void VanillaErrorFeedbackCompressor::UpdateGradient(ByteBuf grad, int dtype) {
-  _cur_lr = *reinterpret_cast<float*>(_mm);
+  fin >> _cur_lr;
   BPS_LOG(INFO) << "lr=" << _cur_lr;
   this->_cpu_reducer->sum(grad.data, _error.get(), grad.size,
                           static_cast<DataType>(dtype), (_pre_lr / _cur_lr));

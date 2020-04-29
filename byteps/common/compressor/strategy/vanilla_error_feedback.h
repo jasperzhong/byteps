@@ -42,6 +42,7 @@ class VanillaErrorFeedbackCompressor : public ErrorFeedback {
   float _pre_lr, _cur_lr;
   int _fd;
   void* _mm;
+  std::fstream fin;
 };
 }  // namespace compressor
 }  // namespace common

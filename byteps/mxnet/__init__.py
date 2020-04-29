@@ -225,10 +225,8 @@ class DistributedTrainer(mx.gluon.Trainer):
     def _allreduce_grads(self):
         # update lr
         if local_rank() == 0:
-            self._f.seek(0)
-            ba = struct.pack("f", self.learning_rate)
-            self._f.write(ba)
-            self._f.flush()
+            with open("lr.s", "w") as f:
+                f.write(str(self.learning_rate))
 
         for i, param in enumerate(self._params):
             if param.grad_req != 'null':
