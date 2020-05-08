@@ -79,10 +79,6 @@ class WeightDecayMomentum(Compressor):
 
     @staticmethod
     def _wd_mom(x, mom, cache, wd, mu):
-        if mom is None:
-            mom = nd.zeros_like(x)
-            cache = nd.zeros_like(x)
-
         nd._internal._mul_scalar(x, wd, out=cache)
         mom += cache
         nd._internal._mul_scalar(mom, mu, out=mom)
@@ -90,8 +86,17 @@ class WeightDecayMomentum(Compressor):
 
     def compress(self, tensor, *args, **kwargs):
         """Returns the tensor unmodified."""
+        if "x" not in kwargs:
+            return self.compressor.compress(tensor)
+
+        x = kwargs["x"]
+        
+        if self.mom is None:
+            self.mom = nd.zeros_like(x)
+            self.cache = nd.zeros_like(x)
+        
         self.res = self.p.apply_async(
-            self._wd_mom, (kwargs["x"], self.mom, self.cache, self.wd, self.mu))
+            self._wd_mom, (x, self.mom, self.cache, self.wd, self.mu))
         return self.compressor.compress(tensor)
 
     def decompress(self, tensor, ctx, *args, **kwargs):
