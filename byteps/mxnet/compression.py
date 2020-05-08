@@ -67,7 +67,7 @@ class FP16Compressor(Compressor):
 
 class WeightDecayMomentum(Compressor):
     """For 1bit compression."""
-    p = Pool(4)
+    p = Pool(processes=16)
 
     def __init__(self, compressor, mu, wd):
         self.compressor = compressor
@@ -104,10 +104,12 @@ class WeightDecayMomentum(Compressor):
             x_{t+1} = x_t - \eta_t (tensor + \mu m_t + wd * x_t)
         """
         try:
-            self.res.get(timeout=1)
+            self.res.get(timeout=0.1)
             tensor += self.cache
         except TimeoutError:
-            print("Wd momentum timeout alert! timeout=%f" % 1)
+            print("Wd momentum timeout alert! timeout=%f" % 0.1)
+        except AttributeError:
+            pass
 
         return self.compressor.decompress(tensor, ctx)
 
