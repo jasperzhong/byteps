@@ -77,7 +77,7 @@ class WeightDecayMomentum(Compressor):
         self.wd = wd
 
     @staticmethod
-    def _wd_mom(x, mom, cache, wd, mu):
+    def _wd_mom():
         pass
 
     def compress(self, tensor, *args, **kwargs):
@@ -92,7 +92,7 @@ class WeightDecayMomentum(Compressor):
             self.cache = nd.zeros_like(x)
         
         self.res = self.p.apply_async(
-            WeightDecayMomentum._wd_mom, (x, self.mom, self.cache, self.wd, self.mu))
+            WeightDecayMomentum._wd_mom)
         return self.compressor.compress(tensor)
 
     def decompress(self, tensor, ctx, *args, **kwargs):
