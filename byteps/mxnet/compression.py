@@ -89,7 +89,7 @@ class WeightDecayMomentum(Compressor):
 
     def compress(self, tensor, *args, **kwargs):
         """Returns the tensor unmodified."""
-        self.res = self.p.apply_async(self._wd_mom, (kwargs["x"],))
+        self.res = self.p.apply_async(self._wd_mom, (self, kwargs["x"],))
         return self.compressor.compress(tensor)
 
     def decompress(self, tensor, ctx, *args, **kwargs):
