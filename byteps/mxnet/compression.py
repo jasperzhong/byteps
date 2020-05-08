@@ -14,11 +14,10 @@
 # limitations under the License.
 # ==============================================================================
 """Gradient compression algorithms."""
-
-from multiprocessing import Pool, TimeoutError
-
 import mxnet
 import mxnet.ndarray as nd
+
+import asyncio
 
 
 class Compressor(object):
@@ -67,7 +66,6 @@ class FP16Compressor(Compressor):
 
 class WeightDecayMomentum(Compressor):
     """For 1bit compression."""
-    p = Pool(processes=16)
 
     def __init__(self, compressor, mu, wd):
         self.compressor = compressor
@@ -77,8 +75,11 @@ class WeightDecayMomentum(Compressor):
         self.wd = wd
 
     @staticmethod
-    def _wd_mom():
-        pass
+    async def _wd_mom(x, mom, cache, wd, mu):
+        nd._internal._mul_scalar(x, wd, out=cache)
+        mom += cache
+        nd._internal._mul_scalar(mom, mu, out=mom)
+        cache += mom
 
     def compress(self, tensor, *args, **kwargs):
         """Returns the tensor unmodified."""
@@ -86,13 +87,13 @@ class WeightDecayMomentum(Compressor):
             return self.compressor.compress(tensor)
 
         x = kwargs["x"]
-        
+
         if self.mom is None:
             self.mom = nd.zeros_like(x)
             self.cache = nd.zeros_like(x)
-        
-        self.res = self.p.apply_async(
-            WeightDecayMomentum._wd_mom)
+
+        self.task = asyncio.create_task(self._wd_mom(
+            x, self.mom, self.cache, self.wd, self.mu))
         return self.compressor.compress(tensor)
 
     def decompress(self, tensor, ctx, *args, **kwargs):
@@ -100,14 +101,8 @@ class WeightDecayMomentum(Compressor):
             m_t = \mu * m_{t-1} + wd * x_t
             x_{t+1} = x_t - \eta_t (tensor + \mu m_t + wd * x_t)
         """
-        try:
-            self.res.get(timeout=0.1)
-            tensor += self.cache
-        except TimeoutError:
-            print("Wd momentum timeout alert! timeout=%f" % 0.1)
-        except AttributeError:
-            pass
-
+        await self.task
+        tensor += self.cache
         return self.compressor.decompress(tensor, ctx)
 
 
