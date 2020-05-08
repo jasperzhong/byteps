@@ -15,6 +15,9 @@
 # ==============================================================================
 """Gradient compression algorithms."""
 
+from multiprocessing import Pool, TimeoutError
+import warnings
+
 import mxnet
 import mxnet.ndarray as nd
 
@@ -65,6 +68,7 @@ class FP16Compressor(Compressor):
 
 class WeightDecayMomentum(Compressor):
     """For 1bit compression."""
+    p = Pool(4)
 
     def __init__(self, compressor, mu, wd):
         self.compressor = compressor
@@ -73,8 +77,19 @@ class WeightDecayMomentum(Compressor):
         self.mu = mu
         self.wd = wd
 
+    def _wd_mom(self, x):
+        if self.mom is None:
+            self.mom = nd.zeros_like(x)
+            self.cache = nd.zeros_like(x)
+
+        nd._internal._mul_scalar(x, self.wd, out=self.cache)
+        self.mom += self.cache
+        nd._internal._mul_scalar(self.mom, self.mu, out=self.mom)
+        self.cache += self.mom
+
     def compress(self, tensor, *args, **kwargs):
         """Returns the tensor unmodified."""
+        self.res = self.p.apply_async(self._wd_mom, kwargs["x"])
         return self.compressor.compress(tensor)
 
     def decompress(self, tensor, ctx, *args, **kwargs):
@@ -82,19 +97,12 @@ class WeightDecayMomentum(Compressor):
             m_t = \mu * m_{t-1} + wd * x_t
             x_{t+1} = x_t - \eta_t (tensor + \mu m_t + wd * x_t)
         """
-        if "x" not in kwargs:
-            return self.compressor.decompress(tensor, ctx)
+        try:
+            res = self.res.get(timeout=0.5)
+            tensor += res
+        except TimeoutError:
+            warnings.warn("Wd momentum timeout alert! timeout=%f" % 0.5)
 
-        x = kwargs["x"]
-        
-        if self.mom is None:
-            self.mom = nd.zeros_like(tensor)
-            self.cache = nd.zeros_like(tensor)
-
-        nd._internal._mul_scalar(x, self.wd, out=self.cache)
-        self.mom += self.cache 
-        nd._internal._mul_scalar(self.mom, self.mu, out=self.mom)
-        tensor += self.mom + self.cache 
         return self.compressor.decompress(tensor, ctx)
 
 
