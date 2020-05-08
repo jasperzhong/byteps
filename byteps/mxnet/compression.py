@@ -16,7 +16,6 @@
 """Gradient compression algorithms."""
 
 from multiprocessing import Pool, TimeoutError
-import warnings
 
 import mxnet
 import mxnet.ndarray as nd
@@ -96,7 +95,7 @@ class WeightDecayMomentum(Compressor):
             self.cache = nd.zeros_like(x)
         
         self.res = self.p.apply_async(
-            self._wd_mom, (x, self.mom, self.cache, self.wd, self.mu))
+            WeightDecayMomentum._wd_mom, (x, self.mom, self.cache, self.wd, self.mu))
         return self.compressor.compress(tensor)
 
     def decompress(self, tensor, ctx, *args, **kwargs):
@@ -105,10 +104,10 @@ class WeightDecayMomentum(Compressor):
             x_{t+1} = x_t - \eta_t (tensor + \mu m_t + wd * x_t)
         """
         try:
-            self.res.get(timeout=0.5)
+            self.res.get(timeout=1)
             tensor += self.cache
         except TimeoutError:
-            warnings.warn("Wd momentum timeout alert! timeout=%f" % 0.5)
+            print("Wd momentum timeout alert! timeout=%f" % 1)
 
         return self.compressor.decompress(tensor, ctx)
 
