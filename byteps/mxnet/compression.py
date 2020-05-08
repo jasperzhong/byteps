@@ -100,8 +100,8 @@ class WeightDecayMomentum(Compressor):
             x_{t+1} = x_t - \eta_t (tensor + \mu m_t + wd * x_t)
         """
         try:
-            res = self.res.get(timeout=0.5)
-            tensor += res
+            self.res.get(timeout=0.5)
+            tensor += self.cache
         except TimeoutError:
             warnings.warn("Wd momentum timeout alert! timeout=%f" % 0.5)
 
