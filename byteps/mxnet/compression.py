@@ -77,7 +77,10 @@ class WeightDecayMomentum(Compressor):
 
     @staticmethod
     def _wd_mom(x, mom, cache, wd, mu):
-        pass
+        nd._internal._mul_scalar(x, wd, out=cache)
+        mom += cache
+        nd._internal._mul_scalar(mom, mu, out=mom)
+        cache += mom
 
     def compress(self, tensor, *args, **kwargs):
         """Returns the tensor unmodified."""
