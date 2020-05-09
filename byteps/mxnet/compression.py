@@ -74,6 +74,8 @@ class WeightDecayMomentum(Compressor):
         self.mu = mu
         self.wd = wd
         self.loop = asyncio.get_event_loop()
+        self.done_cnt = 0
+        self.total_cnt = 0
 
     @staticmethod
     async def _wd_mom(x, mom, cache, wd, mu):
@@ -103,9 +105,10 @@ class WeightDecayMomentum(Compressor):
             x_{t+1} = x_t - \eta_t (tensor + \mu m_t + wd * x_t)
         """
         if self.future.done():
+            self.done_cnt += 1
+            print("ratio=%f" % self.done_cnt / self.total_cnt)
             tensor += self.cache
-        else:
-            print("future not done")
+        self.total_cnt += 1
         return self.compressor.decompress(tensor, ctx)
 
 
