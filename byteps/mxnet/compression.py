@@ -74,8 +74,6 @@ class WeightDecayMomentum(Compressor):
         self.mu = mu
         self.wd = wd
         self.loop = asyncio.get_event_loop()
-        self.done_cnt = 0
-        self.total_cnt = 0
 
     @staticmethod
     async def _wd_mom(x, mom, cache, wd, mu):
@@ -95,16 +93,16 @@ class WeightDecayMomentum(Compressor):
             self.mom = nd.zeros_like(x)
             self.cache = nd.zeros_like(x)
 
-        self.future = asyncio.run_coroutine_threadsafe(self._wd_mom(
-            x, self.mom, self.cache, self.wd, self.mu), self.loop)
+        self.future = self.loop.run_in_executor(None, self._wd_mom(
+            x, self.mom, self.cache, self.wd, self.mu))
         return self.compressor.compress(tensor)
 
-    def decompress(self, tensor, ctx, *args, **kwargs):
+    async def decompress(self, tensor, ctx, *args, **kwargs):
         """Returns the tensor added with additional momentum for wd
             m_t = \mu * m_{t-1} + wd * x_t
             x_{t+1} = x_t - \eta_t (tensor + \mu m_t + wd * x_t)
         """
-        self.future.result()
+        await self.future
         tensor += self.cache
         return self.compressor.decompress(tensor, ctx)
 
