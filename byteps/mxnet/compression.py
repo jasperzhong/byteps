@@ -79,12 +79,10 @@ class WeightDecayMomentum(Compressor):
 
     @staticmethod
     async def _wd_mom(x, mom, cache, wd, mu):
-        print("start")
         nd._internal._mul_scalar(x, wd, out=cache)
         mom += cache
         nd._internal._mul_scalar(mom, mu, out=mom)
         cache += mom
-        print("end")
 
     def compress(self, tensor, *args, **kwargs):
         """Returns the tensor unmodified."""
@@ -106,6 +104,7 @@ class WeightDecayMomentum(Compressor):
             m_t = \mu * m_{t-1} + wd * x_t
             x_{t+1} = x_t - \eta_t (tensor + \mu m_t + wd * x_t)
         """
+        self.future.result(0.1)
         if self.future.done():
             self.done_cnt += 1
             print("ratio=%f" % self.done_cnt / self.total_cnt)
