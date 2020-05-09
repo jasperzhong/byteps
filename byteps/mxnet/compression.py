@@ -104,12 +104,8 @@ class WeightDecayMomentum(Compressor):
             m_t = \mu * m_{t-1} + wd * x_t
             x_{t+1} = x_t - \eta_t (tensor + \mu m_t + wd * x_t)
         """
-        self.future.result(0.1)
-        if self.future.done():
-            self.done_cnt += 1
-            print("ratio=%f" % self.done_cnt / self.total_cnt)
-            tensor += self.cache
-        self.total_cnt += 1
+        self.future.result()
+        tensor += self.cache
         return self.compressor.decompress(tensor, ctx)
 
 
