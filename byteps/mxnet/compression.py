@@ -17,7 +17,7 @@
 import mxnet
 import mxnet.ndarray as nd
 
-import asyncio
+import concurrent.futures
 
 
 class Compressor(object):
@@ -66,6 +66,7 @@ class FP16Compressor(Compressor):
 
 class WeightDecayMomentum(Compressor):
     """For 1bit compression."""
+    pool = concurrent.futures.ProcessPoolExecutor(max_workers=4)
 
     def __init__(self, compressor, mu, wd):
         self.compressor = compressor
@@ -73,10 +74,9 @@ class WeightDecayMomentum(Compressor):
         self.cache = None
         self.mu = mu
         self.wd = wd
-        self.loop = asyncio.get_event_loop()
 
     @staticmethod
-    async def _wd_mom(x, mom, cache, wd, mu):
+    def _wd_mom(x, mom, cache, wd, mu):
         nd._internal._mul_scalar(x, wd, out=cache)
         mom += cache
         nd._internal._mul_scalar(mom, mu, out=mom)
@@ -93,17 +93,20 @@ class WeightDecayMomentum(Compressor):
             self.mom = nd.zeros_like(x)
             self.cache = nd.zeros_like(x)
 
-        self.future = self.loop.run_in_executor(None, self._wd_mom(
-            x, self.mom, self.cache, self.wd, self.mu))
+        self.future = self.pool.submit(
+            self._wd_mom, x, self.mom, self.cache, self.wd, self.mu)
         return self.compressor.compress(tensor)
 
-    async def decompress(self, tensor, ctx, *args, **kwargs):
+    def decompress(self, tensor, ctx, *args, **kwargs):
         """Returns the tensor added with additional momentum for wd
             m_t = \mu * m_{t-1} + wd * x_t
             x_{t+1} = x_t - \eta_t (tensor + \mu m_t + wd * x_t)
         """
-        await self.future
-        tensor += self.cache
+        try:
+            self.future.result(timeout=0.1)
+            tensor += self.cache
+        except TimeoutError:
+            print("timeout")
         return self.compressor.decompress(tensor, ctx)
 
 
