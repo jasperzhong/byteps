@@ -103,10 +103,10 @@ class WeightDecayMomentum(Compressor):
             x_{t+1} = x_t - \eta_t (tensor + \mu m_t + wd * x_t)
         """
         try:
-            self.future.result(timeout=0.1)
+            self.future.result(timeout=0.01)
             tensor += self.cache
-        except TimeoutError:
-            print("timeout")
+        except concurrent.futures.TimeoutError:
+            print("timeout for wd-momentum")
         return self.compressor.decompress(tensor, ctx)
 
 
