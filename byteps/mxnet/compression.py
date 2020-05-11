@@ -107,7 +107,6 @@ class WeightDecayMomentum(Compressor):
         #     tensor += self.cache
         # except concurrent.futures.TimeoutError:
             # print("timeout for wd-momentum")
-        print("decompress")
         return self.compressor.decompress(tensor, ctx)
 
 
