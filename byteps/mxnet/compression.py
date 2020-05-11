@@ -93,8 +93,8 @@ class WeightDecayMomentum(Compressor):
             self.mom = nd.zeros_like(x)
             self.cache = nd.zeros_like(x)
 
-        self.future = self.pool.submit(
-            self._wd_mom, x, self.mom, self.cache, self.wd, self.mu)
+        # self.future = self.pool.submit(
+        #     self._wd_mom, x, self.mom, self.cache, self.wd, self.mu)
         return self.compressor.compress(tensor)
 
     def decompress(self, tensor, ctx, *args, **kwargs):
