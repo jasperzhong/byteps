@@ -62,13 +62,15 @@ size_t TopkCompressor::_Packing(index_t* dst, const scalar_t* src, size_t len) {
       std::push_heap(beg, beg + size, comp);
     } else {
       auto& top = *beg;
-      if (src[i] > top.second) {
+      // note: compare absolute value
+      if (std::abs(src[i]) > std::abs(top.second)) {
         std::pop_heap(beg, beg + size, comp);
         beg[size - 1] = std::make_pair(i, src[i]);
         std::push_heap(beg, beg + size, comp);
       }
     }
   }
+  BPS_LOG(INFO) << "first=" << beg[0].first << " second=" << beg[0].second;
 
   return this->_k * sizeof(pair_t);
 }
