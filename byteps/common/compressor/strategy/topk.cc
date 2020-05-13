@@ -114,6 +114,12 @@ size_t TopkCompressor::_Unpacking(scalar_t* dst, const index_t* src,
                 "index_t should be the same size as scalar_t");
   using pair_t = std::pair<index_t, scalar_t>;
   auto ptr = reinterpret_cast<const pair_t*>(src);
+  
+  if ((void*)dst == (void*)src) {
+    ptr = reinterpret_cast<pair_t*>(_buf.get());
+    std::copy(src, src+len, ptr);
+  }
+
   // reset to zeros
   std::fill(dst, dst + this->_src_len, 0);
   BPS_LOG(INFO) << "len=" << len;
