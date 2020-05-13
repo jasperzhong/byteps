@@ -116,8 +116,9 @@ size_t TopkCompressor::_Unpacking(scalar_t* dst, const index_t* src,
   auto ptr = reinterpret_cast<const pair_t*>(src);
   
   if ((void*)dst == (void*)src) {
-    ptr = reinterpret_cast<pair_t*>(_buf.get());
-    std::copy(src, src+len, ptr);
+    auto buf = reinterpret_cast<pair_t*>(_buf.get());
+    std::copy(src, src+len, buf);
+    ptr = const_cast<const pair_t*>(buf);
   }
 
   // reset to zeros
