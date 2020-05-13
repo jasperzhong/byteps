@@ -48,7 +48,7 @@ parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='disable training on GPU (default: False)')
 parser.add_argument('--compressor', type=str, default='',
                     help='which compressor')
-parser.add_argument('--ef', type=str, default=None,
+parser.add_argument('--ef', type=str, default='',
                     help='which error feedback')
 parser.add_argument('--compress-momentum', type=str, default='',
                     help='which compress momentum')
