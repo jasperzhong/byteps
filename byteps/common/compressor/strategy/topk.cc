@@ -54,16 +54,18 @@ size_t TopkCompressor::_Packing(index_t* dst, const scalar_t* src, size_t len) {
   };
   this->_src_len = len;
   auto beg = reinterpret_cast<pair_t*>(dst);
-  std::priority_queue<pair_t, container_t, decltype(comp)> pq(
-      beg, beg + this->_k, comp);
+  size_t size = 0;
   for (index_t i = 0; i < len; ++i) {
-    if (pq.size() < this->_k) {
-      pq.emplace(i, src[i]);
+    if (i < this->_k) {
+      beg[size] = std::make_pair(i, src[i]);
+      size++;
+      std::push_heap(beg, beg + size, comp);
     } else {
-      auto heap_top = pq.top();
-      if (src[i] > heap_top.second) {
-        pq.pop();
-        pq.emplace(i, src[i]);
+      auto& top = *beg;
+      if (src[i] > top.second) {
+        std::pop_heap(beg, beg + size, comp);
+        beg[size - 1] = std::make_pair(i, src[i]);
+        std::push_heap(beg, beg + size, comp);
       }
     }
   }
