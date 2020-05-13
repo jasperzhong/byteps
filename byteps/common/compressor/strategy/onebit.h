@@ -61,7 +61,6 @@ class OnebitCompressor : public BaseCompressor {
    *
    * \param compressed compressed tensor
    * \param dtype data type
-   * \param src_size uncompressed tensor size
    * \param decompressed decompressed tensor
    */
   void Decompress(ByteBuf compressed, int dtype,

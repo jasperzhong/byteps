@@ -23,7 +23,7 @@ namespace common {
 namespace compressor {
 
 /*!
- * \brief TODO
+ * \brief TopK compressor
  */
 class TopkCompressor : public BaseCompressor {
  public:

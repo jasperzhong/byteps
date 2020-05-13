@@ -93,8 +93,9 @@ size_t TopkCompressor::Packing(const void* src, size_t size, int dtype) {
                       reinterpret_cast<const double*>(src),
                       size / sizeof(int64_t));
     default:
-      break;
+      BPS_CHECK(0) << "Unsupported data type: " << dtype;
   }
+  return 0;
 }
 
 void TopkCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
@@ -140,8 +141,9 @@ size_t TopkCompressor::Unpacking(void* dst, const void* src, size_t size,
                         reinterpret_cast<const int64_t*>(src),
                         size / sizeof(double) / 2);
     default:
-      break;
+      BPS_CHECK(0) << "Unsupported data type: " << dtype;
   }
+  return 0;
 }
 
 #ifndef BYTEPS_BUILDING_SERVER
@@ -157,7 +159,7 @@ void TopkCompressor::Decompress(ByteBuf compressed, int dtype,
   if (decompressed.data == nullptr) decompressed.data = _buf.get();
   Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
 }
-#endif 
+#endif
 }  // namespace compressor
 }  // namespace common
 }  // namespace byteps
