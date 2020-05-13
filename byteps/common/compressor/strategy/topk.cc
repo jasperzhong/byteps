@@ -112,8 +112,10 @@ size_t TopkCompressor::_Unpacking(scalar_t* dst, const index_t* src,
   auto ptr = reinterpret_cast<const pair_t*>(src);
   // reset to zeros
   std::fill(dst, dst + this->_src_len, 0);
+  BPS_LOG(INFO) << "len=" << len;
   for (auto i = 0; i < len; ++i) {
     auto& pair = ptr[i];
+    BPS_LOG(INFO) << "index=" << pair.first << " value=" << pair.second;
     dst[pair.first] = pair.second;
   }
 }
