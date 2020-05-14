@@ -52,7 +52,7 @@ size_t RandomkCompressor::_Packing(index_t* dst, const scalar_t* src,
 
   for (size_t i = 0; i < len; ++i) {
     auto index = dis(_gen);
-    dst[i] = std::make_pair(index, src[index]);
+    ptr[i] = std::make_pair(index, src[index]);
   }
 
   return this->_k * sizeof(pair_t);
