@@ -50,7 +50,7 @@ size_t RandomkCompressor::_Packing(index_t* dst, const scalar_t* src,
   std::uniform_int_distribution<> dis(0, len-1);
   auto ptr = reinterpret_cast<pair_t*>(dst);
 
-  for (size_t i = 0; i < len; ++i) {
+  for (size_t i = 0; i < this->_k; ++i) {
     auto index = dis(_gen);
     ptr[i] = std::make_pair(index, src[index]);
   }
