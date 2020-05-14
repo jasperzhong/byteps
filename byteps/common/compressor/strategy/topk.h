@@ -23,7 +23,7 @@ namespace common {
 namespace compressor {
 
 /*!
- * \brief TopK compressor
+ * \brief TopK Compressor
  * 
  * paper: Sparsified SGD with Memory
  * https://arxiv.org/pdf/1809.07599.pdf
