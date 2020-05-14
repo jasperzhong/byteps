@@ -24,14 +24,41 @@ namespace compressor {
 
 /*!
  * \brief TopK compressor
+ * 
+ * paper: Sparsified SGD with Memory
+ * https://arxiv.org/pdf/1809.07599.pdf
+ * 
+ * sending the most significant entries of the stochastic gradient
+ * 
+ * \note this is a deterministic algorithm
  */
 class TopkCompressor : public BaseCompressor {
  public:
   explicit TopkCompressor(int k);
   virtual ~TopkCompressor();
-
+  
+  /*!
+   * \brief Compress function
+   * 
+   * select topk entries and corresponding indices 
+   * 
+   * \note compare with absolute values
+   * 
+   * \param grad gradient tensor
+   * \param dtype data type
+   * \param compressed compressed tensor
+   */
   void Compress(ByteBuf grad, int dtype, ByteBuf& compressed) override;
 
+  /*!
+   * \brief Decompress function
+   * 
+   * fill a zero tensor with topk entries and corresponding indices 
+   * 
+   * \param compressed compressed tensor
+   * \param dtype data type
+   * \param decompressed decompressed tensor
+   */
   void Decompress(ByteBuf compressed, int dtype,
                   ByteBuf& decompressed) override;
 

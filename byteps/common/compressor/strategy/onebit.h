@@ -55,7 +55,7 @@ class OnebitCompressor : public BaseCompressor {
   void Compress(ByteBuf grad, int dtype, ByteBuf& compressed) override;
 
   /*!
-   * \brief Decompress
+   * \brief Decompress function
    *
    * unpack from byte array to FP tensor
    *
