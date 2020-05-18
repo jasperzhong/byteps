@@ -23,15 +23,43 @@ namespace common {
 namespace compressor {
 
 /*!
- * \brief TODO
+ * \brief Multibit Compressor
+ * 
+ * paper: QSGD: Communication-Efficient SGD via Gradient Quantization and Encoding
+ * https://arxiv.org/pdf/1610.02132.pdf
+ * 
+ * quantize gradients into k levels
+ * use stochastic rounding and elias encoding
+ * 
  */
 class MultibitCompressor : public BaseCompressor {
  public:
   explicit MultibitCompressor(int k);
   virtual ~MultibitCompressor();
 
+  /*!
+   * \brief Compress function
+   * 
+   * 1. normalize 
+   * 2. stochastic rounding 
+   * 3. elias encoding
+   * 
+   * \param grad gradient tensor
+   * \param dtype data tyoe
+   * \param compressed compressed tensor
+   */
   void Compress(ByteBuf grad, int dtype, ByteBuf& compressed) override;
-
+  
+  /*!
+   * \brief Decompress function
+   * 
+   * 1. decoding 
+   * 2. scale
+   * 
+   * \param compressed compressed tensor
+   * \param dtype data type
+   * \param decompressed decompressed tensor
+   */
   void Decompress(ByteBuf compressed, int dtype,
                   ByteBuf& decompressed) override;
 
