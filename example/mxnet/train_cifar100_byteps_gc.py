@@ -110,8 +110,8 @@ def main():
 
     lr_decay = opt.lr_decay
     lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')] + [np.inf]
-    
-    num_batches = 1562 // nworker
+
+    num_batches = 50000 // (opt.batch_size * nworker)
     lr_scheduler = LRSequential([
         LRScheduler('linear', base_lr=opt.warmup_lr, target_lr=opt.lr * nworker / bps.local_size(),
                     nepochs=opt.warmup_epochs, iters_per_epoch=num_batches),
@@ -197,7 +197,8 @@ def main():
             "k": opt.k
         }
 
-        optimizer_params = {'lr_scheduler': lr_scheduler, 'wd': opt.wd, 'momentum': opt.momentum}
+        optimizer_params = {'lr_scheduler': lr_scheduler,
+                            'wd': opt.wd, 'momentum': opt.momentum}
 
         trainer = bps.DistributedTrainer(params,
                                          optimizer, optimizer_params, compression_params=compression_params)
