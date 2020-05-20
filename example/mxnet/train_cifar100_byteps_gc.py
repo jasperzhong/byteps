@@ -47,6 +47,10 @@ def parse_args():
                         help='period in epoch for learning rate decays. default is 0 (has no effect).')
     parser.add_argument('--lr-decay-epoch', type=str, default='100,150',
                         help='epochs at which learning rate decays. default is 100,150.')
+    parser.add_argument('--warmup-lr', type=float, default=0.0,
+                        help='starting warmup learning rate. default is 0.0.')
+    parser.add_argument('--warmup-epochs', type=int, default=0,
+                        help='number of warmup epochs.')
     parser.add_argument('--drop-rate', type=float, default=0.0,
                         help='dropout rate for wide resnet. default is 0.')
     parser.add_argument('--mode', type=str,
