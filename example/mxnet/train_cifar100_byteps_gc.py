@@ -111,7 +111,7 @@ def main():
     lr_decay = opt.lr_decay
     lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')] + [np.inf]
     
-    num_batches = 1562 / nworker
+    num_batches = 1562 // nworker
     lr_scheduler = LRSequential([
         LRScheduler('linear', base_lr=opt.warmup_lr, target_lr=opt.lr * nworker / bps.local_size(),
                     nepochs=opt.warmup_epochs, iters_per_epoch=num_batches),
