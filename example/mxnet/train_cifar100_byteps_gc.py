@@ -207,8 +207,6 @@ def main():
         train_history = TrainingHistory(['training-error', 'validation-error'])
 
         iteration = 0
-        lr_decay_count = 0
-
         best_val_score = 0
 
         for epoch in range(epochs):
@@ -217,12 +215,7 @@ def main():
             metric.reset()
             train_loss = 0
             num_batch = len(train_data)
-            alpha = 1
-
-            if epoch == lr_decay_epoch[lr_decay_count]:
-                trainer.set_learning_rate(trainer.learning_rate*lr_decay)
-                lr_decay_count += 1
-
+            
             for i, batch in enumerate(train_data):
                 data = gluon.utils.split_and_load(
                     batch[0], ctx_list=ctx, batch_axis=0)
