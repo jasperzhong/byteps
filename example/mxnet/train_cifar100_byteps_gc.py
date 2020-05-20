@@ -182,7 +182,7 @@ def main():
         }
 
         optimizer_params = {'learning_rate': opt.lr *
-                            nworker, 'wd': opt.wd, 'momentum': opt.momentum}
+                            nworker / bps.local_size(), 'wd': opt.wd, 'momentum': opt.momentum}
 
         trainer = bps.DistributedTrainer(params,
                                          optimizer, optimizer_params, compression_params=compression_params)
@@ -230,14 +230,13 @@ def main():
             name, acc = train_metric.get()
             throughput = int(batch_size * nworker * i / (time.time() - tic))
 
-            
             logger.info('[Epoch %d] training: %s=%f' %
                         (epoch, name, acc))
             logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f' %
                         (epoch, throughput, time.time()-tic))
 
             name, val_acc = test(ctx, val_data)
-            
+
             logger.info('[Epoch %d] validation: %s=%f' %
                         (epoch, name, val_acc))
 
