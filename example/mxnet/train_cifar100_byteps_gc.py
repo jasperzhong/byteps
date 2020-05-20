@@ -5,6 +5,7 @@ import byteps.mxnet as bps
 from gluoncv.data import transforms as gcv_transforms
 from gluoncv.utils import makedirs, TrainingHistory
 from gluoncv.model_zoo import get_model
+from gluoncv.utils import makedirs, LRSequential, LRScheduler
 import gluoncv as gcv
 from mxnet.gluon.data.vision import transforms
 from mxnet.gluon import nn
@@ -105,6 +106,17 @@ def main():
 
     lr_decay = opt.lr_decay
     lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')] + [np.inf]
+    
+    num_batches = 1562
+    lr_scheduler = LRSequential([
+        LRScheduler('linear', base_lr=opt.warmup_lr, target_lr=opt.lr * nworker / bps.local_size(),
+                    nepochs=opt.warmup_epochs, iters_per_epoch=num_batches),
+        LRScheduler(opt.lr_mode, base_lr=opt.lr * nworker / bps.local_size(), target_lr=0,
+                    nepochs=opt.num_epochs - opt.warmup_epochs,
+                    iters_per_epoch=num_batches,
+                    step_epoch=lr_decay_epoch,
+                    step_factor=lr_decay, power=2)
+    ])
 
     model_name = opt.model
     if model_name.startswith('cifar_wideresnet'):
@@ -181,8 +193,7 @@ def main():
             "k": opt.k
         }
 
-        optimizer_params = {'learning_rate': opt.lr *
-                            nworker / bps.local_size(), 'wd': opt.wd, 'momentum': opt.momentum}
+        optimizer_params = {'lr_scheduler': lr_scheduler, 'wd': opt.wd, 'momentum': opt.momentum}
 
         trainer = bps.DistributedTrainer(params,
                                          optimizer, optimizer_params, compression_params=compression_params)
