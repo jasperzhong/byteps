@@ -248,7 +248,7 @@ def main():
             logger.info('[Epoch %d] training: %s=%f' %
                         (epoch, name, acc))
             logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f lr=%f' %
-                        (epoch, throughput, time.time()-tic), trainer.learning_rate)
+                        (epoch, throughput, time.time()-tic, trainer.learning_rate))
 
             name, val_acc = test(ctx, val_data)
 
