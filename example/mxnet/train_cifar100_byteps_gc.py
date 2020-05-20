@@ -32,20 +32,20 @@ def parse_args():
                         help='model to use. options are resnet and wrn. default is resnet.')
     parser.add_argument('-j', '--num-data-workers', dest='num_workers', default=4, type=int,
                         help='number of preprocessing workers')
-    parser.add_argument('--num-epochs', type=int, default=3,
+    parser.add_argument('--num-epochs', type=int, default=200,
                         help='number of training epochs.')
     parser.add_argument('--lr', type=float, default=0.1,
                         help='learning rate. default is 0.1.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         help='momentum value for optimizer, default is 0.9.')
-    parser.add_argument('--wd', type=float, default=0.0001,
-                        help='weight decay rate. default is 0.0001.')
+    parser.add_argument('--wd', type=float, default=0.0005,
+                        help='weight decay rate. default is 0.0005.')
     parser.add_argument('--lr-decay', type=float, default=0.1,
                         help='decay rate of learning rate. default is 0.1.')
     parser.add_argument('--lr-decay-period', type=int, default=0,
                         help='period in epoch for learning rate decays. default is 0 (has no effect).')
-    parser.add_argument('--lr-decay-epoch', type=str, default='40,60',
-                        help='epochs at which learning rate decays. default is 40,60.')
+    parser.add_argument('--lr-decay-epoch', type=str, default='100,150',
+                        help='epochs at which learning rate decays. default is 100,150.')
     parser.add_argument('--drop-rate', type=float, default=0.0,
                         help='dropout rate for wide resnet. default is 0.')
     parser.add_argument('--mode', type=str,
@@ -63,14 +63,16 @@ def parse_args():
     # additional arguments for gradient compression
     parser.add_argument('--compressor', type=str, default='',
                         help='which compressor')
-    parser.add_argument('--ef', type=str, default=None,
-                        help='enable error-feedback')
+    parser.add_argument('--ef', type=str, default='',
+                        help='which error-feedback')
+    parser.add_argument('--compress-momentum', type=str, default='',
+                        help='which compress momentum')
     parser.add_argument('--onebit-scaling', action='store_true', default=False,
                         help='enable scaling for onebit compressor')
+    parser.add_argument('--k', default=1, type=int,
+                        help='topk or randomk')
     parser.add_argument('--fp16-pushpull', action='store_true', default=False,
                         help='use fp16 compression during pushpull')
-    parser.add_argument('--compress-momentum', action='store_true', default=False,
-                        help='enable compress momentum.')
     opt = parser.parse_args()
     return opt
 
@@ -113,7 +115,11 @@ def main():
     net = get_model(model_name, **kwargs)
     if opt.resume_from:
         net.load_parameters(opt.resume_from, ctx=context)
-    optimizer = 'sgd'
+
+    if opt.compressor:
+        optimizer = 'sgd'
+    else:
+        optimizer = 'nag'
 
     save_period = opt.save_period
     if opt.save_dir and save_period:
@@ -166,26 +172,20 @@ def main():
             batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
         params = net.collect_params()
-        if opt.compressor:
-            for _, param in params.items():
-                setattr(param, "byteps_compressor_type", opt.compressor)
-                if opt.ef:
-                    setattr(param, "byteps_error_feedback_type", opt.ef)
-                if opt.onebit_scaling:
-                    setattr(
-                        param, "byteps_compressor_onebit_enable_scale", opt.onebit_scaling)
-                if opt.compress_momentum:
-                    setattr(param, "byteps_momentum_type", "nesterov")
-                    setattr(param, "byteps_momentum_mu", opt.momentum)
+
+        compression_params = {
+            "compressor": opt.compressor,
+            "ef": opt.ef,
+            "momentum": opt.compress_momentum,
+            "scaling": opt.onebit_scaling,
+            "k": opt.k
+        }
 
         optimizer_params = {'learning_rate': opt.lr *
                             nworker, 'wd': opt.wd, 'momentum': opt.momentum}
-        if opt.compress_momentum:
-            del optimizer_params["momentum"]
 
-        compression = bps.Compression.fp16 if opt.fp16_pushpull else bps.Compression.none
         trainer = bps.DistributedTrainer(params,
-                                           optimizer, optimizer_params, compression=compression)
+                                         optimizer, optimizer_params, compression_params=compression_params)
         metric = mx.metric.Accuracy()
         train_metric = mx.metric.Accuracy()
         loss_fn = gluon.loss.SoftmaxCrossEntropyLoss()
@@ -230,16 +230,16 @@ def main():
             name, acc = train_metric.get()
             throughput = int(batch_size * nworker * i / (time.time() - tic))
 
-            if rank == 0:
-                logger.info('[Epoch %d] training: %s=%f' %
-                             (epoch, name, acc))
-                logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f' %
-                             (epoch, throughput, time.time()-tic))
+            
+            logger.info('[Epoch %d] training: %s=%f' %
+                        (epoch, name, acc))
+            logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f' %
+                        (epoch, throughput, time.time()-tic))
 
             name, val_acc = test(ctx, val_data)
-            if rank == 0:
-                logger.info('[Epoch %d] validation: %s=%f' %
-                             (epoch, name, val_acc))
+            
+            logger.info('[Epoch %d] validation: %s=%f' %
+                        (epoch, name, val_acc))
 
             train_history.update([1-acc, 1-val_acc])
             train_history.plot(save_path='%s/%s_history.png' %
