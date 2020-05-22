@@ -40,35 +40,72 @@ OnebitCompressor::OnebitCompressor(bool use_scale) : _use_scale(use_scale){};
 
 OnebitCompressor::~OnebitCompressor() = default;
 
-template <typename scalar_t>
-size_t OnebitCompressor::PackingImpl(scalar_t* data, size_t len) {
-  constexpr int PACKING_SIZE = sizeof(scalar_t) * 8;
+template <typename index_t, typename scalar_t>
+size_t OnebitCompressor::PackingImpl(index_t* dst, const scalar_t* src,
+                                     size_t len) {
+  static_assert(sizeof(index_t) == sizeof(scalar_t),
+                "index_t should be the same size as scalar_t");
+  constexpr size_t PACKING_SIZE = sizeof(scalar_t) * sizeof(char);
+
+  float scale = 1.0f;
+  if (_use_scale) {
+    float sum = 0.0f;
+    for (size_t i = 0; i < len; ++i) {
+      dst[i] = src[i] < 0;
+      sum += abs(src[i]);
+    }
+    scale = sum / len;
+  } else {
+    for (size_t i = 0; i < len; ++i) {
+      dst[i] = src[i] < 0;
+    }
+  }
+
   size_t padding_len = (PACKING_SIZE - (len % PACKING_SIZE)) % PACKING_SIZE;
   size_t chunk_size = (len + padding_len) / PACKING_SIZE;
 
   for (int i = 1; i < PACKING_SIZE; ++i) {
     for (int j = 0; j < chunk_size; ++j) {
-      data[j] <<= 1;
-      data[j] |= data[i * chunk_size + j] & 0x01;
+      dst[j] <<= 1;
+      dst[j] |= dst[i * chunk_size + j] & 0x01;
     }
   }
 
-  return chunk_size * sizeof(scalar_t);
+  float* p_scale = reinterpret_cast<float*>(&dst[chunk_size]);
+  *p_scale = scale;
+
+  return chunk_size * sizeof(index_t) + sizeof(float);
 }
 
-size_t OnebitCompressor::Packing(void* data, size_t len, int dtype) {
+size_t OnebitCompressor::Packing(void* dst, const void* src, size_t len,
+                                 int dtype) {
   switch (dtype) {
     case BYTEPS_INT8:
+      return PackingImpl(reinterpret_cast<int8_t*>(dst),
+                         reinterpret_cast<const int8_t*>(src),
+                         len / sizeof(int8_t));
     case BYTEPS_UINT8:
-      return PackingImpl(reinterpret_cast<int8_t*>(data), len);
-    case BYTEPS_FLOAT16:
-      return PackingImpl(reinterpret_cast<int16_t*>(data), len);
+      return PackingImpl(reinterpret_cast<int8_t*>(dst),
+                         reinterpret_cast<const uint8_t*>(src),
+                         len / sizeof(uint8_t));
+    // case BYTEPS_FLOAT16:
+    //   return PackingImpl(reinterpret_cast<int16_t*>(dst), len);
     case BYTEPS_INT32:
+      return PackingImpl(reinterpret_cast<int32_t*>(dst),
+                         reinterpret_cast<const int32_t*>(src),
+                         len / sizeof(int32_t));
     case BYTEPS_FLOAT32:
-      return PackingImpl(reinterpret_cast<int32_t*>(data), len);
+      return PackingImpl(reinterpret_cast<int32_t*>(dst),
+                         reinterpret_cast<const float*>(src),
+                         len / sizeof(int32_t));
     case BYTEPS_INT64:
+      return PackingImpl(reinterpret_cast<int64_t*>(dst),
+                         reinterpret_cast<const int64_t*>(src),
+                         len / sizeof(int64_t));
     case BYTEPS_FLOAT64:
-      return PackingImpl(reinterpret_cast<int64_t*>(data), len);
+      return PackingImpl(reinterpret_cast<int64_t*>(dst),
+                         reinterpret_cast<const double*>(src),
+                         len / sizeof(int64_t));
     default:
       BPS_CHECK(0) << "Unsupported data type: " << dtype;
   }
@@ -76,48 +113,42 @@ size_t OnebitCompressor::Packing(void* data, size_t len, int dtype) {
 }
 
 void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
-  float scale = 1.0;
-  if (_use_scale) {
-    auto norm1 =
-        _cpu_reducer->norm1(grad.data, grad.size, static_cast<DataType>(dtype));
-    scale = norm1 / (grad.size / getDataTypeLength(dtype));
-  }
-
-  auto reduced_len = _cpu_reducer->sign(_buf.get(), grad.data, grad.size,
-                                        static_cast<DataType>(dtype));
-
-  auto compressed_size = Packing(_buf.get(), reduced_len, dtype);
-
-  auto pf = reinterpret_cast<float*>(_buf.get() + compressed_size);
-  *pf = scale;
-
+  compressed.size = Packing(_buf.get(), grad.data, grad.size, dtype);
   compressed.data = _buf.get();
-  compressed.size = compressed_size + sizeof(float);
 }
 
-template <typename scalar_t, typename packing_t>
-size_t OnebitCompressor::UnpackingImpl(scalar_t* dst, const packing_t* src,
+template <typename scalar_t, typename index_t>
+size_t OnebitCompressor::UnpackingImpl(scalar_t* dst, const index_t* src,
                                        size_t size) {
-  static_assert(sizeof(scalar_t) == sizeof(packing_t),
-                "scalar_t should be the same size as packing_t");
-  constexpr int PACKING_SIZE = sizeof(packing_t) * 8;
-  auto chunk_size = (size - sizeof(float)) / sizeof(packing_t);
+  static_assert(sizeof(scalar_t) == sizeof(index_t),
+                "scalar_t should be the same size as index_t");
+  constexpr size_t PACKING_SIZE = sizeof(index_t) * sizeof(char);
+  size_t chunk_size = (size - sizeof(float)) / sizeof(index_t);
 
-  float scale;
-  auto pf = reinterpret_cast<const float*>(src + chunk_size);
-  scale = *pf;
+  float* pf = reinterpret_cast<const float*>(src + chunk_size);
+  float scale = *pf;
 
   unsigned int mask = 1;
-  for (int i = PACKING_SIZE - 1; i >= 0; --i) {
-    for (int j = 0; j < chunk_size; ++j) {
-      int sign_bit = (src[j] & mask) >> (PACKING_SIZE - i - 1);
-      int sign = -((sign_bit << 1) - 1);
-      dst[i * chunk_size + j] = sign * scale;
+  // scale = 1, no need to scale 
+  if (abs(scale - 1) < 1e-6) {
+    for (int i = PACKING_SIZE - 1; i >= 0; --i) {
+      for (int j = 0; j < chunk_size; ++j) {
+        int sign_bit = (src[j] & mask) >> (PACKING_SIZE - i - 1);
+        int sign = -((sign_bit << 1) - 1);
+        dst[i * chunk_size + j] = sign;
+      }
+      mask <<= 1;
     }
-    mask <<= 1;
+  } else {
+    for (int i = PACKING_SIZE - 1; i >= 0; --i) {
+      for (int j = 0; j < chunk_size; ++j) {
+        int sign_bit = (src[j] & mask) >> (PACKING_SIZE - i - 1);
+        int sign = -((sign_bit << 1) - 1);
+        dst[i * chunk_size + j] = sign * scale;
+      }
+      mask <<= 1;
+    }
   }
-
-  return chunk_size;
 }
 
 size_t OnebitCompressor::Unpacking(void* dst, const void* src, size_t len,
