@@ -125,7 +125,7 @@ size_t OnebitCompressor::UnpackingImpl(scalar_t* dst, const index_t* src,
   constexpr size_t PACKING_SIZE = sizeof(index_t) * sizeof(char);
   size_t chunk_size = (size - sizeof(float)) / sizeof(index_t);
 
-  float* pf = reinterpret_cast<const float*>(src + chunk_size);
+  auto* pf = reinterpret_cast<const float*>(src + chunk_size);
   float scale = *pf;
 
   unsigned int mask = 1;
