@@ -68,9 +68,11 @@ if not args.no_cuda:
         args.no_cuda = True
 
 filehandler = logging.FileHandler(args.logging_file)
-logging.basicConfig(level=logging.INFO)
-logging.info(args)
-logging.addHandler(filehandler)
+
+logger = logger.getLogger('')
+logger.setLevel(level=logger.INFO)
+logger.info(args)
+logger.addHandler(filehandler)
 
 
 def dummy_transform(data, label):
@@ -182,22 +184,22 @@ for epoch in range(args.epochs):
             bps.byteps_declare_tensor("acc")
             bps.byteps_push_pull(acc)
             acc = acc.asscalar()
-            logging.info('[Epoch %d Batch %d] Training: %s=%f' %
+            logger.info('[Epoch %d Batch %d] Training: %s=%f' %
                          (epoch, i, name, acc))
 
     if bps.rank() == 0:
         elapsed = time.time() - tic
         total_time += elapsed
         speed = train_size * num_workers / elapsed
-        logging.info('Epoch[%d]\tSpeed=%.2f samples/s\tTime cost=%f',
+        logger.info('Epoch[%d]\tSpeed=%.2f samples/s\tTime cost=%f',
                      epoch, speed, elapsed)
 
-    logging.info("total time=%.2f", total_time)
+    logger.info("total time=%.2f", total_time)
     # Evaluate model accuracy
     _, train_acc = metric.get()
     name, val_acc = evaluate(model, val_data, context)
     if bps.rank() == 0:
-        logging.info('Epoch[%d]\tTrain: %s=%f\tValidation: %s=%f', epoch, name,
+        logger.info('Epoch[%d]\tTrain: %s=%f\tValidation: %s=%f', epoch, name,
                     train_acc, name, val_acc)
 
     if bps.rank() == 0 and epoch == args.epochs - 1:
