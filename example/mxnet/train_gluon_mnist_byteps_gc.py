@@ -197,11 +197,11 @@ for epoch in range(args.epochs):
     # Evaluate model accuracy
     _, train_acc = metric.get()
     name, val_acc = evaluate(model, val_data, context)
-    val_acc = mx.nd.array([val_acc])
-    bps.byteps_declare_tensor("val_acc")
-    bps.byteps_push_pull(val_acc, name="val_acc", is_average=False)
-    val_acc /= bps.size()
-    val_acc = val_acc.asscalar()
+    acc = mx.nd.array([train_acc, val_acc])
+    bps.byteps_declare_tensor("acc")
+    bps.byteps_push_pull(acc, name="acc", is_average=False)
+    acc /= bps.size()
+    train_acc, val_acc = acc[0].asscalar(), acc[1].asscalar()
     logger.info('Epoch[%d]\tTrain: %s=%f\tValidation: %s=%f', epoch, name,
                 train_acc, name, val_acc)
 
