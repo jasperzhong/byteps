@@ -14,16 +14,16 @@
 # limitations under the License.
 """This file is modified from `horovod/examples/mxnet_mnist.py`, using gluon
 style MNIST dataset and data_loader."""
-import time
-
 import argparse
 import logging
+import subprocess
+import time
 
 import mxnet as mx
-import byteps.mxnet as bps
 from mxnet import autograd, gluon, nd
 from mxnet.gluon.data.vision import MNIST
 
+import byteps.mxnet as bps
 
 # Higher download speed for chinese users
 # os.environ['MXNET_GLUON_REPO'] =
@@ -70,7 +70,9 @@ if not args.no_cuda:
     if mx.context.num_gpus() == 0:
         args.no_cuda = True
 
-filename = "mnist-%d-%s.log" % (bps.size(), args.logging_file)
+gpu_name = subprocess.check_output(
+    ['nvidia-smi', '--query-gpu=gpu_name', '--format=csv'])
+filename = "mnist-%d-%s.log" % (bps.size(), gpu_name, args.logging_file)
 filehandler = logging.FileHandler(filename)
 streamhandler = logging.StreamHandler()
 
