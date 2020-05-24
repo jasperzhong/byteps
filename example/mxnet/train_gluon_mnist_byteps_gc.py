@@ -70,7 +70,7 @@ if not args.no_cuda:
 filehandler = logging.FileHandler(args.logging_file)
 
 logger = logging.getLogger('')
-logger.setLevel(level=logger.INFO)
+logger.setLevel(level=logging.INFO)
 logger.info(args)
 logger.addHandler(filehandler)
 
