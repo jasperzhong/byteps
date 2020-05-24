@@ -184,7 +184,8 @@ for epoch in range(args.epochs):
             name, acc = metric.get()
             acc = mx.nd.array([acc])
             bps.byteps_declare_tensor("acc")
-            bps.byteps_push_pull(acc)
+            bps.byteps_push_pull(acc, name="acc", is_average=False)
+            acc /= bps.size()
             acc = acc.asscalar()
             logger.info('[Epoch %d Batch %d] Training: %s=%f' %
                         (epoch, i, name, acc))
