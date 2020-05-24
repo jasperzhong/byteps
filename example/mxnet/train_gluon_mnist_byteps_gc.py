@@ -78,11 +78,12 @@ filename = "mnist-%d-%s-%s.log" % (bps.size(), gpu_name, args.logging_file)
 filehandler = logging.FileHandler(filename)
 streamhandler = logging.StreamHandler()
 
+logging.basicConfig(filemode='w')
 logger = logging.getLogger('')
 logger.setLevel(level=logging.INFO)
-logger.info(args)
 logger.addHandler(filehandler)
 logger.addHandler(streamhandler)
+logger.info(args)
 
 
 def dummy_transform(data, label):
