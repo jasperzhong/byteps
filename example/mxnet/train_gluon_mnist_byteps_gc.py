@@ -12,7 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This file is modified from `horovod/examples/mxnet_mnist.py`, using gluon style MNIST dataset and data_loader."""
+"""This file is modified from `horovod/examples/mxnet_mnist.py`, using gluon
+style MNIST dataset and data_loader."""
 import time
 
 import argparse
@@ -85,7 +86,8 @@ def dummy_transform(data, label):
 def get_mnist_iterator():
     train_set = MNIST(train=True, transform=dummy_transform)
     train_iter = gluon.data.DataLoader(
-        train_set, args.batch_size, True, num_workers=args.j, last_batch='discard')
+        train_set, args.batch_size, True, num_workers=args.j,
+        last_batch='discard')
     val_set = MNIST(train=False, transform=dummy_transform)
     val_iter = gluon.data.DataLoader(
         val_set, args.batch_size, False, num_workers=args.j)
@@ -185,14 +187,14 @@ for epoch in range(args.epochs):
             bps.byteps_push_pull(acc)
             acc = acc.asscalar()
             logger.info('[Epoch %d Batch %d] Training: %s=%f' %
-                         (epoch, i, name, acc))
+                        (epoch, i, name, acc))
 
     if bps.rank() == 0:
         elapsed = time.time() - tic
         total_time += elapsed
         speed = train_size * num_workers / elapsed
         logger.info('Epoch[%d]\tSpeed=%.2f samples/s\tTime cost=%f',
-                     epoch, speed, elapsed)
+                    epoch, speed, elapsed)
 
     logger.info("total time=%.2f", total_time)
     # Evaluate model accuracy
