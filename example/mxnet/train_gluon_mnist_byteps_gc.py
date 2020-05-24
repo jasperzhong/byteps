@@ -60,16 +60,18 @@ parser.add_argument('--k', type=int, default=1,
                     help='topk or randomk')
 parser.add_argument('--fp16-pushpull', action='store_true', default=False,
                     help='use fp16 compression during pushpull')
-parser.add_argument('--logging-file', type=str, default='mnist.log',
+parser.add_argument('--logging-file', type=str, default='baseline',
                     help='name of training log file')
 args = parser.parse_args()
+
 
 if not args.no_cuda:
     # Disable CUDA if there are no GPUs.
     if mx.context.num_gpus() == 0:
         args.no_cuda = True
 
-filehandler = logging.FileHandler(args.logging_file)
+filename = "mnist-%d-%s.log" % (bps.size(), args.logging_file)
+filehandler = logging.FileHandler(filename)
 streamhandler = logging.StreamHandler()
 
 logger = logging.getLogger('')
