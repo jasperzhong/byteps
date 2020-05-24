@@ -58,6 +58,8 @@ parser.add_argument('--k', type=int, default=1,
                     help='topk or randomk')
 parser.add_argument('--fp16-pushpull', action='store_true', default=False,
                     help='use fp16 compression during pushpull')
+parser.add_argument('--logging-file', type=str, default='mnist.log',
+                    help='name of training log file')
 args = parser.parse_args()
 
 if not args.no_cuda:
@@ -65,8 +67,10 @@ if not args.no_cuda:
     if mx.context.num_gpus() == 0:
         args.no_cuda = True
 
+filehandler = logging.FileHandler(args.logging_file)
 logging.basicConfig(level=logging.INFO)
 logging.info(args)
+logging.addHandler(filehandler)
 
 
 def dummy_transform(data, label):
@@ -155,6 +159,7 @@ trainer = bps.DistributedTrainer(
 loss_fn = gluon.loss.SoftmaxCrossEntropyLoss()
 metric = mx.metric.Accuracy()
 
+total_time = 0
 # Train model
 for epoch in range(args.epochs):
     tic = time.time()
@@ -173,21 +178,27 @@ for epoch in range(args.epochs):
 
         if i % 100 == 0:
             name, acc = metric.get()
+            acc = mx.nd.array([acc])
+            bps.byteps_declare_tensor("acc")
+            bps.byteps_push_pull(acc)
+            acc = acc.asscalar()
             logging.info('[Epoch %d Batch %d] Training: %s=%f' %
                          (epoch, i, name, acc))
 
     if bps.rank() == 0:
         elapsed = time.time() - tic
+        total_time += elapsed
         speed = train_size * num_workers / elapsed
         logging.info('Epoch[%d]\tSpeed=%.2f samples/s\tTime cost=%f',
                      epoch, speed, elapsed)
 
+    logging.info("total time=%.2f", total_time)
     # Evaluate model accuracy
     _, train_acc = metric.get()
     name, val_acc = evaluate(model, val_data, context)
     if bps.rank() == 0:
         logging.info('Epoch[%d]\tTrain: %s=%f\tValidation: %s=%f', epoch, name,
-                     train_acc, name, val_acc)
+                    train_acc, name, val_acc)
 
     if bps.rank() == 0 and epoch == args.epochs - 1:
         assert val_acc > 0.96, "Achieved accuracy (%f) is lower than expected\
