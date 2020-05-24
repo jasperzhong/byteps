@@ -199,7 +199,7 @@ for epoch in range(args.epochs):
     name, val_acc = evaluate(model, val_data, context)
     val_acc = mx.nd.array([val_acc])
     bps.byteps_declare_tensor("val_acc")
-    bps.byteps_push_pull(acc, name="val_acc", is_average=False)
+    bps.byteps_push_pull(val_acc, name="val_acc", is_average=False)
     val_acc /= bps.size()
     val_acc = val_acc.asscalar()
     logger.info('Epoch[%d]\tTrain: %s=%f\tValidation: %s=%f', epoch, name,
