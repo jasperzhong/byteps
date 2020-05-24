@@ -69,11 +69,13 @@ if not args.no_cuda:
         args.no_cuda = True
 
 filehandler = logging.FileHandler(args.logging_file)
+streamhandler = logging.StreamHandler()
 
 logger = logging.getLogger('')
 logger.setLevel(level=logging.INFO)
 logger.info(args)
 logger.addHandler(filehandler)
+logger.addHandler(streamhandler)
 
 
 def dummy_transform(data, label):
