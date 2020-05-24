@@ -72,6 +72,8 @@ if not args.no_cuda:
 
 gpu_name = subprocess.check_output(
     ['nvidia-smi', '--query-gpu=gpu_name', '--format=csv'])
+gpu_name = gpu_name.decode('utf8').split('\n')[-2]
+gpu_name = '-'.join(gpu_name.split())
 filename = "mnist-%d-%s-%s.log" % (bps.size(), gpu_name, args.logging_file)
 filehandler = logging.FileHandler(filename)
 streamhandler = logging.StreamHandler()
