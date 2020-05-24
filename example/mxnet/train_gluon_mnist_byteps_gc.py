@@ -26,7 +26,8 @@ from mxnet.gluon.data.vision import MNIST
 
 
 # Higher download speed for chinese users
-# os.environ['MXNET_GLUON_REPO'] = 'https://apache-mxnet.s3.cn-north-1.amazonaws.com.cn/'
+# os.environ['MXNET_GLUON_REPO'] =
+# 'https://apache-mxnet.s3.cn-north-1.amazonaws.com.cn/'
 
 # Training settings
 parser = argparse.ArgumentParser(description='MXNet MNIST Example')
@@ -184,29 +185,29 @@ for epoch in range(args.epochs):
 
         if i % 100 == 0:
             name, acc = metric.get()
-            acc = mx.nd.array([acc])
-            bps.byteps_declare_tensor("acc")
-            bps.byteps_push_pull(acc, name="acc", is_average=False)
-            acc /= bps.size()
-            acc = acc.asscalar()
             logger.info('[Epoch %d Batch %d] Training: %s=%f' %
                         (epoch, i, name, acc))
 
-    if bps.rank() == 0:
-        elapsed = time.time() - tic
-        total_time += elapsed
-        speed = train_size * num_workers / elapsed
-        logger.info('Epoch[%d]\tSpeed=%.2f samples/s\tTime cost=%f',
-                    epoch, speed, elapsed)
+    elapsed = time.time() - tic
+    total_time += elapsed
+    speed = train_size * num_workers / elapsed
+    logger.info('Epoch[%d]\tSpeed=%.2f samples/s\tTime cost=%f',
+                epoch, speed, elapsed)
 
-    logger.info("total time=%.2f", total_time)
     # Evaluate model accuracy
     _, train_acc = metric.get()
     name, val_acc = evaluate(model, val_data, context)
-    if bps.rank() == 0:
-        logger.info('Epoch[%d]\tTrain: %s=%f\tValidation: %s=%f', epoch, name,
-                    train_acc, name, val_acc)
+    val_acc = mx.nd.array([val_acc])
+    bps.byteps_declare_tensor("val_acc")
+    bps.byteps_push_pull(acc, name="val_acc", is_average=False)
+    val_acc /= bps.size()
+    val_acc = val_acc.asscalar()
+    logger.info('Epoch[%d]\tTrain: %s=%f\tValidation: %s=%f', epoch, name,
+                train_acc, name, val_acc)
 
-    if bps.rank() == 0 and epoch == args.epochs - 1:
-        assert val_acc > 0.96, "Achieved accuracy (%f) is lower than expected\
-                                (0.96)" % val_acc
+
+if bps.rank() == 0 and epoch == args.epochs - 1:
+    assert val_acc > 0.96, "Achieved accuracy (%f) is lower than expected\
+                            (0.96)" % val_acc
+
+logger.info("total time=%.2f", total_time)
