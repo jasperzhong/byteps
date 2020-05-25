@@ -1,19 +1,36 @@
-import logging
-import time
+# Copyright 2019 Bytedance Inc. or its affiliates. All Rights Reserved.
+# Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""This file is modified from
+`gluon-cv/scripts/classification/cifar/train_cifar10.py`"""
 import argparse
-import byteps.mxnet as bps
-from gluoncv.data import transforms as gcv_transforms
-from gluoncv.utils import makedirs, TrainingHistory
-from gluoncv.model_zoo import get_model
-from gluoncv.utils import makedirs, LRSequential, LRScheduler
+import logging
+import subprocess
+import time
+
 import gluoncv as gcv
-from mxnet.gluon.data.vision import transforms
-from mxnet.gluon import nn
-from mxnet import autograd as ag
-from mxnet import gluon, nd
-import mxnet as mx
-import numpy as np
 import matplotlib
+import mxnet as mx
+from gluoncv.data import transforms as gcv_transforms
+from gluoncv.model_zoo import get_model
+from gluoncv.utils import LRScheduler, LRSequential, makedirs
+from mxnet import autograd as ag
+from mxnet import gluon
+from mxnet.gluon.data.vision import transforms
+
+import byteps.mxnet as bps
+
 matplotlib.use('Agg')
 
 
@@ -61,9 +78,7 @@ def parse_args():
                         help='directory of saved models')
     parser.add_argument('--resume-from', type=str,
                         help='resume training from the model')
-    parser.add_argument('--save-plot-dir', type=str, default='.',
-                        help='the path to save the history plot')
-    parser.add_argument('--logging-file', type=str, default='train_cifar100.log',
+    parser.add_argument('--logging-file', type=str, default='baseline',
                         help='name of training log file')
     # additional arguments for gradient compression
     parser.add_argument('--compressor', type=str, default='',
@@ -85,7 +100,13 @@ def parse_args():
 def main():
     opt = parse_args()
 
-    filehandler = logging.FileHandler(opt.logging_file)
+    gpu_name = subprocess.check_output(
+        ['nvidia-smi', '--query-gpu=gpu_name', '--format=csv'])
+    gpu_name = gpu_name.decode('utf8').split('\n')[-2]
+    gpu_name = '-'.join(gpu_name.split())
+    filename = "cifar100-%d-%s-%s.log" % (bps.size(),
+                                          gpu_name, opt.logging_file)
+    filehandler = logging.FileHandler(filename, mode='w')
     streamhandler = logging.StreamHandler()
 
     logger = logging.getLogger('')
@@ -109,13 +130,15 @@ def main():
     rank = bps.rank()
 
     lr_decay = opt.lr_decay
-    lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')] + [np.inf]
+    lr_decay_epoch = [int(i) for i in opt.lr_decay_epoch.split(',')]
 
     num_batches = 50000 // (opt.batch_size * nworker)
     lr_scheduler = LRSequential([
-        LRScheduler('linear', base_lr=opt.warmup_lr, target_lr=opt.lr * nworker / bps.local_size(),
+        LRScheduler('linear', base_lr=opt.warmup_lr,
+                    target_lr=opt.lr * nworker / bps.local_size(),
                     nepochs=opt.warmup_epochs, iters_per_epoch=num_batches),
-        LRScheduler('step', base_lr=opt.lr * nworker / bps.local_size(), target_lr=0,
+        LRScheduler('step', base_lr=opt.lr * nworker / bps.local_size(),
+                    target_lr=0,
                     nepochs=opt.num_epochs - opt.warmup_epochs,
                     iters_per_epoch=num_batches,
                     step_epoch=lr_decay_epoch,
@@ -144,8 +167,6 @@ def main():
     else:
         save_dir = ''
         save_period = 0
-
-    plot_path = opt.save_plot_dir
 
     transform_train = transforms.Compose([
         gcv_transforms.RandomCrop(32, pad=4),
@@ -180,7 +201,8 @@ def main():
         train_data = gluon.data.DataLoader(
             gluon.data.vision.CIFAR100(train=True).shard(
                 nworker, rank).transform_first(transform_train),
-            batch_size=batch_size, shuffle=True, last_batch='discard', num_workers=num_workers)
+            batch_size=batch_size, shuffle=True, last_batch='discard',
+            num_workers=num_workers)
 
         val_data = gluon.data.DataLoader(
             gluon.data.vision.CIFAR100(train=False).shard(
@@ -201,15 +223,17 @@ def main():
                             'wd': opt.wd, 'momentum': opt.momentum}
 
         trainer = bps.DistributedTrainer(params,
-                                         optimizer, optimizer_params, compression_params=compression_params)
+                                         optimizer,
+                                         optimizer_params,
+                                         compression_params=compression_params)
         metric = mx.metric.Accuracy()
         train_metric = mx.metric.Accuracy()
         loss_fn = gluon.loss.SoftmaxCrossEntropyLoss()
-        train_history = TrainingHistory(['training-error', 'validation-error'])
 
         iteration = 0
         best_val_score = 0
 
+        bps.byteps_declare_tensor("acc")
         for epoch in range(epochs):
             tic = time.time()
             train_metric.reset()
@@ -232,31 +256,32 @@ def main():
                 train_loss += sum([l.sum().asscalar() for l in loss])
 
                 train_metric.update(label, output)
-                name, acc = train_metric.get()
+                name, train_acc = train_metric.get()
                 iteration += 1
 
             train_loss /= batch_size * num_batch
-            name, acc = train_metric.get()
+            name, train_acc = train_metric.get()
             throughput = int(batch_size * nworker * i / (time.time() - tic))
 
-            logger.info('[Epoch %d] training: %s=%f' %
-                        (epoch, name, acc))
             logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f lr=%f' %
                         (epoch, throughput, time.time()-tic, trainer.learning_rate))
 
             name, val_acc = test(ctx, val_data)
-
-            logger.info('[Epoch %d] validation: %s=%f' %
-                        (epoch, name, val_acc))
-
-            train_history.update([1-acc, 1-val_acc])
-            train_history.plot(save_path='%s/%s_history.png' %
-                               (plot_path, model_name))
+            acc = mx.nd.array([train_acc, val_acc])
+            bps.byteps_push_pull(acc, name="acc", is_average=False)
+            acc /= bps.size()
+            train_acc, val_acc = acc[0].asscalar(), acc[1].asscalar()
+            if bps.rank() == 0:
+                logger.info('[Epoch %d] training: %s=%f' %
+                            (epoch, name, train_acc))
+                logger.info('[Epoch %d] validation: %s=%f' %
+                            (epoch, name, val_acc))
 
             if val_acc > best_val_score:
                 best_val_score = val_acc
                 net.save_parameters('%s/%.4f-cifar-%s-%d-best.params' %
-                                    (save_dir, best_val_score, model_name, epoch))
+                                    (save_dir, best_val_score, model_name,
+                                     epoch))
 
             if save_period and save_dir and (epoch + 1) % save_period == 0:
                 net.save_parameters('%s/cifar100-%s-%d.params' %
