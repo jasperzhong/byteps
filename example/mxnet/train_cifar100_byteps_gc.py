@@ -232,7 +232,7 @@ def main():
 
         iteration = 0
         best_val_score = 0
-
+        bps.byteps_declare_tensor("acc")
         for epoch in range(epochs):
             tic = time.time()
             train_metric.reset()
@@ -266,8 +266,7 @@ def main():
                         (epoch, throughput, time.time()-tic, trainer.learning_rate))
 
             name, val_acc = test(ctx, val_data)
-            acc = mx.nd.array([train_acc, val_acc])
-            bps.byteps_declare_tensor("acc")
+            acc = mx.nd.array([train_acc, val_acc], ctx=ctx[0])
             bps.byteps_push_pull(acc, name="acc", is_average=False)
             acc /= bps.size()
             train_acc, val_acc = acc[0].asscalar(), acc[1].asscalar()

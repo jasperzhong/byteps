@@ -174,6 +174,7 @@ metric = mx.metric.Accuracy()
 
 total_time = 0
 # Train model
+bps.byteps_declare_tensor("acc")
 for epoch in range(args.epochs):
     tic = time.time()
     metric.reset()
@@ -203,8 +204,7 @@ for epoch in range(args.epochs):
     # Evaluate model accuracy
     _, train_acc = metric.get()
     name, val_acc = evaluate(model, val_data, context)
-    acc = mx.nd.array([train_acc, val_acc])
-    bps.byteps_declare_tensor("acc")
+    acc = mx.nd.array([train_acc, val_acc], ctx=context)
     bps.byteps_push_pull(acc, name="acc", is_average=False)
     acc /= bps.size()
     train_acc, val_acc = acc[0].asscalar(), acc[1].asscalar()
