@@ -139,7 +139,7 @@ def main():
         ['nvidia-smi', '--query-gpu=gpu_name', '--format=csv'])
     gpu_name = gpu_name.decode('utf8').split('\n')[-2]
     gpu_name = '-'.join(gpu_name.split())
-    filename = "cifar100-%d-%s-%s.log" % (bps.size(),
+    filename = "imagenet-%d-%s-%s.log" % (bps.size(),
                                           gpu_name, opt.logging_file)
     filehandler = logging.FileHandler(filename)
     streamhandler = logging.StreamHandler()
