@@ -512,10 +512,11 @@ def main():
             train_metric_score, err_top1_val, err_top5_val = acc[0].asscalar(
             ), acc[1].asscalar(), acc[2].asscalar()
 
-            logger.info('[Epoch %d] training: %s=%f' %
-                        (epoch, train_metric_name, train_metric_score))
-            logger.info('[Epoch %d] validation: err-top1=%f err-top5=%f' %
-                        (epoch, err_top1_val, err_top5_val))
+            if bps.rank() == 0:
+                logger.info('[Epoch %d] training: %s=%f' %
+                            (epoch, train_metric_name, train_metric_score))
+                logger.info('[Epoch %d] validation: err-top1=%f err-top5=%f' %
+                            (epoch, err_top1_val, err_top5_val))
 
             if err_top1_val < best_val_score:
                 best_val_score = err_top1_val
