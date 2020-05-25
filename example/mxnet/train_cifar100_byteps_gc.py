@@ -100,6 +100,8 @@ def parse_args():
 def main():
     opt = parse_args()
 
+    bps.init()
+
     gpu_name = subprocess.check_output(
         ['nvidia-smi', '--query-gpu=gpu_name', '--format=csv'])
     gpu_name = gpu_name.decode('utf8').split('\n')[-2]
@@ -115,8 +117,6 @@ def main():
     logger.addHandler(streamhandler)
 
     logger.info(opt)
-
-    bps.init()
 
     batch_size = opt.batch_size
     classes = 100
@@ -233,7 +233,6 @@ def main():
         iteration = 0
         best_val_score = 0
 
-        bps.byteps_declare_tensor("acc")
         for epoch in range(epochs):
             tic = time.time()
             train_metric.reset()
@@ -268,6 +267,7 @@ def main():
 
             name, val_acc = test(ctx, val_data)
             acc = mx.nd.array([train_acc, val_acc])
+            bps.byteps_declare_tensor("acc")
             bps.byteps_push_pull(acc, name="acc", is_average=False)
             acc /= bps.size()
             train_acc, val_acc = acc[0].asscalar(), acc[1].asscalar()

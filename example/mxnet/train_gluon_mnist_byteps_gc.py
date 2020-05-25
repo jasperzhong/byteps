@@ -70,6 +70,9 @@ if not args.no_cuda:
     if mx.context.num_gpus() == 0:
         args.no_cuda = True
 
+# Initialize BytePS
+bps.init()
+
 gpu_name = subprocess.check_output(
     ['nvidia-smi', '--query-gpu=gpu_name', '--format=csv'])
 gpu_name = gpu_name.decode('utf8').split('\n')[-2]
@@ -133,9 +136,6 @@ def evaluate(model, data_iter, context):
 # Load training and validation data
 train_data, val_data, train_size = get_mnist_iterator()
 
-# Initialize BytePS
-bps.init()
-
 # BytePS: pin context to local rank
 context = mx.cpu(bps.local_rank()) if args.no_cuda else mx.gpu(
     bps.local_rank())
@@ -173,7 +173,6 @@ loss_fn = gluon.loss.SoftmaxCrossEntropyLoss()
 metric = mx.metric.Accuracy()
 
 total_time = 0
-bps.byteps_declare_tensor("acc")
 # Train model
 for epoch in range(args.epochs):
     tic = time.time()
@@ -205,6 +204,7 @@ for epoch in range(args.epochs):
     _, train_acc = metric.get()
     name, val_acc = evaluate(model, val_data, context)
     acc = mx.nd.array([train_acc, val_acc])
+    bps.byteps_declare_tensor("acc")
     bps.byteps_push_pull(acc, name="acc", is_average=False)
     acc /= bps.size()
     train_acc, val_acc = acc[0].asscalar(), acc[1].asscalar()
