@@ -50,15 +50,15 @@ size_t OnebitCompressor::PackingImpl(index_t* dst, const scalar_t* src,
   float scale = 1.0f;
   if (_use_scale) {
     // float sum = 0.0f;
-    for (size_t i = 0; i < len; ++i) {
-      dst[i] = src[i] < 0;
-      // sum += abs(src[i]);
-    }
+    // for (size_t i = 0; i < len; ++i) {
+    //   dst[i] = src[i] < 0;
+    //   // sum += abs(src[i]);
+    // }
     // scale = sum / len;
   } else {
-    for (size_t i = 0; i < len; ++i) {
-      dst[i] = src[i] < 0;
-    }
+    // for (size_t i = 0; i < len; ++i) {
+    //   dst[i] = src[i] < 0;
+    // }
   }
 
   size_t padding_len = (PACKING_SIZE - (len % PACKING_SIZE)) % PACKING_SIZE;
