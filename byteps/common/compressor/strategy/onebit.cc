@@ -129,16 +129,16 @@ size_t OnebitCompressor::UnpackingImpl(scalar_t* dst, index_t* src,
 
   for (int i = PACKING_SIZE - 1; i >= 1; --i) {
     for (int j = 0; j < len; ++j) {
-      dst[i * len + j] = static_cast<float>(-(((src[j] & 0x01) << 1) - 1));
+      dst[i * len + j] = -(((src[j] & 0x01) << 1) - 1);
       src[j] >>= 1;
     }
   }
 
-  if (_use_scale) {
-    for (int i = 0; i < len; ++i) {
-      dst[i] *= scale;
-    }
-  }
+  // if (_use_scale) {
+  //   for (int i = 0; i < len; ++i) {
+  //     dst[i] *= scale;
+  //   }
+  // }
 }
 
 size_t OnebitCompressor::Unpacking(void* dst, void* src, size_t size,
