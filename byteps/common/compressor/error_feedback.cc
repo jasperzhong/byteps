@@ -38,7 +38,6 @@ void ErrorFeedback::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   _compressor_ptr->Compress(grad, dtype, compressed);
 
   ByteBuf compressed_copy{_buf.get(), compressed.size};
-  std::copy(compressed.data, compressed.data + compressed.size, _buf.get());
 
   UpdateError(grad, dtype, compressed_copy);
 }

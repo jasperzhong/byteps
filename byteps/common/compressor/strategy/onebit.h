@@ -71,10 +71,10 @@ class OnebitCompressor : public BaseCompressor {
   template <typename index_t, typename scalar_t>
   size_t PackingImpl(index_t* dst, const scalar_t* src, size_t len);
 
-  size_t Unpacking(void* dst, void* src, size_t len, int dtype);
+  size_t Unpacking(void* dst, const void* src, size_t len, int dtype);
 
   template <typename scalar_t, typename index_t>
-  size_t UnpackingImpl(scalar_t* dst, index_t* src, size_t size);
+  size_t UnpackingImpl(scalar_t* dst, const index_t* src, size_t size);
 
  private:
   bool _use_scale;
