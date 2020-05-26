@@ -37,9 +37,7 @@ void ErrorFeedback::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   // compress
   _compressor_ptr->Compress(grad, dtype, compressed);
 
-  ByteBuf compressed_copy{_buf.get(), compressed.size};
-
-  UpdateError(grad, dtype, compressed_copy);
+  UpdateError(grad, dtype, compressed);
 }
 
 void ErrorFeedback::Decompress(ByteBuf compressed, int dtype,
