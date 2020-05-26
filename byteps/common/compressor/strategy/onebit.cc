@@ -140,14 +140,18 @@ size_t OnebitCompressor::UnpackingImpl(scalar_t* dst, const index_t* src,
       mask <<= 1;
     }
   } else {
-    // for (int i = PACKING_SIZE - 1; i >= 0; --i) {
-    //   for (int j = 0; j < chunk_size; ++j) {
-    //     int sign_bit = (src[j] & mask) >> (PACKING_SIZE - i - 1);
-    //     int sign = -((sign_bit << 1) - 1);
-    //     dst[i * chunk_size + j] = sign * scale;
-    //   }
-    //   mask <<= 1;
-    // }
+    for (int i = PACKING_SIZE - 1; i >= 0; --i) {
+      for (int j = 0; j < chunk_size; ++j) {
+        int sign_bit = (src[j] & mask) >> (PACKING_SIZE - i - 1);
+        int sign = -((sign_bit << 1) - 1);
+        dst[i * chunk_size + j] = sign;
+      }
+      mask <<= 1;
+    }
+
+    for (int i = 0; i < chunk_size * PACKING_SIZE; ++i) {
+      dst[i] *= scale;
+    }
   }
 }
 
