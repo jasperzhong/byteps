@@ -128,7 +128,7 @@ size_t OnebitCompressor::UnpackingImpl(scalar_t* dst, const index_t* src,
   float scale = *pf;
 
   auto ptr = reinterpret_cast<index_t*>(dst);
-  if ((void*)dst == (void*)src) {
+  if ((void*)dst != (void*)src) {
     std::copy(src, src+len, ptr);
   } 
 
