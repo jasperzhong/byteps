@@ -49,27 +49,27 @@ size_t OnebitCompressor::PackingImpl(index_t* dst, const scalar_t* src,
 
   float scale = 1.0f;
   if (_use_scale) {
-    // float sum = 0.0f;
-    // for (size_t i = 0; i < len; ++i) {
-    //   dst[i] = src[i] < 0;
-    //   // sum += abs(src[i]);
-    // }
-    // scale = sum / len;
+    float sum = 0.0f;
+    for (size_t i = 0; i < len; ++i) {
+      dst[i] = src[i] < 0;
+      sum += abs(src[i]);
+    }
+    scale = sum / len;
   } else {
-    // for (size_t i = 0; i < len; ++i) {
-    //   dst[i] = src[i] < 0;
-    // }
+    for (size_t i = 0; i < len; ++i) {
+      dst[i] = src[i] < 0;
+    }
   }
 
   size_t padding_len = (PACKING_SIZE - (len % PACKING_SIZE)) % PACKING_SIZE;
   size_t chunk_size = (len + padding_len) / PACKING_SIZE;
 
-  // for (int i = 1; i < PACKING_SIZE; ++i) {
-  //   for (int j = 0; j < chunk_size; ++j) {
-  //     dst[j] <<= 1;
-  //     dst[j] |= dst[i * chunk_size + j] & 0x01;
-  //   }
-  // }
+  for (int i = 1; i < PACKING_SIZE; ++i) {
+    for (int j = 0; j < chunk_size; ++j) {
+      dst[j] <<= 1;
+      dst[j] |= dst[i * chunk_size + j] & 0x01;
+    }
+  }
 
   float* p_scale = reinterpret_cast<float*>(&dst[chunk_size]);
   *p_scale = scale;
