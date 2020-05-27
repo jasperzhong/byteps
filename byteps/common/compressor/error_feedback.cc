@@ -13,7 +13,6 @@
 // limitations under the License.
 // =============================================================================
 #include "error_feedback.h"
-#include <bitset>
 
 namespace byteps {
 namespace common {
@@ -39,7 +38,6 @@ void ErrorFeedback::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   compressed.data = _error.get();
   // compress
   _compressor_ptr->Compress(grad, dtype, compressed);
-  auto ptr = reinterpret_cast<int*>(compressed.data);
 
   UpdateError(grad, dtype, compressed);
 }
