@@ -73,14 +73,14 @@ void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
   // Decompress(compressed, dtype, decompressed);
   float scale = *reinterpret_cast<float*>(compressed.data + compressed.size -
                                           sizeof(float));
-  BPS_LOG(INFO) << "after:" << scale;
+
   size_t len = corrected.size / getDataTypeLength(dtype);
   auto err_fp_ptr = reinterpret_cast<float*>(_error.get());
   auto err_int_ptr = reinterpret_cast<int32_t*>(_error.get());
   auto p_ptr = reinterpret_cast<float*>(corrected.data);
-  for (size_t i = 0; i < len; ++i) {
-    err_fp_ptr[i] = p_ptr[i] - scale * err_int_ptr[i];
-  }
+  // for (size_t i = 0; i < len; ++i) {
+  //   err_fp_ptr[i] = p_ptr[i] - scale * err_int_ptr[i];
+  // }
   // this->_cpu_reducer->sum(_error.get(), corrected.data, _error.get(),
   //                         corrected.size, static_cast<DataType>(dtype), -scale);
 }
