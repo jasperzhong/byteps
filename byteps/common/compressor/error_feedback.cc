@@ -13,6 +13,7 @@
 // limitations under the License.
 // =============================================================================
 #include "error_feedback.h"
+#include <bitset>
 
 namespace byteps {
 namespace common {

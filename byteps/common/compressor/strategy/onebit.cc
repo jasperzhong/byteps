@@ -16,6 +16,7 @@
 #include "onebit.h"
 
 #include "../../logging.h"
+#include <bitset>
 
 namespace byteps {
 namespace common {
