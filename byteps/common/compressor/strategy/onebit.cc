@@ -17,7 +17,6 @@
 
 #include "../../logging.h"
 
-#include <bitset>
 namespace byteps {
 namespace common {
 namespace compressor {
@@ -52,13 +51,13 @@ size_t OnebitCompressor::PackingImpl(index_t* dst, const scalar_t* src,
   if (_use_scale) {
     float sum = 0.0f;
     for (size_t i = 0; i < len; ++i) {
-      dst[i] = 1;
+      dst[i] = src[i] < 0;
       sum += abs(src[i]);
     }
     scale = sum / len;
   } else {
     for (size_t i = 0; i < len; ++i) {
-      dst[i] = 1;
+      dst[i] = src[i] < 0;
     }
   }
 

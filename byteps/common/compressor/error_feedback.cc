@@ -38,8 +38,11 @@ void ErrorFeedback::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   compressed.data = _error.get();
   // compress
   _compressor_ptr->Compress(grad, dtype, compressed);
+  BPS_LOG(INFO) << std::bitset<32>(compressed.data[0]);
 
   UpdateError(grad, dtype, compressed);
+  BPS_LOG(INFO) << std::bitset<32>(compressed.data[0]);
+
 }
 
 void ErrorFeedback::Decompress(ByteBuf compressed, int dtype,
