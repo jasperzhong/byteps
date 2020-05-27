@@ -40,11 +40,8 @@ void ErrorFeedback::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   // compress
   _compressor_ptr->Compress(grad, dtype, compressed);
   auto ptr = reinterpret_cast<int*>(compressed.data);
-  BPS_LOG(INFO) << std::bitset<32>(ptr[0]);
 
   UpdateError(grad, dtype, compressed);
-  BPS_LOG(INFO) << std::bitset<32>(ptr[0]);
-
 }
 
 void ErrorFeedback::Decompress(ByteBuf compressed, int dtype,
