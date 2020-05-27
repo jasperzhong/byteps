@@ -46,19 +46,18 @@ size_t OnebitCompressor::PackingImpl(index_t* dst, const scalar_t* src,
   static_assert(sizeof(index_t) == sizeof(scalar_t),
                 "index_t should be the same size as scalar_t");
   constexpr size_t PACKING_SIZE = sizeof(scalar_t) * sizeof(char);
-  auto ptr = reinterpret_cast<index_t*>(_buf.get());
 
   float scale = 1.0f;
   if (_use_scale) {
     float sum = 0.0f;
     for (size_t i = 0; i < len; ++i) {
-      ptr[i] = src[i] < 0;
+      dst[i] = src[i] < 0;
       sum += abs(src[i]);
     }
     scale = sum / len;
   } else {
     for (size_t i = 0; i < len; ++i) {
-      ptr[i] = src[i] < 0;
+      dst[i] = src[i] < 0;
     }
   }
 
@@ -67,13 +66,16 @@ size_t OnebitCompressor::PackingImpl(index_t* dst, const scalar_t* src,
 
   for (int i = 0; i < PACKING_SIZE; ++i) {
     for (int j = 0; j < chunk_size; ++j) {
-      ptr[j] <<= 1;
-      ptr[j] |= ptr[i * chunk_size + j] & 0x01;
+      dst[j] <<= 1;
+      dst[j] |= dst[i * chunk_size + j] & 0x01;
     }
   }
 
-  float* p_scale = reinterpret_cast<float*>(&ptr[chunk_size]);
+  float* p_scale = reinterpret_cast<float*>(&dst[chunk_size]);
   *p_scale = scale;
+
+  auto ptr = reinterpret_cast<index_t*>(_buf.get());
+  std::copy(dst, dst+chunk_size * sizeof(index_t) + sizeof(float), ptr);
 
   return chunk_size * sizeof(index_t) + sizeof(float);
 }
