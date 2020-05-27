@@ -73,7 +73,7 @@ void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
   // Decompress(compressed, dtype, decompressed);
   float scale = *reinterpret_cast<float*>(compressed.data + compressed.size -
                                           sizeof(float));
-  size_t len = corrected.size / getDataTypeLength(dyte);
+  size_t len = corrected.size / getDataTypeLength(dtype);
   auto err_fp_ptr = reinterpret_cast<float*>(_error.get());
   auto err_int_ptr = reinterpret_cast<int32_t*>(_error.get());
   auto p_ptr = reinterpret_cast<int32_t*>(corrected.data);
