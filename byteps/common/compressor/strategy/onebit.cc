@@ -15,8 +15,9 @@
 
 #include "onebit.h"
 
-#include "../../logging.h"
 #include <bitset>
+
+#include "../../logging.h"
 
 namespace byteps {
 namespace common {
@@ -64,8 +65,13 @@ size_t OnebitCompressor::PackingImpl(index_t* dst, const scalar_t* src,
 
   size_t padding_len = (PACKING_SIZE - (len % PACKING_SIZE)) % PACKING_SIZE;
   size_t chunk_size = (len + padding_len) / PACKING_SIZE;
-  BPS_LOG(INFO) << dst[0];
-  BPS_LOG(INFO) << dst[31];
+  BPS_LOG(INFO) << dst[0] << dst[1] << dst[2] << dst[3] << dst[4] << dst[5]
+                << dst[6] << dst[7] << dst[8] << dst[9] << dst[10] << dst[11]
+                << dst[12] << dst[13] << dst[14] << dst[15] << dst[16]
+                << dst[17] << dst[18] << dst[19] << dst[20] << dst[21]
+                << dst[22] << dst[23] << dst[24] << dst[25] << dst[26]
+                << dst[27] << dst[28] << dst[29] << dst[30] << dst[31];
+
   auto ptr = reinterpret_cast<index_t*>(_buf.get());
   for (int i = 0; i < PACKING_SIZE; ++i) {
     for (int j = 0; j < chunk_size; ++j) {
