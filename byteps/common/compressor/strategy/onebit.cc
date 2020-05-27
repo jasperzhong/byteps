@@ -146,7 +146,7 @@ size_t OnebitCompressor::UnpackingImpl(scalar_t* dst, const index_t* src,
 
   // for i = 0 chunk 
   for (int j = 0; j < len; ++j) {
-    iint sign = -(((ptr[j] & 0x01) << 1) - 1);
+    int sign = -(((ptr[j] & 0x01) << 1) - 1);
     dst[j] = sign * scale;
   }
 }
