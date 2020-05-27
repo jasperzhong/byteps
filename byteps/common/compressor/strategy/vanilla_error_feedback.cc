@@ -77,7 +77,7 @@ void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
   auto err_int_ptr = reinterpret_cast<int32_t*>(_error.get());
   auto p_ptr = reinterpret_cast<float*>(corrected.data);
   for (size_t i = 0; i < len; ++i) {
-    err_fp_ptr[i] = p_ptr[i] - scale * err_int_ptr[i];
+    err_fp_ptr[i] = p_ptr[i] + scale * (((err_int_ptr[i]) << 1) - 1);
   }
 }
 }  // namespace compressor
