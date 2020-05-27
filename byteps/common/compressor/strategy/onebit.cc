@@ -17,6 +17,7 @@
 
 #include "../../logging.h"
 
+#include <bitset>
 namespace byteps {
 namespace common {
 namespace compressor {
