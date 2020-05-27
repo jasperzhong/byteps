@@ -15,8 +15,6 @@
 
 #include "onebit.h"
 
-#include <bitset>
-
 #include "../../logging.h"
 
 namespace byteps {
@@ -65,12 +63,6 @@ size_t OnebitCompressor::PackingImpl(index_t* dst, const scalar_t* src,
 
   size_t padding_len = (PACKING_SIZE - (len % PACKING_SIZE)) % PACKING_SIZE;
   size_t chunk_size = (len + padding_len) / PACKING_SIZE;
-  BPS_LOG(INFO) << dst[0] << dst[1] << dst[2] << dst[3] << dst[4] << dst[5]
-                << dst[6] << dst[7] << dst[8] << dst[9] << dst[10] << dst[11]
-                << dst[12] << dst[13] << dst[14] << dst[15] << dst[16]
-                << dst[17] << dst[18] << dst[19] << dst[20] << dst[21]
-                << dst[22] << dst[23] << dst[24] << dst[25] << dst[26]
-                << dst[27] << dst[28] << dst[29] << dst[30] << dst[31];
 
   auto ptr = reinterpret_cast<index_t*>(_buf.get());
   for (int i = 0; i < PACKING_SIZE; ++i) {
@@ -79,7 +71,6 @@ size_t OnebitCompressor::PackingImpl(index_t* dst, const scalar_t* src,
       ptr[j] |= dst[i * chunk_size + j] & 0x01;
     }
   }
-  BPS_LOG(INFO) << std::bitset<32>(ptr[0]);
 
   float* p_scale = reinterpret_cast<float*>(&ptr[chunk_size]);
   *p_scale = scale;
@@ -91,31 +82,31 @@ size_t OnebitCompressor::Packing(void* dst, const void* src, size_t len,
                                  int dtype) {
   switch (dtype) {
     case BYTEPS_INT8:
-      return PackingImpl(reinterpret_cast<int8_t*>(dst),
+      return PackingImpl(reinterpret_cast<uint8_t*>(dst),
                          reinterpret_cast<const int8_t*>(src),
                          len / sizeof(int8_t));
     case BYTEPS_UINT8:
-      return PackingImpl(reinterpret_cast<int8_t*>(dst),
+      return PackingImpl(reinterpret_cast<uint8_t*>(dst),
                          reinterpret_cast<const uint8_t*>(src),
                          len / sizeof(uint8_t));
     // case BYTEPS_FLOAT16:
     //   return PackingImpl(reinterpret_cast<int16_t*>(dst), len);
     case BYTEPS_INT32:
-      return PackingImpl(reinterpret_cast<int32_t*>(dst),
+      return PackingImpl(reinterpret_cast<uint32_t*>(dst),
                          reinterpret_cast<const int32_t*>(src),
                          len / sizeof(int32_t));
     case BYTEPS_FLOAT32:
-      return PackingImpl(reinterpret_cast<int32_t*>(dst),
+      return PackingImpl(reinterpret_cast<uint32_t*>(dst),
                          reinterpret_cast<const float*>(src),
-                         len / sizeof(int32_t));
+                         len / sizeof(float));
     case BYTEPS_INT64:
-      return PackingImpl(reinterpret_cast<int64_t*>(dst),
+      return PackingImpl(reinterpret_cast<uint64_t*>(dst),
                          reinterpret_cast<const int64_t*>(src),
                          len / sizeof(int64_t));
     case BYTEPS_FLOAT64:
-      return PackingImpl(reinterpret_cast<int64_t*>(dst),
+      return PackingImpl(reinterpret_cast<uint64_t*>(dst),
                          reinterpret_cast<const double*>(src),
-                         len / sizeof(int64_t));
+                         len / sizeof(double));
     default:
       BPS_CHECK(0) << "Unsupported data type: " << dtype;
   }
@@ -159,32 +150,32 @@ size_t OnebitCompressor::Unpacking(void* dst, const void* src, size_t size,
   switch (dtype) {
     case BYTEPS_INT8:
       return UnpackingImpl(reinterpret_cast<int8_t*>(dst),
-                           reinterpret_cast<const int8_t*>(src),
-                           (size - sizeof(float)) / sizeof(int8_t));
+                           reinterpret_cast<const uint8_t*>(src),
+                           (size - sizeof(float)) / sizeof(uint8_t));
     case BYTEPS_UINT8:
       return UnpackingImpl(reinterpret_cast<uint8_t*>(dst),
-                           reinterpret_cast<const int8_t*>(src),
-                           (size - sizeof(float)) / sizeof(int8_t));
+                           reinterpret_cast<const uint8_t*>(src),
+                           (size - sizeof(float)) / sizeof(uint8_t));
     // TODO:
     // case BYTEPS_FLOAT16:
     //   return UnpackingImpl(reinterpret_cast<uint16_t*>(dst),
     //                     reinterpret_cast<int16_t*>(src), len);
     case BYTEPS_INT32:
       return UnpackingImpl(reinterpret_cast<int32_t*>(dst),
-                           reinterpret_cast<const int32_t*>(src),
-                           (size - sizeof(float)) / sizeof(int32_t));
+                           reinterpret_cast<const uint32_t*>(src),
+                           (size - sizeof(float)) / sizeof(uint32_t));
     case BYTEPS_FLOAT32:
       return UnpackingImpl(reinterpret_cast<float*>(dst),
-                           reinterpret_cast<const int32_t*>(src),
-                           (size - sizeof(float)) / sizeof(int32_t));
+                           reinterpret_cast<const uint32_t*>(src),
+                           (size - sizeof(float)) / sizeof(uint32_t));
     case BYTEPS_INT64:
       return UnpackingImpl(reinterpret_cast<int64_t*>(dst),
-                           reinterpret_cast<const int64_t*>(src),
-                           (size - sizeof(float)) / sizeof(int64_t));
+                           reinterpret_cast<const uint64_t*>(src),
+                           (size - sizeof(float)) / sizeof(uint64_t));
     case BYTEPS_FLOAT64:
       return UnpackingImpl(reinterpret_cast<double*>(dst),
-                           reinterpret_cast<const int64_t*>(src),
-                           (size - sizeof(float)) / sizeof(int64_t));
+                           reinterpret_cast<const uint64_t*>(src),
+                           (size - sizeof(float)) / sizeof(uint64_t));
     default:
       BPS_CHECK(0) << "Unsupported data type: " << dtype;
   }
