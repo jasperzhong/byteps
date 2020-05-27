@@ -64,7 +64,7 @@ size_t OnebitCompressor::PackingImpl(index_t* dst, const scalar_t* src,
   size_t padding_len = (PACKING_SIZE - (len % PACKING_SIZE)) % PACKING_SIZE;
   size_t chunk_size = (len + padding_len) / PACKING_SIZE;
 
-  auto ptr = reinterpret_cast<scalar_t*>(_buf.get());
+  auto ptr = reinterpret_cast<index_t*>(_buf.get());
   for (int i = 0; i < PACKING_SIZE; ++i) {
     for (int j = 0; j < chunk_size; ++j) {
       ptr[j] <<= 1;
