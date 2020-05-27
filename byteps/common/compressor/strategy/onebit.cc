@@ -74,6 +74,7 @@ size_t OnebitCompressor::PackingImpl(index_t* dst, const scalar_t* src,
 
   float* p_scale = reinterpret_cast<float*>(&ptr[chunk_size]);
   *p_scale = scale;
+  BPS_LOG(INFO) << "before:" << scale;
 
   return chunk_size * sizeof(index_t) + sizeof(float);
 }
