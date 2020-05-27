@@ -51,13 +51,13 @@ size_t OnebitCompressor::PackingImpl(index_t* dst, const scalar_t* src,
   if (_use_scale) {
     float sum = 0.0f;
     for (size_t i = 0; i < len; ++i) {
-      dst[i] = src[i] < 0;
+      dst[i] = 1;
       sum += abs(src[i]);
     }
     scale = sum / len;
   } else {
     for (size_t i = 0; i < len; ++i) {
-      dst[i] = src[i] < 0;
+      dst[i] = 1;
     }
   }
 
@@ -65,13 +65,13 @@ size_t OnebitCompressor::PackingImpl(index_t* dst, const scalar_t* src,
   size_t chunk_size = (len + padding_len) / PACKING_SIZE;
 
   auto ptr = reinterpret_cast<index_t*>(_buf.get());
-  std::copy(dst, dst+len, ptr);
   for (int i = 0; i < PACKING_SIZE; ++i) {
     for (int j = 0; j < chunk_size; ++j) {
       ptr[j] <<= 1;
-      ptr[j] |= ptr[i * chunk_size + j] & 0x01;
+      ptr[j] |= dst[i * chunk_size + j] & 0x01;
     }
   }
+  BPS_LOG(INFO) << std::bitset<32>(ptr[0]);
 
   float* p_scale = reinterpret_cast<float*>(&ptr[chunk_size]);
   *p_scale = scale;
