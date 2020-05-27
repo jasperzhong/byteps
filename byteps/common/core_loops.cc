@@ -506,7 +506,7 @@ bool RunCompressLoopOnce() {
                                       task->offset);
       int len = task->len;
       int dtype = task->tensor->dtype();
-      compressor::ByteBuf grad{data, len}, compressed;
+      compressor::ByteBuf grad{data, len}, compressed{nullptr, 0};
       task->compressor->Compress(grad, dtype, compressed);
       BPS_CHECK_LE(compressed.size, len)
           << "Compressor Implementation Error "

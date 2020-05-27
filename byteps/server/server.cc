@@ -90,7 +90,7 @@ void BytePSServerEngineThread(int i) {
       if (msg.ops == ALL_RECV) {
         common::compressor::ByteBuf grad{reinterpret_cast<char*>(msg.src),
                                          msg.len},
-            compressed;
+            compressed{nullptr, 0};
         iter->second->Compress(grad, msg.type.dtype, compressed);
         // 1. compress
         auto& updates = update_buf_[msg.key];

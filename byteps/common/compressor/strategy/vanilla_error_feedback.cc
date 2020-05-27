@@ -13,12 +13,13 @@
 // limitations under the License.
 // =============================================================================
 
+#include "vanilla_error_feedback.h"
+
+#include <errno.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include <errno.h>
 
-#include "vanilla_error_feedback.h"
 #include "../../logging.h"
 
 namespace byteps {
@@ -68,10 +69,19 @@ void VanillaErrorFeedbackCompressor::UpdateGradient(ByteBuf grad, int dtype) {
 
 void VanillaErrorFeedbackCompressor::UpdateError(ByteBuf corrected, int dtype,
                                                  ByteBuf compressed) {
-  ByteBuf decompressed{_error.get(), corrected.size};
-  Decompress(compressed, dtype, decompressed);
-  this->_cpu_reducer->sum(_error.get(), corrected.data, decompressed.data,
-                          corrected.size, static_cast<DataType>(dtype), -1.0);
+  // ByteBuf decompressed{_error.get(), corrected.size};
+  // Decompress(compressed, dtype, decompressed);
+  float scale = *reinterpret_cast<float*>(compressed.data + compressed.size -
+                                          sizeof(float));
+  size_t len = corrected.size / getDataTypeLength(dyte);
+  auto err_fp_ptr = reinterpret_cast<float*>(_error.get());
+  auto err_int_ptr = reinterpret_cast<int32_t*>(_error.get());
+  auto p_ptr = reinterpret_cast<int32_t*>(corrected.data);
+  for (size_t i = 0; i < len; ++i) {
+    err_fp_ptr[i] = p_ptr[i] - scale * err_int_ptr[i];
+  }
+  // this->_cpu_reducer->sum(_error.get(), corrected.data, _error.get(),
+  //                         corrected.size, static_cast<DataType>(dtype), -scale);
 }
 }  // namespace compressor
 }  // namespace common

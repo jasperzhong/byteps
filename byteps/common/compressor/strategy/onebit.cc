@@ -64,10 +64,11 @@ size_t OnebitCompressor::PackingImpl(index_t* dst, const scalar_t* src,
   size_t padding_len = (PACKING_SIZE - (len % PACKING_SIZE)) % PACKING_SIZE;
   size_t chunk_size = (len + padding_len) / PACKING_SIZE;
 
-  for (int i = 1; i < PACKING_SIZE; ++i) {
+  auto ptr = reinterpret_cast<scalar_t*>(_buf.get());
+  for (int i = 0; i < PACKING_SIZE; ++i) {
     for (int j = 0; j < chunk_size; ++j) {
-      dst[j] <<= 1;
-      dst[j] |= dst[i * chunk_size + j] & 0x01;
+      ptr[j] <<= 1;
+      ptr[j] |= dst[i * chunk_size + j] & 0x01;
     }
   }
 
@@ -113,7 +114,10 @@ size_t OnebitCompressor::Packing(void* dst, const void* src, size_t len,
 }
 
 void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
-  compressed.size = Packing(_buf.get(), grad.data, grad.size, dtype);
+  if (compressed.data == nullptr) {
+    compressed.data = _buf.get();
+  }
+  compressed.size = Packing(compressed.data, grad.data, grad.size, dtype);
   compressed.data = _buf.get();
 }
 
@@ -129,8 +133,8 @@ size_t OnebitCompressor::UnpackingImpl(scalar_t* dst, const index_t* src,
 
   auto ptr = reinterpret_cast<index_t*>(dst);
   if ((void*)dst != (void*)src) {
-    std::copy(src, src+len, ptr);
-  } 
+    std::copy(src, src + len, ptr);
+  }
 
   for (int i = PACKING_SIZE - 1; i >= 1; --i) {
     for (int j = 0; j < len; ++j) {

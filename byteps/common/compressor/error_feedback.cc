@@ -26,6 +26,7 @@ ErrorFeedback::~ErrorFeedback() = default;
 void ErrorFeedback::Init(size_t aligned_size) {
   _compressor_ptr->Init(aligned_size);
   _error.reset(new char[aligned_size]);
+  // _buf.reset(new char[aligned_size]);
   memset(_error.get(), 0, aligned_size);
   _cpu_reducer.reset(new CpuReducer(nullptr));
 }
@@ -33,6 +34,8 @@ void ErrorFeedback::Init(size_t aligned_size) {
 void ErrorFeedback::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
   // before: grad += error
   UpdateGradient(grad, dtype);
+
+  compressed.data = _error.get();
   // compress
   _compressor_ptr->Compress(grad, dtype, compressed);
 
