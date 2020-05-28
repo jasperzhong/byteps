@@ -27,6 +27,9 @@ if [ "$TEST_TYPE" == "mxnet" ]; then
 elif [ "$TEST_TYPE" == "keras" ]; then
   echo "TEST KERAS ..."
   python $path/test_tensorflow_keras.py $@
+elif [ "$TEST_TYPE" == "onebit" ]; then
+  echo "TEST ONEBIT"
+  bpslaunch python3 test_onebit.py
 else
   echo "Error: unsupported $TEST_TYPE"
   exit 1
