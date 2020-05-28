@@ -3,7 +3,8 @@ from mxnet import autograd, gluon
 import byteps.mxnet as bps
 from gluoncv.model_zoo import get_model
 
-def fake_data(dtype, height=224, width=224, depth=3, num_classes=1000):
+
+def fake_data(dtype="float32", height=224, width=224, depth=3, num_classes=1000):
     mx.random.seed()
     image = mx.ndarray.random.normal(-1, 1,
                                      shape=[1, depth, height, width],
