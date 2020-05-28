@@ -50,7 +50,7 @@ for i, batch in enumerate(train_data):
 
     loss.backward()
     
-    for param in params:
+    for _, param in params.items():
         print(param.grad[0])
 
     trainer.step(32)
