@@ -40,7 +40,7 @@ loss_fn = gluon.loss.SoftmaxCrossEntropyLoss()
 
 train_data = fake_data()
 
-for i, batch in enumerate(trainer):
+for i, batch in enumerate(train_data):
     data = batch[0].as_in_context(ctx)
     label = batch[1].as_in_context(ctx)
 

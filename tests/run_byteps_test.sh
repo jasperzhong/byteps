@@ -8,6 +8,9 @@ export DMLC_NUM_SERVER=1
 export DMLC_PS_ROOT_URI=127.0.0.1
 export DMLC_PS_ROOT_PORT=1234
 
+pkill bpslaunch
+pkill python3
+
 echo "Launch scheduler"
 export DMLC_ROLE=scheduler
 bpslaunch &
@@ -23,7 +26,7 @@ export BYTEPS_FORCE_DISTRIBUTED=1
 
 if [ "$TEST_TYPE" == "mxnet" ]; then
   echo "TEST MXNET ..."
-  bpslaunch python $path/test_mxnet.py $@
+  bpslaunch python3 $path/test_mxnet.py $@
 elif [ "$TEST_TYPE" == "keras" ]; then
   echo "TEST KERAS ..."
   python $path/test_tensorflow_keras.py $@
