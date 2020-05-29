@@ -43,10 +43,9 @@ class RandomkCompressor : public BaseCompressor {
    * randomly select k entries and corresponding indices
    *
    * \param grad gradient tensor
-   * \param dtype data type
    * \param compressed compressed tensor
    */
-  void Compress(ByteBuf grad, int dtype, ByteBuf& compressed) override;
+  void Compress(tensor_t grad, tensor_t& compressed) override;
 
   /*!
    * \brief Decompress function
@@ -54,11 +53,9 @@ class RandomkCompressor : public BaseCompressor {
    * fill a zero tensor with topk entries and corresponding indices
    *
    * \param compressed compressed tensor
-   * \param dtype data type
    * \param decompressed decompressed tensor
    */
-  void Decompress(ByteBuf compressed, int dtype,
-                  ByteBuf& decompressed) override;
+  void Decompress(tensor_t compressed, tensor_t& decompressed) override;
 
  private:
   size_t Packing(const void* src, size_t size, int dtype);
@@ -66,14 +63,15 @@ class RandomkCompressor : public BaseCompressor {
   template <typename index_t, typename scalar_t>
   size_t PackingImpl(index_t* dst, const scalar_t* src, size_t len);
 
-  size_t Unpacking(void* dst, const void* src, size_t size, int dtype);
+  void Unpacking(void* dst, const void* src, size_t size, size_t src_size,
+                 int dtype);
 
   template <typename index_t, typename scalar_t>
-  size_t UnpackingImpl(scalar_t* dst, const index_t* src, size_t len);
+  void UnpackingImpl(scalar_t* dst, const index_t* src, size_t len,
+                     size_t src_len);
 
  private:
   int _k;
-  int _src_len;
   std::random_device _rd;
   std::mt19937 _gen;
 };

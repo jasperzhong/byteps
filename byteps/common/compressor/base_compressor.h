@@ -28,13 +28,18 @@ namespace byteps {
 namespace common {
 namespace compressor {
 
+typedef char byte_t;
 /*!
- * \brief Byte buffer
+ * \brief Tensor type
  */
-struct ByteBuf {
-  char* data;
+typedef struct BPSTensor {
+  byte_t* data;
   size_t size;
-};
+  int dtype;
+
+  BPSTensor(byte_t* data=nullptr, size_t size=0, int dtype=0)
+      : data(data), size(size), dtype(dtype) {}
+} tensor_t;
 
 /*!
  *  \brief Compressor interface used in BytePS core.
@@ -54,20 +59,17 @@ class BaseCompressor {
    * \brief Compress function
    *
    * \param grad gradient tensor
-   * \param dtype data type
    * \param compressed compressed tensor
    */
-  virtual void Compress(ByteBuf grad, int dtype, ByteBuf& compressed) = 0;
+  virtual void Compress(tensor_t grad, tensor_t& compressed) = 0;
 
   /*!
    * \brief Decompress function
    *
    * \param compressed compressed tensor
-   * \param dtype data type
    * \param decompressed decompressed tensor
    */
-  virtual void Decompress(ByteBuf compressed, int dtype,
-                          ByteBuf& decompressed) = 0;
+  virtual void Decompress(tensor_t compressed, tensor_t& decompressed) = 0;
 
  protected:
   /*!
@@ -79,6 +81,11 @@ class BaseCompressor {
    * \brief CPU reducer
    */
   std::unique_ptr<CpuReducer> _cpu_reducer;
+
+  /*!
+   * \brief src len
+   */
+  size_t _src_len;
 };
 
 using kwargs_t = std::unordered_map<std::string, std::string>;

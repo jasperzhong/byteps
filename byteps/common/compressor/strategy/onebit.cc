@@ -110,20 +110,19 @@ size_t OnebitCompressor::Packing(void* dst, const void* src, size_t len,
     default:
       BPS_CHECK(0) << "Unsupported data type: " << dtype;
   }
-  return 0;
 }
 
-void OnebitCompressor::Compress(ByteBuf grad, int dtype, ByteBuf& compressed) {
+void OnebitCompressor::Compress(tensor_t grad, tensor_t& compressed) {
   if (compressed.data == nullptr) {
     compressed.data = _buf.get();
   }
-  compressed.size = Packing(compressed.data, grad.data, grad.size, dtype);
+  compressed.size = Packing(compressed.data, grad.data, grad.size, grad.dtype);
   compressed.data = _buf.get();
 }
 
 template <typename scalar_t, typename index_t>
-size_t OnebitCompressor::UnpackingImpl(scalar_t* dst, const index_t* src,
-                                       size_t len) {
+void OnebitCompressor::UnpackingImpl(scalar_t* dst, const index_t* src,
+                                     size_t len) {
   static_assert(sizeof(scalar_t) == sizeof(index_t),
                 "scalar_t should be the same size as index_t");
   constexpr size_t PACKING_SIZE = sizeof(index_t) * sizeof(char);
@@ -144,15 +143,15 @@ size_t OnebitCompressor::UnpackingImpl(scalar_t* dst, const index_t* src,
     }
   }
 
-  // for i = 0 chunk 
+  // for i = 0 chunk
   for (int j = 0; j < len; ++j) {
     int sign = -(((ptr[j] & 0x01) << 1) - 1);
     dst[j] = sign * scale;
   }
 }
 
-size_t OnebitCompressor::Unpacking(void* dst, const void* src, size_t size,
-                                   int dtype) {
+void OnebitCompressor::Unpacking(void* dst, const void* src, size_t size,
+                                 int dtype) {
   switch (dtype) {
     case BYTEPS_INT8:
       return UnpackingImpl(reinterpret_cast<int8_t*>(dst),
@@ -185,26 +184,15 @@ size_t OnebitCompressor::Unpacking(void* dst, const void* src, size_t size,
     default:
       BPS_CHECK(0) << "Unsupported data type: " << dtype;
   }
-  return 0;
 }
 
-#ifndef BYTEPS_BUILDING_SERVER
-// worker version decompressor
-void OnebitCompressor::Decompress(ByteBuf compressed, int dtype,
-                                  ByteBuf& decompressed) {
-  BPS_CHECK(decompressed.data);
-  Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
-}
-
-#else
-
-void OnebitCompressor::Decompress(ByteBuf compressed, int dtype,
-                                  ByteBuf& decompressed) {
+void OnebitCompressor::Decompress(tensor_t compressed, tensor_t& decompressed) {
+#ifdef BYTEPS_BUILDING_SERVER
   if (decompressed.data == nullptr) decompressed.data = _buf.get();
-  Unpacking(decompressed.data, compressed.data, compressed.size, dtype);
-}
 #endif
-
+  Unpacking(decompressed.data, compressed.data, compressed.size,
+            compressed.dtype);
+}
 }  // namespace compressor
 }  // namespace common
 }  // namespace byteps
