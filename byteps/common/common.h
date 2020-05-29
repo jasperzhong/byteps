@@ -43,8 +43,8 @@
 namespace byteps {
 namespace common {
 namespace compressor {
-  struct BPSTensor;
-  typedef BPSTensor tensor_t;
+struct BPSTensor;
+typedef BPSTensor tensor_t;
 class BaseCompressor;
 class ErrorFeedback;
 }  // namespace compressor
