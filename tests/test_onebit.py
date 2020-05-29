@@ -2,6 +2,7 @@ import mxnet as mx
 from mxnet import autograd, gluon
 import byteps.mxnet as bps
 from gluoncv.model_zoo import get_model
+import numpy as np
 
 
 def fake_data(dtype="float32", height=224, width=224, depth=3, num_classes=1000):
@@ -17,6 +18,8 @@ def fake_data(dtype="float32", height=224, width=224, depth=3, num_classes=1000)
 
     return mx.gluon.data.DataLoader(fake_dataset, batch_size=32, num_workers=2, last_batch='discard')
 
+
+bps.init()
 
 ctx = mx.gpu(0)
 net = get_model("resnet18_v2")
@@ -49,9 +52,21 @@ for i, batch in enumerate(train_data):
         loss = loss_fn(output, label)
 
     loss.backward()
-    
+
     for _, param in params.items():
         if param.grad_req != "null":
-            print(param._grad[0])
+            x = param._grad[0].asnumpy()
+            break
+
+    def onebit(tensor):
+        pass
 
     trainer.step(32)
+
+    for _, param in params.items():
+        if param.grad_req != "null":
+            y = param._grad[0].asnumpy()
+            break
+
+    print(np.allclose(onebit(x), y))
+    input()

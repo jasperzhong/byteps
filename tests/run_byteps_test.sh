@@ -22,6 +22,7 @@ bpslaunch &
 export NVIDIA_VISIBLE_DEVICES=0
 export DMLC_WORKER_ID=0
 export DMLC_ROLE=worker
+export BYTEPS_THREADPOOL_SIZE=4
 export BYTEPS_FORCE_DISTRIBUTED=1
 
 if [ "$TEST_TYPE" == "mxnet" ]; then
