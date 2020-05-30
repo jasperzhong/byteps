@@ -58,6 +58,16 @@ class TopkCompressor : public BaseCompressor {
    */
   void Decompress(tensor_t compressed, tensor_t& decompressed) override;
 
+  /*!
+   * \brief help function for error feedback `UpdateError`
+   *
+   * \param corrected gradient corrected with error
+   * \param error error
+   * \param compressed compressed gradient
+   */
+  void FastUpdateError(tensor_t error, tensor_t corrected,
+                       tensor_t compressed) override;
+
  private:
   size_t Packing(const void* src, size_t size, int dtype);
 
@@ -65,11 +75,11 @@ class TopkCompressor : public BaseCompressor {
   size_t PackingImpl(index_t* dst, const scalar_t* src, size_t len);
 
   void Unpacking(void* dst, const void* src, size_t size, size_t src_size,
-                   int dtype);
+                 int dtype);
 
   template <typename index_t, typename scalar_t>
   void UnpackingImpl(scalar_t* dst, const index_t* src, size_t len,
-                       size_t src_len);
+                     size_t src_len);
 
  private:
   int _k;

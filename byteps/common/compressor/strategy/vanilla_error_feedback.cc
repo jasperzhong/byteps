@@ -63,23 +63,11 @@ void VanillaErrorFeedbackCompressor::Init(size_t aligned_size) {
 void VanillaErrorFeedbackCompressor::UpdateGradient(tensor_t grad) {
   _cur_lr = *reinterpret_cast<double*>(_mm);
   this->_cpu_reducer->sum(grad.data, _error.get(), grad.size,
-                          static_cast<DataType>(grad.dtype), (_pre_lr / _cur_lr));
+                          static_cast<DataType>(grad.dtype),
+                          (_pre_lr / _cur_lr));
   _pre_lr = _cur_lr;
 }
 
-void VanillaErrorFeedbackCompressor::UpdateError(tensor_t corrected,
-                                                 tensor_t compressed) {
-  float scale = *reinterpret_cast<float*>(compressed.data + compressed.size -
-                                          sizeof(float));
-
-  size_t len = corrected.size / getDataTypeLength(corrected.dtype);
-  auto err_fp_ptr = reinterpret_cast<float*>(_error.get());
-  auto err_int_ptr = reinterpret_cast<int32_t*>(_error.get());
-  auto p_ptr = reinterpret_cast<float*>(corrected.data);
-  for (size_t i = 0; i < len; ++i) {
-    err_fp_ptr[i] = p_ptr[i] + scale * (((err_int_ptr[i]) << 1) - 1);
-  }
-}
 }  // namespace compressor
 }  // namespace common
 }  // namespace byteps

@@ -193,6 +193,56 @@ void OnebitCompressor::Decompress(tensor_t compressed, tensor_t& decompressed) {
   Unpacking(decompressed.data, compressed.data, compressed.size,
             compressed.dtype);
 }
+
+template <typename scalar_t, typename index_t>
+void OnebitCompressor::FastUpdateErrorImpl(scalar_t* error, scalar_t* corrected,
+                                           index_t* unpacked, float scale,
+                                           size_t len) {
+#pragma omp parallel for simd
+  for (size_t i = 0; i < len; ++i) {
+    error[i] = corrected[i] + scale * (((unpacked[i]) << 1) - 1);
+  }
+}
+
+void OnebitCompressor::FastUpdateError(tensor_t error, tensor_t corrected,
+                                       tensor_t compressed) {
+  float scale = *reinterpret_cast<float*>(compressed.data + compressed.size -
+                                          sizeof(float));
+  switch (corrected.dtype) {
+    case BYTEPS_INT8:
+      return FastUpdateErrorImpl(reinterpret_cast<int8_t*>(error.data),
+                                 reinterpret_cast<int8_t*>(corrected.data),
+                                 reinterpret_cast<int8_t*>(error.data), scale,
+                                 corrected.size / sizeof(int8_t));
+    case BYTEPS_UINT8:
+      return FastUpdateErrorImpl(reinterpret_cast<uint8_t*>(error.data),
+                                 reinterpret_cast<uint8_t*>(corrected.data),
+                                 reinterpret_cast<int8_t*>(error.data), scale,
+                                 corrected.size / sizeof(uint8_t));
+    case BYTEPS_INT32:
+      return FastUpdateErrorImpl(reinterpret_cast<int32_t*>(error.data),
+                                 reinterpret_cast<int32_t*>(corrected.data),
+                                 reinterpret_cast<int32_t*>(error.data), scale,
+                                 corrected.size / sizeof(int32_t));
+    case BYTEPS_FLOAT32:
+      return FastUpdateErrorImpl(reinterpret_cast<float*>(error.data),
+                                 reinterpret_cast<float*>(corrected.data),
+                                 reinterpret_cast<int32_t*>(error.data), scale,
+                                 corrected.size / sizeof(float));
+    case BYTEPS_INT64:
+      return FastUpdateErrorImpl(reinterpret_cast<int64_t*>(error.data),
+                                 reinterpret_cast<int64_t*>(corrected.data),
+                                 reinterpret_cast<int64_t*>(error.data), scale,
+                                 corrected.size / sizeof(int64_t));
+    case BYTEPS_FLOAT64:
+      return FastUpdateErrorImpl(reinterpret_cast<double*>(error.data),
+                                 reinterpret_cast<double*>(corrected.data),
+                                 reinterpret_cast<int64_t*>(error.data), scale,
+                                 corrected.size / sizeof(double));
+    default:
+      BPS_CHECK(0) << "Unsupported data type: " << corrected.dtype;
+  }
+}
 }  // namespace compressor
 }  // namespace common
 }  // namespace byteps

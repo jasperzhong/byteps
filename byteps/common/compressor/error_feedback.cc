@@ -45,6 +45,11 @@ void ErrorFeedback::Compress(tensor_t grad, tensor_t& compressed) {
 void ErrorFeedback::Decompress(tensor_t compressed, tensor_t& decompressed) {
   _compressor_ptr->Decompress(compressed, decompressed);
 }
+
+void ErrorFeedback::UpdateError(tensor_t corrected, tensor_t compressed) {
+  _compressor_ptr->FastUpdateError({_error.get()}, corrected, compressed);
+}
+
 }  // namespace compressor
 }  // namespace common
 }  // namespace byteps

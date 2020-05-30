@@ -73,7 +73,7 @@ class ErrorFeedback : public BaseCompressor {
    * \param corrected refers to gradient + error
    * \param compressed compressed tensor
    */
-  virtual void UpdateError(tensor_t corrected, tensor_t compressed) = 0;
+  virtual void UpdateError(tensor_t corrected, tensor_t compressed);
 
  protected:
   std::unique_ptr<char[]> _error;

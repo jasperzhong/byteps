@@ -35,9 +35,7 @@ class VanillaErrorFeedbackCompressor : public ErrorFeedback {
 
  protected:
   void UpdateGradient(tensor_t grad) override;
-
-  void UpdateError(tensor_t corrected, tensor_t compressed) override;
- 
+  
  private:
   double _pre_lr, _cur_lr;
   int _fd;

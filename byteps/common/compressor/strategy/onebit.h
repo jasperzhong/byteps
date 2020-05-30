@@ -62,6 +62,16 @@ class OnebitCompressor : public BaseCompressor {
    */
   void Decompress(tensor_t compressed, tensor_t& decompressed) override;
 
+  /*!
+   * \brief help function for error feedback `UpdateError`
+   *
+   * \param corrected gradient corrected with error
+   * \param error error
+   * \param compressed compressed gradient
+   */
+  void FastUpdateError(tensor_t error, tensor_t corrected,
+                       tensor_t compressed) override;
+
  private:
   size_t Packing(void* dst, const void* src, size_t len, int dtype);
 
@@ -72,6 +82,10 @@ class OnebitCompressor : public BaseCompressor {
 
   template <typename scalar_t, typename index_t>
   void UnpackingImpl(scalar_t* dst, const index_t* src, size_t size);
+
+  template <typename scalar_t, typename index_t>
+  void FastUpdateErrorImpl(scalar_t* error, scalar_t* corrected,
+                           index_t* unpacked, float scale, size_t len);
 
  private:
   bool _use_scale;
