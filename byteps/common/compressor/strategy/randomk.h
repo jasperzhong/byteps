@@ -65,7 +65,7 @@ class RandomkCompressor : public BaseCompressor {
    * \param compressed compressed gradient
    */
   void FastUpdateError(tensor_t error, tensor_t corrected,
-                       tensor_t compressed) override{};
+                       tensor_t compressed) override;
 
  private:
   size_t Packing(const void* src, size_t size, int dtype);
@@ -79,6 +79,10 @@ class RandomkCompressor : public BaseCompressor {
   template <typename index_t, typename scalar_t>
   void UnpackingImpl(scalar_t* dst, const index_t* src, size_t len,
                      size_t src_len);
+
+  template <typename index_t, typename scalar_t>
+  void FastUpdateErrorImpl(scalar_t* error, const index_t* compressed,
+                           size_t len);
 
  private:
   int _k;

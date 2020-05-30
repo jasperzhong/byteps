@@ -135,23 +135,23 @@ void TopkCompressor::Unpacking(void* dst, const void* src, size_t size,
     case BYTEPS_INT8:
       return UnpackingImpl(
           reinterpret_cast<int8_t*>(dst), reinterpret_cast<const int8_t*>(src),
-          size / sizeof(int8_t) / 2, src_size / sizeof(int8_t) / 2);
+          size / sizeof(int8_t) / 2, src_size / sizeof(int8_t));
     case BYTEPS_UINT8:
       return UnpackingImpl(reinterpret_cast<uint8_t*>(dst),
                            reinterpret_cast<const uint8_t*>(src),
                            size / sizeof(uint8_t) / 2,
-                           src_size / sizeof(uint8_t) / 2);
+                           src_size / sizeof(uint8_t));
     // case BYTEPS_FLOAT16:
     //   return _Unpacking(reinterpret_cast<int8_t*>(_buf.get()),
     //                   reinterpret_cast<const int8_t*>(src), size);
     case BYTEPS_FLOAT32:
-      return UnpackingImpl(
-          reinterpret_cast<float*>(dst), reinterpret_cast<const int32_t*>(src),
-          size / sizeof(float) / 2, src_size / sizeof(float) / 2);
+      return UnpackingImpl(reinterpret_cast<float*>(dst),
+                           reinterpret_cast<const int32_t*>(src),
+                           size / sizeof(float) / 2, src_size / sizeof(float));
     case BYTEPS_FLOAT64:
       return UnpackingImpl(
           reinterpret_cast<double*>(dst), reinterpret_cast<const int64_t*>(src),
-          size / sizeof(double) / 2, src_size / sizeof(double) / 2);
+          size / sizeof(double) / 2, src_size / sizeof(double));
     default:
       BPS_CHECK(0) << "Unsupported data type: " << dtype;
   }
