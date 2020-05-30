@@ -81,6 +81,10 @@ class TopkCompressor : public BaseCompressor {
   void UnpackingImpl(scalar_t* dst, const index_t* src, size_t len,
                      size_t src_len);
 
+  template <typename index_t, typename scalar_t>
+  void FastUpdateErrorImpl(scalar_t* error, const scalar_t* corrected,
+                           const index_t* compressed, size_t len);
+
  private:
   int _k;
 };

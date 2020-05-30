@@ -71,7 +71,6 @@ size_t TopkCompressor::PackingImpl(index_t* dst, const scalar_t* src,
       }
     }
   }
-  BPS_LOG(INFO) << "first=" << beg[0].first << " second=" << beg[0].second;
 
   return this->_k * sizeof(pair_t);
 }
@@ -165,6 +164,66 @@ void TopkCompressor::Decompress(tensor_t compressed, tensor_t& decompressed) {
 #endif
   Unpacking(decompressed.data, compressed.data, compressed.size,
             decompressed.size, compressed.dtype);
+}
+
+template <typename index_t, typename scalar_t>
+void TopkCompressor::FastUpdateErrorImpl(scalar_t* error, const scalar_t* corrected,
+                         const index_t* compressed, size_t len) {
+  static_assert(sizeof(index_t) == sizeof(scalar_t),
+                "index_t should be the same size as scalar_t");
+  using pair_t = std::pair<index_t, scalar_t>;
+
+  std::copy(corrected, corrected + len, error);
+
+  auto ptr = reinterpret_cast<const pair_t*>(compressed);
+  for (auto i = 0; i < this->_k; ++i) {
+    auto& pair = ptr[i];
+    error[pair.first] = 0;
+  }
+}
+
+void TopkCompressor::FastUpdateError(tensor_t error, tensor_t corrected,
+                                     tensor_t compressed) {
+  switch (corrected.dtype) {
+    case BYTEPS_INT8:
+      return FastUpdateErrorImpl(
+          reinterpret_cast<int8_t*>(error.data),
+          reinterpret_cast<const int8_t*>(corrected.data),
+          reinterpret_cast<const int8_t*>(compressed.data),
+          corrected.size / sizeof(int8_t));
+    case BYTEPS_UINT8:
+      return FastUpdateErrorImpl(
+          reinterpret_cast<uint8_t*>(error.data),
+          reinterpret_cast<const uint8_t*>(corrected.data),
+          reinterpret_cast<const int8_t*>(compressed.data),
+          corrected.size / sizeof(uint8_t));
+    case BYTEPS_INT32:
+      return FastUpdateErrorImpl(
+          reinterpret_cast<int32_t*>(error.data),
+          reinterpret_cast<const int32_t*>(corrected.data),
+          reinterpret_cast<const int32_t*>(compressed.data),
+          corrected.size / sizeof(int32_t));
+    case BYTEPS_FLOAT32:
+      return FastUpdateErrorImpl(
+          reinterpret_cast<float*>(error.data),
+          reinterpret_cast<const float*>(corrected.data),
+          reinterpret_cast<const int32_t*>(compressed.data),
+          corrected.size / sizeof(float));
+    case BYTEPS_INT64:
+      return FastUpdateErrorImpl(
+          reinterpret_cast<int64_t*>(error.data),
+          reinterpret_cast<const int64_t*>(corrected.data),
+          reinterpret_cast<const int64_t*>(compressed.data),
+          corrected.size / sizeof(int64_t));
+    case BYTEPS_FLOAT64:
+      return FastUpdateErrorImpl(
+          reinterpret_cast<double*>(error.data),
+          reinterpret_cast<const double*>(corrected.data),
+          reinterpret_cast<const int64_t*>(compressed.data),
+          corrected.size / sizeof(double));
+    default:
+      BPS_CHECK(0) << "Unsupported data type: " << corrected.dtype;
+  }
 }
 }  // namespace compressor
 }  // namespace common

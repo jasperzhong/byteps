@@ -79,7 +79,7 @@ class BaseCompressor {
    * \param compressed compressed gradient
    */
   virtual void FastUpdateError(tensor_t error, tensor_t corrected,
-                               tensor_t compressed){};
+                               tensor_t compressed);
 
  protected:
   /*!

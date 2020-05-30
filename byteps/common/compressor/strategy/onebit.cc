@@ -198,7 +198,6 @@ template <typename scalar_t, typename index_t>
 void OnebitCompressor::FastUpdateErrorImpl(scalar_t* error, scalar_t* corrected,
                                            index_t* unpacked, float scale,
                                            size_t len) {
-#pragma omp parallel for simd
   for (size_t i = 0; i < len; ++i) {
     error[i] = corrected[i] + scale * (((unpacked[i]) << 1) - 1);
   }
