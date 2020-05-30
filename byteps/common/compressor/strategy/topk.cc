@@ -158,7 +158,7 @@ void TopkCompressor::Unpacking(void* dst, const void* src, size_t size,
 }
 
 void TopkCompressor::Decompress(tensor_t compressed, tensor_t& decompressed) {
-  BPS_CHECK_GE(decompressed.size, 0);
+  BPS_CHECK_GT(decompressed.size, 0);
 #ifdef BYTEPS_BUILDING_SERVER
   if (decompressed.data == nullptr) decompressed.data = _buf.get();
 #endif
@@ -167,13 +167,12 @@ void TopkCompressor::Decompress(tensor_t compressed, tensor_t& decompressed) {
 }
 
 template <typename index_t, typename scalar_t>
-void TopkCompressor::FastUpdateErrorImpl(scalar_t* error, const scalar_t* corrected,
-                         const index_t* compressed, size_t len) {
+void TopkCompressor::FastUpdateErrorImpl(scalar_t* error,
+                                         const index_t* compressed,
+                                         size_t len) {
   static_assert(sizeof(index_t) == sizeof(scalar_t),
                 "index_t should be the same size as scalar_t");
   using pair_t = std::pair<index_t, scalar_t>;
-
-  std::copy(corrected, corrected + len, error);
 
   auto ptr = reinterpret_cast<const pair_t*>(compressed);
   for (auto i = 0; i < this->_k; ++i) {
@@ -184,41 +183,36 @@ void TopkCompressor::FastUpdateErrorImpl(scalar_t* error, const scalar_t* correc
 
 void TopkCompressor::FastUpdateError(tensor_t error, tensor_t corrected,
                                      tensor_t compressed) {
+  std::memcpy(error.data, corrected.data, corrected.size);
   switch (corrected.dtype) {
     case BYTEPS_INT8:
       return FastUpdateErrorImpl(
           reinterpret_cast<int8_t*>(error.data),
-          reinterpret_cast<const int8_t*>(corrected.data),
           reinterpret_cast<const int8_t*>(compressed.data),
           corrected.size / sizeof(int8_t));
     case BYTEPS_UINT8:
       return FastUpdateErrorImpl(
           reinterpret_cast<uint8_t*>(error.data),
-          reinterpret_cast<const uint8_t*>(corrected.data),
           reinterpret_cast<const int8_t*>(compressed.data),
           corrected.size / sizeof(uint8_t));
     case BYTEPS_INT32:
       return FastUpdateErrorImpl(
           reinterpret_cast<int32_t*>(error.data),
-          reinterpret_cast<const int32_t*>(corrected.data),
           reinterpret_cast<const int32_t*>(compressed.data),
           corrected.size / sizeof(int32_t));
     case BYTEPS_FLOAT32:
       return FastUpdateErrorImpl(
           reinterpret_cast<float*>(error.data),
-          reinterpret_cast<const float*>(corrected.data),
           reinterpret_cast<const int32_t*>(compressed.data),
           corrected.size / sizeof(float));
     case BYTEPS_INT64:
       return FastUpdateErrorImpl(
           reinterpret_cast<int64_t*>(error.data),
-          reinterpret_cast<const int64_t*>(corrected.data),
           reinterpret_cast<const int64_t*>(compressed.data),
           corrected.size / sizeof(int64_t));
     case BYTEPS_FLOAT64:
       return FastUpdateErrorImpl(
           reinterpret_cast<double*>(error.data),
-          reinterpret_cast<const double*>(corrected.data),
           reinterpret_cast<const int64_t*>(compressed.data),
           corrected.size / sizeof(double));
     default:

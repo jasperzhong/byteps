@@ -82,8 +82,8 @@ class TopkCompressor : public BaseCompressor {
                      size_t src_len);
 
   template <typename index_t, typename scalar_t>
-  void FastUpdateErrorImpl(scalar_t* error, const scalar_t* corrected,
-                           const index_t* compressed, size_t len);
+  void FastUpdateErrorImpl(scalar_t* error, const index_t* compressed,
+                           size_t len);
 
  private:
   int _k;
