@@ -278,6 +278,10 @@ def get_common_options(build_ext):
     # RDMA and NUMA libs
     LIBRARIES += ['numa']
 
+    # cblas
+    LIBRARIES += ['cblas']
+    LIBRARY_DIRS += ['/usr/lib/x86_64-linux-gnu']
+
     # auto-detect rdma
     if has_rdma_header():
         LIBRARIES += ['rdmacm', 'ibverbs', 'rt']
@@ -321,6 +325,8 @@ def build_server(build_ext, options):
         server_lib.libraries = ['rdmacm', 'ibverbs', 'rt']
     else:
         server_lib.libraries = []
+    
+    server_lib.libraries += ['cblas']
 
     build_ext.build_extension(server_lib)
 

@@ -62,7 +62,7 @@ void VanillaErrorFeedbackCompressor::Init(size_t aligned_size) {
 
 void VanillaErrorFeedbackCompressor::UpdateGradient(tensor_t grad) {
   _cur_lr = *reinterpret_cast<double*>(_mm);
-  this->_cpu_reducer->sum(grad.data, _error.get(), grad.size,
+  this->_cpu_reducer->axpy(grad.data, _error.get(), grad.size,
                           static_cast<DataType>(grad.dtype),
                           (_pre_lr / _cur_lr));
   _pre_lr = _cur_lr;

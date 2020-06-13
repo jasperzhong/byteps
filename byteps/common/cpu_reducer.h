@@ -45,11 +45,14 @@ class CpuReducer {
     BPS_LOG(DEBUG) << "Clear CpuReducer";
   }
 
-  int sum(void* dst, const void* src, size_t len, DataType dtype, float alpha=1.0);
-  int sum(void* dst, const void* src1, const void* src2, size_t len, DataType dtype, float alpha=1.0);
+  int sum(void* dst, const void* src, size_t len, DataType dtype);
+  int sum(void* dst, const void* src1, const void* src2, size_t len, DataType dtype);
   int copy(void* dst, const void* src, size_t len);
   int sign(void* dst, const void* src, size_t len, DataType dtype);
   float norm1(const void* src, size_t len, DataType dtype);
+
+  void axpy(void* dst, const void* src, size_t len, DataType dtype, float alpha);
+  void axpby(void* dst, const void* src, size_t len, DataType dtype, float alpha, float beta);
 
 #ifndef BYTEPS_BUILDING_SERVER
   bool isRoot();
@@ -177,13 +180,13 @@ class CpuReducer {
   }
 
   template <typename T>
-  int _sum(T* dst, const T* src, size_t len, float alpha);
+  int _sum(T* dst, const T* src, size_t len);
 
   template <typename T>
-  int _sum(T* dst, const T* src1, const T* src2, size_t len, float alpha);
+  int _sum(T* dst, const T* src1, const T* src2, size_t len);
 
-  int _sum_float16(void* dst, const void* src, size_t len, float alpha);
-  int _sum_float16(void* dst, const void* src1, const void* src2, size_t len, float alpha);
+  int _sum_float16(void* dst, const void* src, size_t len);
+  int _sum_float16(void* dst, const void* src1, const void* src2, size_t len);
 
   template <typename T1, typename T2>
   size_t _sign(T1* dst, const T2* src, size_t len);
