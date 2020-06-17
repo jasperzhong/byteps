@@ -181,7 +181,7 @@ void BytePSServerEngineThread(int i) {
                     << "src_addr: " << DEBUG_PRINT_TENSOR_ADDRESS(msg.src)
                     << "\t";
         }
-        bps_reducer_->axpy(msg.dst, msg.src, msg.len, bps_type, 1.0);
+        CHECK_GE(bps_reducer_->sum(msg.dst, msg.src, msg.len, bps_type), 0);
         if (is_debug) {
           std::lock_guard<std::mutex> lock(debug_mu_);
           LOG(INFO) << "stage: ENGINE_SUM_RECV_AFTER \t"
@@ -308,8 +308,9 @@ void BytePSHandler(const ps::KVMeta& req_meta,
                                      COPY_FIRST,     req_data, req_meta};
           engine_queues_[tid]->Push(msg);
         } else {  // async mode, directly add to the buffer
-          bps_reducer_->axpy((void*)stored->tensor, (void*)recved, len,
-                                     bps_reducer_->GetDataType(stored->dtype), 1.0);
+          CHECK_GE(bps_reducer_->sum((void*)stored->tensor, (void*)recved, len,
+                                     bps_reducer_->GetDataType(stored->dtype)),
+                   0);
         }
       } else {  // from other workers
         CHECK(sync_mode_);
