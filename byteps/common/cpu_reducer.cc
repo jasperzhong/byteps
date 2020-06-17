@@ -17,6 +17,7 @@
 #include "global.h"
 #endif
 
+// #include <cblas.h>
 #include <cblas.h>
 #include <cmath>
 
@@ -319,17 +320,30 @@ void CpuReducer::axpy(void* dst, const void* src, size_t len, DataType dtype,
 }
 
 void CpuReducer::axpby(void* dst, const void* src, size_t len, DataType dtype,
-                       float alpha, float beta) {
+                      float alpha, float beta) {
   switch (dtype) {
     case BYTEPS_FLOAT32:
-    // y = ax + by
       return cblas_saxpby(len / sizeof(float), alpha,
-                          reinterpret_cast<const float*>(src), 1, beta,
-                          reinterpret_cast<float*>(dst), 1);
-    // case BYTEPS_FLOAT64:
-    //   return cblas_daxpby(len / sizeof(double), alpha,
-    //                       reinterpret_cast<const double*>(src), 1, beta,
-    //                       reinterpret_cast<double*>(dst), 1);
+                         reinterpret_cast<const float*>(src), 1, beta,
+                         reinterpret_cast<float*>(dst), 1);
+    case BYTEPS_FLOAT64:
+      return cblas_daxpby(len / sizeof(double), alpha,
+                         reinterpret_cast<const double*>(src), 1, beta,
+                         reinterpret_cast<double*>(dst), 1);
+    default:
+      BPS_CHECK(0) << "Unsupported data type: " << dtype;
+  }
+}
+
+void CpuReducer::scal(void* dst, size_t len, DataType dtype, float alpha) {
+  switch (dtype) {
+    case BYTEPS_FLOAT32:
+      // y = ay
+      return cblas_sscal(len / sizeof(float), alpha,
+                         reinterpret_cast<float*>(dst), 1);
+    case BYTEPS_FLOAT64:
+      return cblas_dscal(len / sizeof(double), alpha,
+                         reinterpret_cast<double*>(dst), 1);
     default:
       BPS_CHECK(0) << "Unsupported data type: " << dtype;
   }

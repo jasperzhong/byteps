@@ -53,6 +53,7 @@ class CpuReducer {
 
   void axpy(void* dst, const void* src, size_t len, DataType dtype, float alpha);
   void axpby(void* dst, const void* src, size_t len, DataType dtype, float alpha, float beta);
+  void scal(void* dst, size_t len, DataType dtype, float alpha);
 
 #ifndef BYTEPS_BUILDING_SERVER
   bool isRoot();

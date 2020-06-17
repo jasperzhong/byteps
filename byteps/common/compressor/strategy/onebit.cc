@@ -14,6 +14,7 @@
 // =============================================================================
 
 #include "onebit.h"
+#include <cmath>
 
 #include "../../logging.h"
 
@@ -49,10 +50,10 @@ size_t OnebitCompressor::PackingImpl(index_t* dst, const scalar_t* src,
 
   float scale = 1.0f;
   if (_use_scale) {
-    float sum = 0.0f;
+    double sum = 0.0f;
     for (size_t i = 0; i < len; ++i) {
       dst[i] = src[i] < 0;
-      sum += abs(src[i]);
+      sum += std::fabs(src[i]);
     }
     scale = sum / len;
   } else {
@@ -150,6 +151,7 @@ void OnebitCompressor::UnpackingImpl(scalar_t* dst, const index_t* src,
     int sign = -(((ptr[j] & 0x01) << 1) - 1);
     dst[j] = sign * scale;
   }
+
 }
 
 void OnebitCompressor::Unpacking(void* dst, const void* src, size_t size,
@@ -203,6 +205,17 @@ void OnebitCompressor::FastUpdateErrorImpl(scalar_t* error, scalar_t* corrected,
   for (size_t i = 0; i < len; ++i) {
     error[i] = corrected[i] + scale * (((unpacked[i]) << 1) - 1);
   }
+}
+
+template <>
+void OnebitCompressor::FastUpdateErrorImpl(float* error, float* corrected,
+                                           int32_t* unpacked, float scale,
+                                           size_t len) {
+  for (int i = 0; i < len; ++i) {
+    error[i] = (((unpacked[i]) << 1) - 1);
+  }
+  // y = ax + by     e = ap + be
+  this->_cpu_reducer->axpby(error, corrected, len*sizeof(float), BYTEPS_FLOAT32, 1.0, scale);
 }
 
 void OnebitCompressor::FastUpdateError(tensor_t error, tensor_t corrected,

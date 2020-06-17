@@ -279,8 +279,7 @@ def get_common_options(build_ext):
     LIBRARIES += ['numa']
 
     # cblas
-    LIBRARIES += ['cblas']
-    LIBRARY_DIRS += ['/usr/lib/x86_64-linux-gnu']
+    LIBRARIES += ['openblas']
 
     # auto-detect rdma
     if has_rdma_header():
@@ -326,7 +325,7 @@ def build_server(build_ext, options):
     else:
         server_lib.libraries = []
     
-    server_lib.libraries += ['cblas']
+    server_lib.libraries += ['openblas']
 
     build_ext.build_extension(server_lib)
 
