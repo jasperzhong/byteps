@@ -14,7 +14,6 @@
 // =============================================================================
 
 #include "multibit.h"
-
 #include "../compressor_registry.h"
 
 namespace byteps {
