@@ -8,6 +8,12 @@ export DMLC_NUM_SERVER=1
 export DMLC_PS_ROOT_URI=127.0.0.1
 export DMLC_PS_ROOT_PORT=1234
 
+function cleanup {
+  rm -rf lr.s
+}
+
+trap cleanup EXIT
+
 pkill bpslaunch
 pkill python3
 
@@ -32,6 +38,8 @@ elif [ "$TEST_TYPE" == "keras" ]; then
   echo "TEST KERAS ..."
   python $path/test_tensorflow_keras.py $@
 elif [ "$TEST_TYPE" == "onebit" ]; then
+  export BYTEPS_MIN_COMPRESS_BYTES=0
+  export BYTEPS_PARTITION_BYTES=2147483647
   echo "TEST ONEBIT"
   bpslaunch python3 test_onebit.py
 else

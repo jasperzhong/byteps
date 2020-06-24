@@ -1,72 +1,121 @@
-import mxnet as mx
-from mxnet import autograd, gluon
+import unittest
+
 import byteps.mxnet as bps
-from gluoncv.model_zoo import get_model
+import mxnet as mx
+import mxnet.ndarray as nd
 import numpy as np
+from gluoncv.model_zoo import get_model
+from mxnet import gluon, autograd
+
+from utils import fake_data
 
 
-def fake_data(dtype="float32", height=224, width=224, depth=3, num_classes=1000):
-    image = mx.ndarray.random.normal(-1, 1,
-                                     shape=[1, depth, height, width],
-                                     dtype=dtype)
-    label = mx.ndarray.random.randint(0, num_classes, [1, 1])
-
-    images = mx.ndarray.repeat(image, 1024, axis=0)
-    labels = mx.ndarray.repeat(label, 1024, axis=0)
-
-    fake_dataset = mx.gluon.data.ArrayDataset(images, labels)
-
-    return mx.gluon.data.DataLoader(fake_dataset, batch_size=32, num_workers=2, last_batch='discard')
+def onebit(x):
+    l1 = np.linalg.norm(x.flatten(), 1)
+    sign = x < 0
+    sign = -((sign << 1) - 1)
+    return l1 / len(x.flatten()) * sign
 
 
-bps.init()
+class OnebitTestCase(unittest.TestCase):
+    def test_onebit(self):
+        bps.init()
+        ctx = mx.gpu(0)
+        net = get_model("resnet18_v2")
+        net.initialize(mx.init.Xavier(), ctx=ctx)
+        net.summary(nd.ones((1, 3, 224, 224), ctx=ctx))
 
-ctx = mx.gpu(0)
-net = get_model("resnet18_v2")
-net.initialize(mx.init.Xavier(), ctx=ctx)
-params = net.collect_params()
+        # hyper-params
+        optimizer_params = {'momentum': 0.9, 'wd': 1e-4,
+                            'learning_rate': 0.01}
 
-optimizer_params = {'momentum': 0.9, 'wd': 1e-4,
-                    'learning_rate': 0.01}
+        compression_params = {
+            "compressor": "onebit",
+            "ef": "vanilla",
+            "momentum": "nesterov",
+            "scaling": True,
+        }
 
-compression_params = {
-    "compressor": "onebit",
-    "ef": "vanilla",
-    "momentum": "nesterov",
-    "scaling": True,
-}
+        trainer = bps.DistributedTrainer(net.collect_params(
+        ), "sgd", optimizer_params, compression_params=compression_params)
 
-trainer = bps.DistributedTrainer(
-    params, "sgd", optimizer_params, compression_params=compression_params)
+        loss_fn = gluon.loss.SoftmaxCrossEntropyLoss()
 
-loss_fn = gluon.loss.SoftmaxCrossEntropyLoss()
+        train_data = fake_data()
 
-train_data = fake_data()
+        params = {}
+        errors = {}
+        errors_s = {}
+        moms = {}
+        wd_moms = {}
 
-for i, batch in enumerate(train_data):
-    data = batch[0].as_in_context(ctx)
-    label = batch[1].as_in_context(ctx)
+        for i, param in enumerate(trainer._params):
+            if param.grad_req != 'null':
+                params[i] = param._data[0].asnumpy()
+                errors[i] = np.zeros_like(params[i])
+                errors_s[i] = np.zeros_like(params[i])
+                moms[i] = np.zeros_like(params[i])
+                wd_moms[i] = np.zeros_like(params[i])
 
-    with autograd.record():
-        output = net(data)
-        loss = loss_fn(output, label)
+        for it, batch in enumerate(train_data):
+            data = batch[0].as_in_context(ctx)
+            label = batch[1].as_in_context(ctx)
 
-    loss.backward()
+            with autograd.record():
+                output = net(data)
+                loss = loss_fn(output, label)
 
-    for _, param in params.items():
-        if param.grad_req != "null":
-            x = param._grad[0].asnumpy()
-            break
+            loss.backward()
 
-    def onebit(tensor):
-        pass
+            gs = {}
+            xs = {}
 
-    trainer.step(32)
+            for i, param in enumerate(trainer._params):
+                if param.grad_req != 'null':
+                    gs[i] = param._grad[0].asnumpy()
+                    xs[i] = param._data[0].asnumpy()
 
-    for _, param in params.items():
-        if param.grad_req != "null":
-            y = param._grad[0].asnumpy()
-            break
+            trainer.step(32)
 
-    print(np.allclose(onebit(x), y))
-    input()
+            for i, param in enumerate(trainer._params):
+                if param.grad_req != "null":
+                    g = gs[i] / (32 * bps.size())
+                    moms[i] *= 0.9
+                    moms[i] += g
+                    g += 0.9 * moms[i]
+                    g += errors[i]
+                    c = onebit(g)
+                    errors[i] = g - c
+
+                    c += errors_s[i]
+                    cs = onebit(c)
+                    errors_s[i] = c - cs
+                    c = cs
+
+                    wd_moms[i] = 0.9 * wd_moms[i] + 1e-4 * xs[i]
+                    c += 0.9 * wd_moms[i] + 1e-4 * xs[i]
+                    params[i] -= optimizer_params["learning_rate"] * c
+
+        cnt = 0
+        tot = 0
+        diffs = []
+        for i, param in enumerate(trainer._params):
+            if param.grad_req != "null":
+                x = param._data[0].asnumpy()
+                tot += len(x.flatten())
+                if not np.allclose(params[i], x, atol=np.finfo(np.float32).eps):
+                    diff = np.abs(x.flatten() - params[i].flatten())
+                    diffs.append(np.max(diff))
+                    idx = np.where(diff > np.finfo(np.float32).eps)
+                    cnt += len(idx[0])
+                else:
+                    print(x.shape)
+
+        print("false=%d tot=%d false / tot = %lf" % (cnt, tot, cnt / tot))
+        if diffs:
+            print("max_diff=%f\tmin_diff=%f\tmean_diff=%f" %
+                  (np.max(diffs), np.min(diffs), np.mean(diffs)))
+
+
+if __name__ == '__main__':
+    unittest.main()
