@@ -31,7 +31,7 @@ typedef struct BPSTensor {
   int dtype;
 
   BPSTensor() : data(nullptr), size(0), dtype(0) {}
-  BPSTensor(byte_t* data, size_t size, int dtype)
+  BPSTensor(byte_t* data, size_t size=0, int dtype=0)
       : data(data), size(size), dtype(dtype) {}
 } tensor_t;
 

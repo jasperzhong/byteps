@@ -627,7 +627,7 @@ bool RunDecompressLoopOnce() {
       auto &pskv = BytePSGlobal::EncodeDefaultKey(task->key, 0);
       auto len = pskv.lens[0];
       int dtype = task->tensor->dtype();
-      compressor::tensor_t compressed(data, len, dtype), decompressed;
+      compressor::tensor_t compressed(data, len, dtype), decompressed{data};
       task->compressor->Decompress(compressed, decompressed);
       BPS_LOG(DEBUG) << "PULL  with gradient compression. key=" << task->key;
 

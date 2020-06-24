@@ -37,11 +37,6 @@ class Momentum : public Compressor {
         _mu(mu),
         _mom(new byte_t[size]()){};
   virtual ~Momentum() = default;
-  /*!
-   * \brief Allocate encoding buffer for compression.
-   * \param aligned_size aligned size
-   */
-  virtual void Init(size_t aligned_size) final;
 
   /*!
    * \brief Compress function
