@@ -14,11 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 """Gradient compression algorithms."""
-import mxnet
 import mxnet.ndarray as nd
-
-import threading
-from queue import Queue, Empty
 
 
 class Compressor(object):
