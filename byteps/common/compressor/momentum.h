@@ -38,36 +38,24 @@ class Momentum : public Compressor {
         _mom(new byte_t[size]()){};
   virtual ~Momentum() = default;
 
-  /*!
-   * \brief Compress function
-   *
-   * \param grad gradient tensor
-   * \param compressed compressed tensor
-   */
   virtual void Compress(tensor_t grad, tensor_t& compressed) final;
 
-  /*!
-   * \brief Decompress function
-   *
-   * \param compressed compressed tensor
-   * \param decompressed decompressed tensor
-   */
   virtual void Decompress(tensor_t compressed, tensor_t& decompressed) final;
 
  protected:
   /*!
    * \brief Update momentum
    *
-   * m_t = \mu * m_{t-1} + g_t
+   * e.g. m_t = \mu * m_{t-1} + g_t
    *
    * \param grad refers to gradient
    */
   virtual void UpdateMom(tensor_t grad) = 0;
 
   /*!
-   * \brief Update gradient
+   * \brief Update gradient with momentum
    *
-   * p_t = \mu m_t + g_t
+   * e.g. g_t = \mu m_t + g_t
    *
    * \param grad refers to gradient which adds momentum in place.
    */

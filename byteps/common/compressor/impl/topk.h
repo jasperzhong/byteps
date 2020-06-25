@@ -13,8 +13,8 @@
 // limitations under the License.
 // =============================================================================
 
-#ifndef BYTEPS_COMPRESSOR_STRATEGY_ONEBIT_H
-#define BYTEPS_COMPRESSOR_STRATEGY_ONEBIT_H
+#ifndef BYTEPS_COMPRESSOR_IMPL_TOPK_H
+#define BYTEPS_COMPRESSOR_IMPL_TOPK_H
 
 #include "../compressor.h"
 
@@ -23,30 +23,25 @@ namespace common {
 namespace compressor {
 
 /*!
- * \brief Onebit Compressor
+ * \brief TopK Compressor
  *
- * paper: SIGNSGD: Compressed Optimisation for Non-Convex Problems
- * https://arxiv.org/pdf/1802.04434.pdf
+ * paper: Sparsified SGD with Memory
+ * https://arxiv.org/pdf/1809.07599.pdf
  *
- * each worker i:
- *    c_i <- sign(grad)
+ * sending the most significant entries of the stochastic gradient
  *
- * server: majority vote
- *    sign(\sum_i c_i)
- *
- * \note 0 represents positive and 1 represents negative.
  */
-class OnebitCompressor : public Compressor {
+class TopkCompressor : public Compressor {
  public:
-  OnebitCompressor(size_t size, bool use_scale = false)
-      : Compressor(size), _use_scale(use_scale) {}
-  virtual ~OnebitCompressor() = default;
+  TopkCompressor(size_t size, int k) : Compressor(size), _k(k){};
+  virtual ~TopkCompressor() = default;
 
   /*!
    * \brief Compress function
    *
-   * compress and pack into byte array.
-   * each bit represents a sign.
+   * select topk entries and corresponding indices
+   *
+   * \note compare with absolute values
    *
    * \param grad gradient tensor
    * \param compressed compressed tensor
@@ -56,7 +51,7 @@ class OnebitCompressor : public Compressor {
   /*!
    * \brief Decompress function
    *
-   * unpack from byte array to FP tensor
+   * fill a zero tensor with topk entries and corresponding indices
    *
    * \param compressed compressed tensor
    * \param decompressed decompressed tensor
@@ -74,25 +69,27 @@ class OnebitCompressor : public Compressor {
                        tensor_t compressed) override;
 
  private:
-  size_t Packing(void* dst, const void* src, size_t len, int dtype);
+  size_t Packing(const void* src, size_t size, int dtype);
 
   template <typename index_t, typename scalar_t>
   size_t PackingImpl(index_t* dst, const scalar_t* src, size_t len);
 
-  void Unpacking(void* dst, const void* src, size_t len, int dtype);
+  void Unpacking(void* dst, const void* src, size_t size, size_t src_size,
+                 int dtype);
 
-  template <typename scalar_t, typename index_t>
-  void UnpackingImpl(scalar_t* dst, const index_t* src, size_t size);
+  template <typename index_t, typename scalar_t>
+  void UnpackingImpl(scalar_t* dst, const index_t* src, size_t len,
+                     size_t src_len);
 
-  template <typename scalar_t, typename index_t>
-  void FastUpdateErrorImpl(scalar_t* error, scalar_t* corrected,
-                           index_t* unpacked, float scale, size_t len);
+  template <typename index_t, typename scalar_t>
+  void FastUpdateErrorImpl(scalar_t* error, const index_t* compressed,
+                           size_t len);
 
  private:
-  bool _use_scale;
+  int _k;
 };
 }  // namespace compressor
 }  // namespace common
 }  // namespace byteps
 
-#endif  // BYTEPS_COMPRESSOR_STRATEGY_ONEBIT_H
+#endif  // BYTEPS_COMPRESSOR_IMPL_TOPK_H

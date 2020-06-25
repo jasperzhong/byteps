@@ -25,7 +25,20 @@ namespace byteps {
 namespace common {
 namespace compressor {
 /*!
- *  \brief Compressor interface used in BytePS core.
+ * \brief Compressor interface
+ * Compressor defines two universal API - \sa Compress & Decompress
+ * 
+ * \par
+ * The caller do not need to allocate additional memory to store compressed data
+ * because there is an internal buffer to store the compressed data and the
+ * pointer will be returned to the caller. Then the caller can send the returned
+ * compressed data.
+ * 
+ * \par
+ * Detailed impl 
+ *
+ *
+ * \sa tensor_t
  */
 class Compressor {
  public:
@@ -38,10 +51,19 @@ class Compressor {
   /*!
    * \brief Compress function
    *
-   * \param grad gradient tensor
-   * \param compressed compressed tensor
+   * \note except for error-feedback and momentum, the underlying data of input
+   * should never be changed. this is because input is still used in error
+   * feedback if enabled.
+   *
+   * \param grad gradient tensor, passed by value.
+   * \param compressed Output compressed tensor, passed by ref. Passed
+   * `compressed` can be an empty tensor, its values are given in this function.
+   * In the implementation, its pointer must be assigned to the buffer of the
+   * compressor (`_buf`).
    */
-  virtual void Compress(tensor_t grad, tensor_t& compressed) = 0;
+  virtual void Compress(tensor_t grad, tensor_t& compressed) {
+    compressed.data = _buf.get();  // this is a must
+  };
 
   /*!
    * \brief Decompress function
@@ -49,10 +71,26 @@ class Compressor {
    * \param compressed compressed tensor
    * \param decompressed decompressed tensor
    */
-  virtual void Decompress(tensor_t compressed, tensor_t& decompressed) = 0;
+  virtual void Decompress(tensor_t compressed, tensor_t& decompressed) {}
 
+ protected:
   /*!
-   * \brief help function for error feedback `UpdateError`
+   * \brief faster version of `UpdateError` via operation fusion
+   *
+   * \par
+   * This is a helper function implemented by each compressor. If defined,
+   * `ErrorFeedback` will use this function instead of defualt `UpdateError`
+   * function implemented in error_feedback.cc. If undefined, default
+   * `UpdateError` will be used.
+   *
+   * \par
+   * Typically `UpdateError` needs to decompress and do a substraction. But for
+   * most compressors, the step of decompression can be avoided. For example,
+   * for topk compressor, `UpdateError` can be simplied in this way:
+   * 1. e <- p (e is the error and p is the corrected gradient)
+   * 2. zero-fill e with selected k indices
+   *
+   * Actually it is a fusion of original decompression and substraction.
    *
    * \param corrected gradient corrected with error
    * \param error error
@@ -63,11 +101,8 @@ class Compressor {
     BPS_LOG(FATAL) << "FastUpdateError is not implemented";
   };
 
-  size_t size() const { return _size; }
-
- protected:
   /*!
-   * \brief buffer
+   * \brief buffer to store compressed grad
    */
   std::unique_ptr<byte_t[]> _buf;
 

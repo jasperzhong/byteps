@@ -13,8 +13,8 @@
 // limitations under the License.
 // =============================================================================
 
-#ifndef BYTEPS_COMPRESSOR_STRATEGY_MULTIBIT_H
-#define BYTEPS_COMPRESSOR_STRATEGY_MULTIBIT_H
+#ifndef BYTEPS_COMPRESSOR_IMPL_MULTIBIT_H
+#define BYTEPS_COMPRESSOR_IMPL_MULTIBIT_H
 
 #include "../compressor.h"
 
@@ -41,4 +41,4 @@ class DitheringCompressor : public Compressor {
 }  // namespace common
 }  // namespace byteps
 
-#endif  // BYTEPS_COMPRESSOR_STRATEGY_MULTIBIT_H
+#endif  // BYTEPS_COMPRESSOR_IMPL_MULTIBIT_H

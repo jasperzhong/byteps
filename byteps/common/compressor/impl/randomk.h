@@ -13,8 +13,10 @@
 // limitations under the License.
 // =============================================================================
 
-#ifndef BYTEPS_COMPRESSOR_STRATEGY_TOPK_H
-#define BYTEPS_COMPRESSOR_STRATEGY_TOPK_H
+#ifndef BYTEPS_COMPRESSOR_IMPL_RANDOMK_H
+#define BYTEPS_COMPRESSOR_IMPL_RANDOMK_H
+
+#include <random>
 
 #include "../compressor.h"
 
@@ -23,25 +25,30 @@ namespace common {
 namespace compressor {
 
 /*!
- * \brief TopK Compressor
+ * \brief RandomK Compressor
  *
  * paper: Sparsified SGD with Memory
  * https://arxiv.org/pdf/1809.07599.pdf
  *
- * sending the most significant entries of the stochastic gradient
- *
+ * randomly sending k entries of the stochastic gradient
  */
-class TopkCompressor : public Compressor {
+class RandomkCompressor : public Compressor {
  public:
-  TopkCompressor(size_t size, int k) : Compressor(size), _k(k){};
-  virtual ~TopkCompressor() = default;
+  RandomkCompressor(size_t size, int k, unsigned int seed = 0,
+                    bool deterministic = false)
+      : Compressor(size), _k(k) {
+    if (deterministic) {
+      _gen.seed(seed);
+    } else {
+      _gen.seed(_rd());
+    }
+  };
+  virtual ~RandomkCompressor() = default;
 
   /*!
    * \brief Compress function
    *
-   * select topk entries and corresponding indices
-   *
-   * \note compare with absolute values
+   * randomly select k entries and corresponding indices
    *
    * \param grad gradient tensor
    * \param compressed compressed tensor
@@ -87,9 +94,11 @@ class TopkCompressor : public Compressor {
 
  private:
   int _k;
+  std::random_device _rd;
+  std::mt19937 _gen;
 };
 }  // namespace compressor
 }  // namespace common
 }  // namespace byteps
 
-#endif  // BYTEPS_COMPRESSOR_STRATEGY_TOPK_H
+#endif  // BYTEPS_COMPRESSOR_IMPL_RANDOMK_H

@@ -33,20 +33,8 @@ class ErrorFeedback : public Compressor {
       : Compressor(size), _cptr(std::move(cptr)), _error(new byte_t[size]()) {}
   virtual ~ErrorFeedback() = default;
 
-  /*!
-   * \brief Compress function
-   *
-   * \param grad gradient tensor
-   * \param compressed compressed tensor
-   */
   virtual void Compress(tensor_t grad, tensor_t& compressed);
 
-  /*!
-   * \brief Decompress function
-   *
-   * \param compressed compressed tensor
-   * \param decompressed decompressed tensor
-   */
   virtual void Decompress(tensor_t compressed, tensor_t& decompressed);
 
  protected:

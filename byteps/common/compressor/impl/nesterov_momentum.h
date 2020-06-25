@@ -13,8 +13,8 @@
 // limitations under the License.
 // =============================================================================
 
-#ifndef BYTEPS_COMPRESSOR_STRATEGY_NESTEROV_MOMENTUM_H
-#define BYTEPS_COMPRESSOR_STRATEGY_NESTEROV_MOMENTUM_H
+#ifndef BYTEPS_COMPRESSOR_IMPL_NESTEROV_MOMENTUM_H
+#define BYTEPS_COMPRESSOR_IMPL_NESTEROV_MOMENTUM_H
 
 #include "../momentum.h"
 
@@ -38,4 +38,4 @@ class NesterovMomentumCompressor : public Momentum {
 }  // namespace common
 }  // namespace byteps
 
-#endif  // BYTEPS_COMPRESSOR_STRATEGY_NESTEROV_MOMENTUM_H
+#endif  // BYTEPS_COMPRESSOR_IMPL_NESTEROV_MOMENTUM_H
