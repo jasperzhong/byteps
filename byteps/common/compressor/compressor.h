@@ -26,19 +26,27 @@ namespace common {
 namespace compressor {
 /*!
  * \brief Compressor interface
- * Compressor defines two universal API - \sa Compress & Decompress
- * 
+ * Compressor defines two universal API - Compress & Decompress
+ *
  * \par
  * The caller do not need to allocate additional memory to store compressed data
  * because there is an internal buffer to store the compressed data and the
  * pointer will be returned to the caller. Then the caller can send the returned
- * compressed data.
- * 
+ * compressed data as normal.
+ *
  * \par
- * Detailed impl 
+ * There are two optional features of the compressor - error-feedback &
+ * momentum. These two features can be added to any common compressors like 1bit
+ * and topk. To be generic, these two features are also compressors, exposing
+ * the same API as Compressor. More details can be found in their own files.
  *
+ * \par
+ * To add a new compressor, developers need to inherit this class in 'impl'
+ * directory. If a new optional feature like error-feedback is needed,
+ * developers need to use decorator pattern and add new files in the current
+ * directory. The existing implementation can be used as a reference.
  *
- * \sa tensor_t
+ * \sa ErrorFeedback, Momentum
  */
 class Compressor {
  public:
@@ -51,27 +59,34 @@ class Compressor {
   /*!
    * \brief Compress function
    *
-   * \note except for error-feedback and momentum, the underlying data of input
+   * \note Except for error-feedback and momentum, the underlying data of input
    * should never be changed. this is because input is still used in error
    * feedback if enabled.
    *
+   * \note Compressed data should be stored in the buffer of the compressor. So
+   * it is not an inplace operation.
+   *
    * \param grad gradient tensor, passed by value.
-   * \param compressed Output compressed tensor, passed by ref. Passed
-   * `compressed` can be an empty tensor, its values are given in this function.
-   * In the implementation, its pointer must be assigned to the buffer of the
-   * compressor (`_buf`).
+   * \return compressed tensor. it is the buffer of the compressor,
+   * which contains the compressed data. the returned size is the size of
+   * compressed data.
    */
-  virtual void Compress(tensor_t grad, tensor_t& compressed) {
-    compressed.data = _buf.get();  // this is a must
-  };
+  virtual tensor_t Compress(tensor_t grad) = 0;
 
   /*!
    * \brief Decompress function
    *
-   * \param compressed compressed tensor
-   * \param decompressed decompressed tensor
+   * \note For servers, decompression is not an inplace operation. The
+   * decompressed results locates in the buffer of the compressor. For workers,
+   * it is an inplace operation.
+   *
+   * \param compressed compressed tensor.
+   * \return decompressed tensor. For servers, it is the buffer of the
+   * compressor, which contains the decompressed data. For workers, its pointer
+   * is the same as the input's, while the size is decompressed size, which is
+   * also the original size.
    */
-  virtual void Decompress(tensor_t compressed, tensor_t& decompressed) {}
+  virtual tensor_t Decompress(tensor_t compressed) = 0;
 
  protected:
   /*!
