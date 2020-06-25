@@ -41,7 +41,7 @@ def dithering(x, k, partition='linear'):
         # 2 < 3 < 4
         y *= 2**(k-1)
         low = round_next_pow2(int(np.ceil(y))) << 1
-        p = (low - y) / (low >> 1)
+        p = (y - low) / low
         y = (1 + np.random.binomial(n=1, p=p)) * low
         y /= 2**(k-1)
 
