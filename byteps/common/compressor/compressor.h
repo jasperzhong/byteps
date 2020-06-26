@@ -46,6 +46,7 @@ namespace compressor {
  * developers need to use decorator pattern and add new files in the current
  * directory. The existing implementation can be used as a reference.
  *
+ *
  * \sa ErrorFeedback, Momentum
  */
 class Compressor {
@@ -88,7 +89,6 @@ class Compressor {
    */
   virtual tensor_t Decompress(tensor_t compressed) = 0;
 
- protected:
   /*!
    * \brief faster version of `UpdateError` via operation fusion
    *
@@ -105,7 +105,8 @@ class Compressor {
    * 1. e <- p (e is the error and p is the corrected gradient)
    * 2. zero-fill e with selected k indices
    *
-   * Actually it is a fusion of original decompression and substraction.
+   * Actually it is a fusion of original decompression and substraction. It is
+   * optional to override.
    *
    * \param corrected gradient corrected with error
    * \param error error
@@ -116,19 +117,13 @@ class Compressor {
     BPS_LOG(FATAL) << "FastUpdateError is not implemented";
   };
 
-  /*!
-   * \brief buffer to store compressed grad
-   */
+  /*! \brief buffer to store compressed grad */
   std::unique_ptr<byte_t[]> _buf;
 
-  /*!
-   * \brief original size
-   */
+  /*! \brief original size */
   size_t _size;
 
-  /*!
-   * \brief CPU reducer
-   */
+  /*! \brief CPU reducer */
   std::unique_ptr<CpuReducer> _cpu_reducer;
 };
 

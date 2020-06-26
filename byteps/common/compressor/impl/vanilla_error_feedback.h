@@ -23,7 +23,7 @@ namespace common {
 namespace compressor {
 
 /*!
- * \brief VanillaErrorFeedbackCompressor
+ * \brief Vanilla Error Feedback Compressor
  *
  * paper: Communication-efficient distributed blockwise momentum sgd with
  * error-feedback
