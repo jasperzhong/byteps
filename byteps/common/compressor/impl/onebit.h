@@ -51,7 +51,7 @@ class OnebitCompressor : public Compressor {
    * \param grad gradient tensor
    * \param compressed compressed tensor
    */
-  void Compress(tensor_t grad, tensor_t& compressed) override;
+  tensor_t Compress(tensor_t grad) override;
 
   /*!
    * \brief Decompress function
@@ -61,7 +61,7 @@ class OnebitCompressor : public Compressor {
    * \param compressed compressed tensor
    * \param decompressed decompressed tensor
    */
-  void Decompress(tensor_t compressed, tensor_t& decompressed) override;
+  tensor_t Decompress(tensor_t compressed) override;
 
   /*!
    * \brief help function for error feedback `UpdateError`
@@ -74,7 +74,7 @@ class OnebitCompressor : public Compressor {
                        tensor_t compressed) override;
 
  private:
-  size_t Packing(void* dst, const void* src, size_t len, int dtype);
+  size_t Packing(const void* src, size_t len, int dtype);
 
   template <typename index_t, typename scalar_t>
   size_t PackingImpl(index_t* dst, const scalar_t* src, size_t len);
@@ -86,7 +86,7 @@ class OnebitCompressor : public Compressor {
 
   template <typename scalar_t, typename index_t>
   void FastUpdateErrorImpl(scalar_t* error, scalar_t* corrected,
-                           index_t* unpacked, float scale, size_t len);
+                           index_t* compressed, float scale, size_t len);
 
  private:
   bool _use_scale;

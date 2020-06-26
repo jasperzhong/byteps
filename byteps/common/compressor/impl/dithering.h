@@ -30,9 +30,9 @@ class DitheringCompressor : public Compressor {
   DitheringCompressor(size_t size, int k) : Compressor(size), _k(k){};
   virtual ~DitheringCompressor() = default;
 
-  void Compress(tensor_t grad, tensor_t& compressed) override;
+  tensor_t Compress(tensor_t grad) override;
 
-  void Decompress(tensor_t compressed, tensor_t& decompressed) override;
+  tensor_t Decompress(tensor_t compressed) override;
 
  private:
   int _k;

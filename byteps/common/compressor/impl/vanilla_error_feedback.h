@@ -46,11 +46,7 @@ class VanillaErrorFeedbackCompressor : public ErrorFeedback {
   virtual ~VanillaErrorFeedbackCompressor();
 
  protected:
-  /*!
-   * \brief 
-   * 
-   * \param grad 
-   */
+ 
   void UpdateGradient(tensor_t grad) override;
 
  private:

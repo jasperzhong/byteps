@@ -22,6 +22,16 @@ namespace byteps {
 namespace common {
 namespace compressor {
 
+/*!
+ * \brief Nesterov Momentum Compressor
+ *
+ * paper: A method for solving the convex programming problem with convergence
+ * rate $O (1/k^2)$
+ * 
+ * m_t <- \mu m_{t-1} + g_t
+ * g_t <- \mu m_t + g_t
+ * 
+ */
 class NesterovMomentumCompressor : public Momentum {
  public:
   NesterovMomentumCompressor(size_t size, std::unique_ptr<Compressor> cptr,

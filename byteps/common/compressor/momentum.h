@@ -41,6 +41,7 @@ namespace compressor {
  */
 class Momentum : public Compressor {
  public:
+  // momentum should be cleared to zeros
   Momentum(size_t size, std::unique_ptr<Compressor> cptr, float mu)
       : Compressor(size),
         _cptr(std::move(cptr)),

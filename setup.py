@@ -253,7 +253,7 @@ def get_common_options(build_ext):
                'byteps/common/compressor/compressor_registry.cc',
                'byteps/common/compressor/error_feedback.cc',
                'byteps/common/compressor/momentum.cc',
-               'byteps/common/compressor/impl/multibit.cc',
+               'byteps/common/compressor/impl/dithering.cc',
                'byteps/common/compressor/impl/onebit.cc',
                'byteps/common/compressor/impl/randomk.cc',
                'byteps/common/compressor/impl/topk.cc',
@@ -305,7 +305,7 @@ def build_server(build_ext, options):
                           'byteps/common/common.cc'] + [
                           'byteps/common/compressor/compressor_registry.cc',
                           'byteps/common/compressor/error_feedback.cc',
-                          'byteps/common/compressor/impl/multibit.cc',
+                          'byteps/common/compressor/impl/dithering.cc',
                           'byteps/common/compressor/impl/onebit.cc',
                           'byteps/common/compressor/impl/randomk.cc',
                           'byteps/common/compressor/impl/topk.cc',

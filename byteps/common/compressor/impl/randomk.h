@@ -31,6 +31,9 @@ namespace compressor {
  * https://arxiv.org/pdf/1809.07599.pdf
  *
  * randomly sending k entries of the stochastic gradient
+ *
+ * \note it is a stochastic algorithm. If you want to have deterministic
+ * behavior, please set a seed in the configurations.
  */
 class RandomkCompressor : public Compressor {
  public:
@@ -53,7 +56,7 @@ class RandomkCompressor : public Compressor {
    * \param grad gradient tensor
    * \param compressed compressed tensor
    */
-  void Compress(tensor_t grad, tensor_t& compressed) override;
+  tensor_t Compress(tensor_t grad) override;
 
   /*!
    * \brief Decompress function
@@ -63,10 +66,13 @@ class RandomkCompressor : public Compressor {
    * \param compressed compressed tensor
    * \param decompressed decompressed tensor
    */
-  void Decompress(tensor_t compressed, tensor_t& decompressed) override;
+  tensor_t Decompress(tensor_t compressed) override;
 
   /*!
-   * \brief help function for error feedback `UpdateError`
+   * \brief faster version of `UpdateError` 
+   * 
+   * 1. e <- p (e is the error and p is the corrected gradient)
+   * 2. zero-fill e with selected k indices
    *
    * \param corrected gradient corrected with error
    * \param error error
