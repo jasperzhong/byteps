@@ -24,3 +24,22 @@ def fake_data(dtype="float32", batch_size=32, height=224, width=224, depth=3, nu
 
     return mx.gluon.data.DataLoader(fake_dataset, batch_size=batch_size, num_workers=4,
                                     shuffle=True, last_batch='discard')
+
+
+class XorShift128PlusBitShifterRNG:
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+
+    def xorshift128p(self):
+        t = self.a
+        s = self.b
+        self.a = s
+        t ^= t << 23
+        t ^= t >> 17
+        t ^= s ^ (s >> 26)
+        self.b = t
+        return t + s
+
+    def randint(self, low, high):
+        return self.xorshift128p() % (high - low) + low
