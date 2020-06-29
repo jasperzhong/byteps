@@ -38,10 +38,9 @@ namespace compressor {
  */
 class RandomkCompressor : public Compressor {
  public:
-  RandomkCompressor(size_t size, DataType dtype, int k, unsigned int seed = 0,
-                    bool deterministic = false)
+  RandomkCompressor(size_t size, DataType dtype, int k, unsigned int seed = 0)
       : Compressor(size, dtype), _k(k) {
-    if (deterministic) {
+    if (seed != 0) {
       BPS_LOG(INFO) << "SET SEED = " << seed;
       _rng.set_seed(seed);
     }

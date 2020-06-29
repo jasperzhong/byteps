@@ -40,7 +40,7 @@ CompressorRegistry::Register reg(
         unsigned int seed = std::stoul(iter2->second);
         BPS_CHECK(seed != 0) << "seed should not be 0";
         return std::unique_ptr<Compressor>(
-            new RandomkCompressor(size, dtype, k, seed, true));
+            new RandomkCompressor(size, dtype, k, seed));
       }
     });
 }
