@@ -28,8 +28,7 @@ CompressorRegistry::Register reg(
        int dtype) -> std::unique_ptr<Compressor> {
       auto iter = kwargs.find("compressor_k");
       if (iter == kwargs.end()) {
-        BPS_LOG(WARNING) << "Topk Compressor needs parameter \"compressor_k\"";
-        return nullptr;
+        BPS_LOG(FATAL) << "Topk Compressor needs parameter \"compressor_k\"";
       }
       int k = std::stoi(iter->second);
       BPS_LOG(DEBUG) << "Register Topk Compressor "
