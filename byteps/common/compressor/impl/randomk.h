@@ -42,6 +42,7 @@ class RandomkCompressor : public Compressor {
                     bool deterministic = false)
       : Compressor(size), _k(k) {
     if (deterministic) {
+      BPS_LOG(INFO) << "SET SEED = " << seed;
       _rng.set_seed(seed);
     }
   };

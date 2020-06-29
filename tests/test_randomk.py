@@ -111,6 +111,23 @@ class RandomkTestCase(unittest.TestCase):
                     # c += 1e-4*xs[i]
                     params[i] -= optimizer_params["learning_rate"] * c
 
+                    g2 = param._grad[0].asnumpy().flatten()
+                    d = c.flatten()
+                    if not np.allclose(d, g2, atol=np.finfo(np.float32).eps):
+                        print("False")
+
+                        diff = np.abs(d - g2)
+                        print(d) # baseline
+                        print(g2) # byteps
+                        print(diff)
+                        print(it, i, np.max(diff), np.mean(diff), len(diff), c.shape)
+                        idx = np.where(diff > 1e-5)
+                        print("g: ", idx, gs[i].flatten()[idx])
+                        print("g+e: ", idx, g.flatten()[idx])
+                        print("mxnet: ", idx, d[idx])
+                        print("byteps: ", idx, g2[idx])
+                        input()
+
         cnt = 0
         tot = 0
         diffs = []
