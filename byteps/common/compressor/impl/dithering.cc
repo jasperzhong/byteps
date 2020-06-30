@@ -13,8 +13,10 @@
 // limitations under the License.
 // =============================================================================
 
-#include "dithering.h"
+#include <cmath>
+
 #include "../compressor_registry.h"
+#include "dithering.h"
 
 namespace byteps {
 namespace common {
@@ -38,8 +40,39 @@ CompressorRegistry::Register
         });
 }
 
-tensor_t DitheringCompressor::Compress(tensor_t grad) {
+template <typename index_t, typename scalar_t>
+tensor_t DitheringCompressor::CompressImpl(index_t* dst, const scalar_t* src,
+                                           size_t len) {
+  static_assert(sizeof(index_t) == sizeof(scalar_t),
+                "index_t should be the same size as scalar_t");
   // normalize
+  double l2 = 0.0;
+  for (int i = 0; i < len; ++i) {
+    l2 += src[i] * src[i];
+  }
+  l2 = std::sqrt(l2);
+
+  switch (_ptype) {
+    case PartitionType::LINEAR: {
+      for (int i = 0; i < len; ++i) {
+        float fp = (src[i] / l2) * k;
+        int low = std::floor(fp);
+        int ret = _rng.Bernoulli(fp - low);
+†      }
+      break;
+    }
+
+    case PartitionType::NATURAL: {
+      break;
+    }
+    default:
+      BPS_CHECK(0) << "Unsupported partition type: " << _ptype;
+  }
+}
+
+tensor_t DitheringCompressor::Compress(tensor_t grad) {
+  COMPRESS_IMPL_SWITCH(grad.dtype, CompressImpl, _buf.get(), grad.data,
+                       grad.size);
 }
 
 tensor_t DitheringCompressor::Decompress(tensor_t compressed) {
