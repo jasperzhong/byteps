@@ -29,6 +29,8 @@ def dithering(x, k, partition='linear'):
     # normalize
     l2 = np.linalg.norm(y, ord=2)
     y /= l2
+    sign = np.sign(y)
+    y = np.abs(y)
 
     # stocastic rounding
     if partition == 'linear':
@@ -45,7 +47,7 @@ def dithering(x, k, partition='linear'):
         y = (1 + np.random.binomial(n=1, p=p)) * low
         y /= 2**(k-1)
 
-    return y.reshape(x.shape)
+    return y.reshape(x.shape) * sign * l2
 
 
 class DitheringTestCase(unittest.TestCase):

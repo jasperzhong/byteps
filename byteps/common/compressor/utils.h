@@ -16,6 +16,7 @@
 #ifndef BYTEPS_COMPRESSOR_UTILS_H
 #define BYTEPS_COMPRESSOR_UTILS_H
 
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <random>
@@ -109,6 +110,80 @@ class XorShift128PlusBitShifterRNG {
 
   static constexpr uint64_t MAX = std::numeric_limits<uint64_t>::max();
 };
+
+/*!
+ * \brief Bit Writer
+ *
+ */
+class BitWriter {
+ public:
+  explicit BitWriter(uint32_t* data) : _dptr(data), _bits(0) {}
+  void Put(bool x) {
+    size_t pos = _bits / PACKING_SIZE;
+    _dptr[pos] <<= 1;
+    _dptr[pos] |= x;
+    ++_bits;
+  }
+
+  void Pad() {
+    size_t pos = _bits / PACKING_SIZE;
+    size_t padding_size = (PACKING_SIZE - _bits % PACKING_SIZE) % PACKING_SIZE;
+    _bits += padding_size;
+    _dptr[pos] <<= padding_size;
+  }
+
+  size_t bits() const { return _bits; }
+  size_t ints() const { return _bits / PACKING_SIZE; }
+
+ private:
+  static constexpr size_t PACKING_SIZE = sizeof(uint32_t) * 8;
+  uint32_t* _dptr;  // allocated
+  size_t _bits;
+};
+
+/*!
+ * \brief Bit Reader
+ *
+ */
+class BitReader {
+ public:
+  explicit BitReader(uint32_t* data) : _dptr(data), _bits(0) {}
+  bool Get() {
+    size_t pos = _bits / PACKING_SIZE;
+    size_t offset = PACKING_SIZE - 1 - _bits % PACKING_SIZE;
+    _bits++;
+    return _dptr[pos] & (1 << offset);
+  }
+
+  size_t bits() const { return _bits; }
+
+ private:
+  static constexpr size_t PACKING_SIZE = sizeof(uint32_t) * 8;
+  uint32_t* _dptr;  // allocated
+  size_t _bits;
+};
+
+inline uint32_t RoundNextPow2(uint32_t v) {
+  v -= 1;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+  v += 1;
+  return v;
+}
+
+inline void EliasDeltaEncode(BitWriter& bit_writer, int x) {
+  int len = 1 + std::floor(std::log2(x));
+  int lenth_of_len = std::floor(std::log2(len));
+
+  for (int i = lenth_of_len; i > 0; --i) bit_writer.Put(0);
+  for (int i = lenth_of_len; i >= 0; --i) bit_writer.Put((len >> i) & 1);
+  for (int i = len - 2; i >= 0; i--) bit_writer.Put((x >> i) & 1);
+}
+
+
 
 }  // namespace compressor
 }  // namespace common

@@ -47,27 +47,51 @@ tensor_t DitheringCompressor::CompressImpl(index_t* dst, const scalar_t* src,
                 "index_t should be the same size as scalar_t");
   // normalize
   double l2 = 0.0;
+#pragma omp parallel for simd num_threads(4) reduction(+ : l2)
   for (int i = 0; i < len; ++i) {
     l2 += src[i] * src[i];
   }
   l2 = std::sqrt(l2);
 
-  switch (_ptype) {
-    case PartitionType::LINEAR: {
-      for (int i = 0; i < len; ++i) {
-        float fp = (src[i] / l2) * k;
-        int low = std::floor(fp);
-        int ret = _rng.Bernoulli(fp - low);
-†      }
-      break;
+  BitWriter bit_writer(dst);
+  int last_non_zero_pos = 0;
+  if (_ptype == PartitionType::LINEAR) {
+    for (int i = 0; i < len; ++i) {
+      int x = std::abs(src[i]);
+      float fp = (x / l2) * _s;
+      int low = std::floor(fp);
+      int ret = low + _rng.Bernoulli(fp - low);
+      if (ret) {
+        int diff = i - last_non_zero_pos;
+        last_non_zero_pos = i;
+        EliasDeltaEncode(bit_writer, diff);
+        bit_writer.Put(std::signbit(src[i]));
+        EliasDeltaEncode(bit_writer, ret);
+      }
     }
-
-    case PartitionType::NATURAL: {
-      break;
+  } else if (_ptype == PartitionType::NATURAL) {
+    const int scale = 1 << (_s - 1);
+    for (int i = 0; i < len; ++i) {
+      int x = std::abs(src[i]);
+      float fp = (x / l2) * scale;
+      int low = RoundNextPow2(std::ceil(fp)) << 1;
+      int ret = low * (1 + _rng.Bernoulli((fp - low) / low));
+      if (ret) {
+        int diff = i - last_non_zero_pos;
+        last_non_zero_pos = i;
+        EliasDeltaEncode(bit_writer, diff);
+        bit_writer.Put(std::signbit(src[i]));
+        EliasDeltaEncßode(bit_writer, ret);
+      }
     }
-    default:
-      BPS_CHECK(0) << "Unsupported partition type: " << _ptype;
   }
+
+  bit_writer.Pad();
+
+  float* p_scale = reinterpret_cast<float*>(&dst[bit_writer.ints()]);
+  *p_scale = l2;
+
+  return {dst, bit_writer.ints() * sizeof(index_t) + sizeof(float)};
 }
 
 tensor_t DitheringCompressor::Compress(tensor_t grad) {
@@ -75,8 +99,20 @@ tensor_t DitheringCompressor::Compress(tensor_t grad) {
                        grad.size);
 }
 
+template <typename index_t, typename scalar_t>
+tensor_t DitheringCompressor::DecompressImpl(scalar_t* dst, const index_t* src,
+                                             size_t compressed_size) {
+  
+}
+
 tensor_t DitheringCompressor::Decompress(tensor_t compressed) {
-  // TODO
+#ifdef BYTEPS_BUILDING_SERVER
+  auto dst = _buf.get();
+#else
+  auto dst = compressed.data;
+#endif
+  DECOMPRESS_IMPL_SWITCH(_dtype, DecompressImpl, dst, compressed.data,
+                         compressed.size);
 }
 }  // namespace compressor
 }  // namespace common
