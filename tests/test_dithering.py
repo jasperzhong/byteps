@@ -72,6 +72,7 @@ class DitheringTestCase(unittest.TestCase):
             # "ef": "vanilla",
             # "momentum": "nesterov",
             "k": k,
+            "seed": 2020
         }
 
         trainer = bps.DistributedTrainer(net.collect_params(

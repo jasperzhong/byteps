@@ -22,22 +22,29 @@ namespace byteps {
 namespace common {
 namespace compressor {
 namespace {
-CompressorRegistry::Register
-    reg("dithering_compressor",
-        [](const kwargs_t& kwargs, size_t size,
-           DataType dtype) -> std::unique_ptr<Compressor> {
-          auto iter = kwargs.find("compressor_k");
-          if (iter == kwargs.end()) {
-            BPS_LOG(WARNING)
-                << "Multibit Compressor needs parameter \"compressor_k\"";
-            return nullptr;
-          }
-          int k = std::stoi(iter->second);
-          BPS_LOG(DEBUG) << "Register Multibit Compressor "
-                         << "k=" << k;
-          return std::unique_ptr<Compressor>(
-              new DitheringCompressor(size, dtype, k));
-        });
+CompressorRegistry::Register reg(
+    "dithering_compressor",
+    [](const kwargs_t& kwargs, size_t size,
+       DataType dtype) -> std::unique_ptr<Compressor> {
+      auto iter = kwargs.find("compressor_k");
+      if (iter == kwargs.end()) {
+        BPS_LOG(FATAL) << "Randomk Compressor needs parameter \"compressor_k\"";
+      }
+      int k = std::stoi(iter->second);
+      BPS_LOG(DEBUG) << "Register Dithering Compressor "
+                     << "k=" << k;
+      
+      auto iter2 = kwargs.find("seed");
+      if (iter2 == kwargs.end()) {
+        return std::unique_ptr<Compressor>(
+            new DitheringCompressor(size, dtype, k));
+      } else {
+        unsigned int seed = std::stoul(iter2->second);
+        BPS_CHECK(seed != 0) << "seed should not be 0";
+        return std::unique_ptr<Compressor>(
+            new DitheringCompressor(size, dtype, k, seed));
+      }
+    });
 }
 
 template <typename index_t, typename scalar_t>
