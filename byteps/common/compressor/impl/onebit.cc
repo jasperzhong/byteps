@@ -47,36 +47,28 @@ tensor_t OnebitCompressor::CompressImpl(index_t* dst, const scalar_t* src,
   float scale = 1.0f;
   if (_use_scale) {
     double sum = 0.0f;
-    for (int i = 0; i < chunk_len; ++i) {
-      sum += std::abs(src[i * PACKING_SIZE]);
-      index_t x = src[i * PACKING_SIZE] < 0;
-      for (int j = 1; j < PACKING_SIZE; ++j) {
-        x <<= 1;
-        sum += std::abs(src[i * PACKING_SIZE + j]);
-        x |= src[i * PACKING_SIZE + j] < 0;
-      }
-      dst[i] = x;
-    }
-    for (int i = len; i < len + padding_len; ++i) {
-      sum -= std::abs(src[i]);
+#pragma omp parallel for simd num_threads(4) reduction(+ : sum)
+    for (int i = 0; i < len; ++i) {
+      sum += std::abs(src[i]);
     }
     scale = sum / len;
-  } else {
-    for (int i = 0; i < chunk_len; ++i) {
-      index_t x = src[i * PACKING_SIZE] < 0;
-      for (int j = 1; j < PACKING_SIZE; ++j) {
-        x <<= 1;
-        x |= src[i * PACKING_SIZE + j] < 0;
-      }
-      dst[i] = x;
+  }
+
+#pragma omp parallel for simd num_threads(4)
+  for (int i = 0; i < chunk_len; ++i) {
+    index_t x = src[i * PACKING_SIZE] < 0;
+    for (int j = 1; j < PACKING_SIZE; ++j) {
+      x <<= 1;
+      x |= src[i * PACKING_SIZE + j] < 0;
     }
+    dst[i] = x;
   }
 
   float* p_scale = reinterpret_cast<float*>(&dst[chunk_len]);
   *p_scale = scale;
 
   return {dst, chunk_len * sizeof(index_t) + sizeof(float)};
-}
+}  // namespace compressor
 
 tensor_t OnebitCompressor::Compress(tensor_t grad) {
   COMPRESS_IMPL_SWITCH(grad.dtype, CompressImpl, _buf.get(), grad.data,
@@ -94,9 +86,15 @@ tensor_t OnebitCompressor::DecompressImpl(scalar_t* dst, const index_t* src,
   auto* pf = reinterpret_cast<const float*>(src + chunk_len);
   float scale = *pf;
 
-  auto ptr = reinterpret_cast<index_t*>(dst);
+  index_t* ptr = const_cast<index_t*>(src);
+  if ((void*)dst == (void*)src) {
+    ptr = reinterpret_cast<index_t*>(_buf.get());
+    std::memcpy(ptr, src, compressed_size);
+  }
+
+#pragma omp parallel for simd num_threads(4)
   for (int i = chunk_len - 1; i >= 0; --i) {
-    index_t x = src[i];
+    index_t x = ptr[i];
     for (int j = PACKING_SIZE - 1; j >= 0; --j) {
       int sign = 1 - ((x & 0x01) << 1);
       dst[i * PACKING_SIZE + j] = sign * scale;
@@ -127,6 +125,7 @@ void OnebitCompressor::FastUpdateErrorImpl(scalar_t* error, scalar_t* corrected,
   auto* pf = reinterpret_cast<const float*>(compressed + chunk_len);
   float scale = *pf;
 
+#pragma omp parallel for simd num_threads(4)
   for (int i = chunk_len - 1; i >= 0; --i) {
     index_t x = compressed[i];
     for (int j = PACKING_SIZE - 1; j >= 0; --j) {
