@@ -64,13 +64,13 @@ class DitheringTestCase(unittest.TestCase):
 
         # hyper-params
         batch_size = 32
-        optimizer_params = {'momentum': 0.9, 'wd': 1e-4,
+        optimizer_params = {'momentum': 0, 'wd': 0,
                             'learning_rate': 0.01}
 
         compression_params = {
             "compressor": "dithering",
-            "ef": "vanilla",
-            "momentum": "nesterov",
+            # "ef": "vanilla",
+            # "momentum": "nesterov",
             "k": k,
         }
 
@@ -118,19 +118,19 @@ class DitheringTestCase(unittest.TestCase):
             for i, param in enumerate(trainer._params):
                 if param.grad_req != "null":
                     g = gs[i] / (batch_size * bps.size())
-                    moms[i] *= 0.9
-                    moms[i] += g
-                    g += 0.9 * moms[i]
-                    g += errors[i]
+                    # moms[i] *= 0.9
+                    # moms[i] += g
+                    # g += 0.9 * moms[i]
+                    # g += errors[i]
                     c = dithering(g, k)
-                    errors[i] = g - c
+                    # errors[i] = g - c
 
                     # c += errors_s[i]
-                    # cs = dithering(c, k)
+                    cs = dithering(c, k)
                     # errors_s[i] = c - cs
-                    # c = cs
+                    c = cs
 
-                    c += 1e-4*xs[i]
+                    # c += 1e-4*xs[i]
                     params[i] -= optimizer_params["learning_rate"] * c
 
         cnt = 0

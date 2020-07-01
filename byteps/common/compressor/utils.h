@@ -115,9 +115,10 @@ class XorShift128PlusBitShifterRNG {
  * \brief Bit Writer
  *
  */
+template <typename T>
 class BitWriter {
  public:
-  explicit BitWriter(uint32_t* data) : _dptr(data), _bits(0) {}
+  explicit BitWriter(T* data) : _dptr(data), _bits(0) {}
   void Put(bool x) {
     size_t pos = _bits / PACKING_SIZE;
     _dptr[pos] <<= 1;
@@ -136,8 +137,8 @@ class BitWriter {
   size_t ints() const { return _bits / PACKING_SIZE; }
 
  private:
-  static constexpr size_t PACKING_SIZE = sizeof(uint32_t) * 8;
-  uint32_t* _dptr;  // allocated
+  static constexpr size_t PACKING_SIZE = sizeof(T) * 8;
+  T* _dptr;  // allocated
   size_t _bits;
 };
 
@@ -145,9 +146,10 @@ class BitWriter {
  * \brief Bit Reader
  *
  */
+template <typename T>
 class BitReader {
  public:
-  explicit BitReader(uint32_t* data) : _dptr(data), _bits(0) {}
+  explicit BitReader(const T* data) : _dptr(data), _bits(0) {}
   bool Get() {
     size_t pos = _bits / PACKING_SIZE;
     size_t offset = PACKING_SIZE - 1 - _bits % PACKING_SIZE;
@@ -158,8 +160,8 @@ class BitReader {
   size_t bits() const { return _bits; }
 
  private:
-  static constexpr size_t PACKING_SIZE = sizeof(uint32_t) * 8;
-  uint32_t* _dptr;  // allocated
+  static constexpr size_t PACKING_SIZE = sizeof(T) * 8;
+  const T* _dptr;  // allocated
   size_t _bits;
 };
 
@@ -174,7 +176,8 @@ inline uint32_t RoundNextPow2(uint32_t v) {
   return v;
 }
 
-inline void EliasDeltaEncode(BitWriter& bit_writer, int x) {
+template <typename T>
+void EliasDeltaEncode(BitWriter<T>& bit_writer, int x) {
   int len = 1 + std::floor(std::log2(x));
   int lenth_of_len = std::floor(std::log2(len));
 
@@ -183,7 +186,22 @@ inline void EliasDeltaEncode(BitWriter& bit_writer, int x) {
   for (int i = len - 2; i >= 0; i--) bit_writer.Put((x >> i) & 1);
 }
 
-
+template <typename T>
+int EliasDeltaDecode(BitReader<T>& bit_reader) {
+  int num = 1;
+  int len = 1;
+  int lenth_of_len = 0;
+  while (!bit_reader.Get()) lenth_of_len++;
+  for (int i = 0; i < lenth_of_len; i++) {
+    len <<= 1;
+    if (bit_reader.Get()) len |= 1;
+  }
+  for (int i = 0; i < len - 1; i++) {
+    num <<= 1;
+    if (bit_reader.Get()) num |= 1;
+  }
+  return num;
+}
 
 }  // namespace compressor
 }  // namespace common
