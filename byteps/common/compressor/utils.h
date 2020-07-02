@@ -177,7 +177,7 @@ inline uint32_t RoundNextPow2(uint32_t v) {
 }
 
 template <typename T>
-void EliasDeltaEncode(BitWriter<T>& bit_writer, int x) {
+void EliasDeltaEncode(BitWriter<T>& bit_writer, unsigned int x) {
   int len = 1 + std::floor(std::log2(x));
   int lenth_of_len = std::floor(std::log2(len));
 
@@ -187,7 +187,7 @@ void EliasDeltaEncode(BitWriter<T>& bit_writer, int x) {
 }
 
 template <typename T>
-int EliasDeltaDecode(BitReader<T>& bit_reader) {
+unsigned int EliasDeltaDecode(BitReader<T>& bit_reader) {
   int num = 1;
   int len = 1;
   int lenth_of_len = 0;

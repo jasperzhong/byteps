@@ -33,7 +33,7 @@ CompressorRegistry::Register reg(
       int k = std::stoi(iter->second);
       BPS_LOG(DEBUG) << "Register Dithering Compressor "
                      << "k=" << k;
-      
+
       auto iter2 = kwargs.find("seed");
       if (iter2 == kwargs.end()) {
         return std::unique_ptr<Compressor>(
@@ -61,7 +61,7 @@ tensor_t DitheringCompressor::CompressImpl(index_t* dst, const scalar_t* src,
   l2 = std::sqrt(l2);
 
   BitWriter<index_t> bit_writer(dst);
-  int last_non_zero_pos = 0;
+  int last_non_zero_pos = -1;
   if (_ptype == PartitionType::LINEAR) {
     for (int i = 0; i < len; ++i) {
       int x = std::abs(src[i]);
@@ -117,7 +117,7 @@ tensor_t DitheringCompressor::DecompressImpl(scalar_t* dst, const index_t* src,
   std::memset(dst, 0, _size);
 
   BitReader<index_t> bit_reader(src);
-  int last_non_zero_pos = 0;
+  int last_non_zero_pos = -1;
   if (_ptype == PartitionType::LINEAR) {
     while (bit_reader.bits() < bits) {
       int diff = EliasDeltaDecode(bit_reader);
@@ -138,6 +138,8 @@ tensor_t DitheringCompressor::DecompressImpl(scalar_t* dst, const index_t* src,
       dst[i] = (1 - (signbit << 1)) * num;
     }
   }
+
+  return {dst, _size};
 }
 
 tensor_t DitheringCompressor::Decompress(tensor_t compressed) {
@@ -148,6 +150,11 @@ tensor_t DitheringCompressor::Decompress(tensor_t compressed) {
 #endif
   DECOMPRESS_IMPL_SWITCH(_dtype, DecompressImpl, dst, compressed.data,
                          compressed.size);
+}
+
+void DitheringCompressor::FastUpdateError(tensor_t error, tensor_t corrected,
+                                          tensor_t compressed) {
+  BPS_LOG(FATAL) << "TODO";
 }
 }  // namespace compressor
 }  // namespace common
