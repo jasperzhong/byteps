@@ -121,6 +121,7 @@ tensor_t DitheringCompressor::DecompressImpl(scalar_t* dst, const index_t* src,
   if (_ptype == PartitionType::LINEAR) {
     while (bit_reader.bits() < bits) {
       int diff = EliasDeltaDecode(bit_reader);
+      BPS_CHECK_GT(diff, 0);
       int i = last_non_zero_pos + diff;
       int signbit = bit_reader.Get();
       int x = EliasDeltaDecode(bit_reader);
