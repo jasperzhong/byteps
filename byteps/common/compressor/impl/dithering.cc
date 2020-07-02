@@ -64,7 +64,7 @@ tensor_t DitheringCompressor::CompressImpl(index_t* dst, const scalar_t* src,
   int last_non_zero_pos = -1;
   if (_ptype == PartitionType::LINEAR) {
     for (int i = 0; i < len; ++i) {
-      int x = std::abs(src[i]);
+      float x = std::abs(src[i]);
       float fp = (x / l2) * _s;
       int low = std::floor(fp);
       int ret = low + _rng.Bernoulli(fp - low);
@@ -79,7 +79,7 @@ tensor_t DitheringCompressor::CompressImpl(index_t* dst, const scalar_t* src,
   } else if (_ptype == PartitionType::NATURAL) {
     const int scale = 1 << (_s - 1);
     for (int i = 0; i < len; ++i) {
-      int x = std::abs(src[i]);
+      float x = std::abs(src[i]);
       float fp = (x / l2) * scale;
       int low = RoundNextPow2(std::ceil(fp)) << 1;
       int ret = low * (1 + _rng.Bernoulli((fp - low) / low));
