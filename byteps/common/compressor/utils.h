@@ -129,12 +129,11 @@ class BitWriter {
   void Pad() {
     size_t pos = _bits / PACKING_SIZE;
     size_t padding_size = (PACKING_SIZE - _bits % PACKING_SIZE) % PACKING_SIZE;
-    _bits += padding_size;
     _dptr[pos] <<= padding_size;
   }
 
   size_t bits() const { return _bits; }
-  size_t ints() const { return _bits / PACKING_SIZE; }
+  size_t ints() const { return std::ceil((float)_bits / PACKING_SIZE); }
 
  private:
   static constexpr size_t PACKING_SIZE = sizeof(T) * 8;

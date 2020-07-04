@@ -9,12 +9,16 @@ from mxnet import gluon, autograd
 from parameterized import parameterized
 from tqdm import tqdm
 
-from utils import fake_data, XorShift128PlusBitShifterRNG
+from utils import fake_data, randint
+from numba import jit
 
 
-def randomk(x, k, rng):
+def randomk(x, k, state):
     y = x.flatten()
-    indices = [rng.randint(0, len(y)) for _ in range(k)]
+    low = np.uint64(0)
+    high = np.uint64(len(y))
+    indices = np.array([randint(low, high, state)
+                        for _ in range(k)], dtype=np.uint64)
     vals = y[indices]
     y.fill(0)
     for idx, val in zip(indices, vals):
@@ -70,8 +74,8 @@ class RandomkTestCase(unittest.TestCase):
                 errors_s[i] = np.zeros_like(params[i])
                 moms[i] = np.zeros_like(params[i])
                 wd_moms[i] = np.zeros_like(params[i])
-                rngs[i] = XorShift128PlusBitShifterRNG(2020, 2020)
-                rngs_s[i] = XorShift128PlusBitShifterRNG(2020, 2020)
+                rngs[i] = np.array([2020, 2020], dtype=np.uint64)
+                rngs_s[i] = np.array([2020, 2020], dtype=np.uint64)
 
         for it, batch in tqdm(enumerate(train_data)):
             data = batch[0].as_in_context(ctx)
@@ -117,10 +121,11 @@ class RandomkTestCase(unittest.TestCase):
                         print("False")
 
                         diff = np.abs(d - g2)
-                        print(d) # baseline
-                        print(g2) # byteps
+                        print(d)  # baseline
+                        print(g2)  # byteps
                         print(diff)
-                        print(it, i, np.max(diff), np.mean(diff), len(diff), c.shape)
+                        print(it, i, np.max(diff), np.mean(
+                            diff), len(diff), c.shape)
                         idx = np.where(diff > 1e-5)
                         print("g: ", idx, gs[i].flatten()[idx])
                         print("g+e: ", idx, g.flatten()[idx])

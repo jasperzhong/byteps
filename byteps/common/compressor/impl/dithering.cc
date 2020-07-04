@@ -59,6 +59,7 @@ tensor_t DitheringCompressor::CompressImpl(index_t* dst, const scalar_t* src,
     l2 += src[i] * src[i];
   }
   l2 = std::sqrt(l2);
+  BPS_LOG(INFO) << "compress l2=" << l2;
 
   BitWriter<index_t> bit_writer(dst);
   int last_non_zero_pos = -1;
@@ -94,11 +95,16 @@ tensor_t DitheringCompressor::CompressImpl(index_t* dst, const scalar_t* src,
   }
 
   bit_writer.Pad();
+  // bits
+  index_t* p_bits = reinterpret_cast<index_t*>(&dst[bit_writer.ints()]);
+  *p_bits = bit_writer.bits();
 
-  float* p_scale = reinterpret_cast<float*>(&dst[bit_writer.ints()]);
+  // l2
+  double* p_scale = reinterpret_cast<double*>(&dst[bit_writer.ints() + 1]);
   *p_scale = l2;
 
-  return {dst, bit_writer.ints() * sizeof(index_t) + sizeof(float)};
+  return {dst, bit_writer.ints() * sizeof(index_t) + sizeof(index_t) +
+                   sizeof(double)};
 }
 
 tensor_t DitheringCompressor::Compress(tensor_t grad) {
@@ -109,23 +115,32 @@ tensor_t DitheringCompressor::Compress(tensor_t grad) {
 template <typename index_t, typename scalar_t>
 tensor_t DitheringCompressor::DecompressImpl(scalar_t* dst, const index_t* src,
                                              size_t compressed_size) {
-  const size_t ints = (compressed_size - sizeof(float)) / sizeof(index_t);
-  const size_t bits = ints * 32;
-  auto* pf = reinterpret_cast<const float*>(src + ints);
-  float scale = *pf;
+  const size_t ints =
+      (compressed_size - sizeof(double) - sizeof(index_t)) / sizeof(index_t);
+  auto* p_bits = reinterpret_cast<const index_t*>(src + ints);
+  const index_t bits = *p_bits;
+
+  auto* p_scale = reinterpret_cast<const double*>(src + ints + 1);
+  const double scale = *p_scale;
+  BPS_LOG(INFO) << "decompress l2=" << scale;
+  auto ptr = const_cast<index_t*>(src);
+  if ((void*)dst == (void*)src) {
+    ptr = reinterpret_cast<index_t*>(_buf.get());
+    std::memcpy(ptr, src, compressed_size);
+  }
 
   std::memset(dst, 0, _size);
 
-  BitReader<index_t> bit_reader(src);
+  BitReader<index_t> bit_reader(ptr);
   int last_non_zero_pos = -1;
   if (_ptype == PartitionType::LINEAR) {
     while (bit_reader.bits() < bits) {
       int diff = EliasDeltaDecode(bit_reader);
-      BPS_CHECK_GT(diff, 0);
       int i = last_non_zero_pos + diff;
+      last_non_zero_pos = i;
       int signbit = bit_reader.Get();
       int x = EliasDeltaDecode(bit_reader);
-      float num = x / _s * scale;
+      float num = x * scale / _s;
       dst[i] = (1 - (signbit << 1)) * num;
     }
   } else if (_ptype == PartitionType::NATURAL) {
@@ -133,6 +148,7 @@ tensor_t DitheringCompressor::DecompressImpl(scalar_t* dst, const index_t* src,
     while (bit_reader.bits() < bits) {
       int diff = EliasDeltaDecode(bit_reader);
       int i = last_non_zero_pos + diff;
+      last_non_zero_pos = i;
       int signbit = bit_reader.Get();
       int x = EliasDeltaDecode(bit_reader);
       float num = x / s * scale;

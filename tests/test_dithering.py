@@ -9,7 +9,7 @@ from mxnet import gluon, autograd
 from parameterized import parameterized
 from tqdm import tqdm
 
-from utils import fake_data
+from utils import fake_data, bernoulli
 
 
 def round_next_pow2(v):
@@ -24,10 +24,11 @@ def round_next_pow2(v):
 
 
 # partition: 'linear' or 'natural'
-def dithering(x, k, partition='linear'):
+def dithering(x, k, state, partition='linear'):
     y = x.flatten()
     # normalize
     l2 = np.linalg.norm(y, ord=2)
+    print(l2/k)
     y /= l2
     sign = np.sign(y)
     y = np.abs(y)
@@ -37,17 +38,20 @@ def dithering(x, k, partition='linear'):
         y *= k
         low = np.floor(y)
         p = y - low  # whether to ceil
-        y = low + np.random.binomial(n=1, p=p)
+        y = low + bernoulli(p, state)
+        # print(y)
         y /= k
     else:
         # 2 < 3 < 4
         y *= 2**(k-1)
         low = round_next_pow2(int(np.ceil(y))) << 1
         p = (y - low) / low
-        y = (1 + np.random.binomial(n=1, p=p)) * low
+        y = (1 + bernoulli(p, state)) * low
         y /= 2**(k-1)
 
-    return y.reshape(x.shape) * sign * l2
+    y *= sign
+    y *= l2
+    return y.reshape(x.shape)
 
 
 class DitheringTestCase(unittest.TestCase):
@@ -55,7 +59,7 @@ class DitheringTestCase(unittest.TestCase):
         print("init")
         bps.init()
 
-    @parameterized.expand([(1,)])
+    @parameterized.expand([(2,)])
     def test_dithering(self, k):
         ctx = mx.gpu(0)
         net = get_model("resnet18_v2")
@@ -87,6 +91,8 @@ class DitheringTestCase(unittest.TestCase):
         errors_s = {}
         moms = {}
         wd_moms = {}
+        rngs = {}
+        rngs_s = {}
 
         for i, param in enumerate(trainer._params):
             if param.grad_req != 'null':
@@ -95,6 +101,8 @@ class DitheringTestCase(unittest.TestCase):
                 errors_s[i] = np.zeros_like(params[i])
                 moms[i] = np.zeros_like(params[i])
                 wd_moms[i] = np.zeros_like(params[i])
+                rngs[i] = np.array([2020, 2020], dtype=np.uint64)
+                rngs_s[i] = np.array([2020, 2020], dtype=np.uint64)
 
         for it, batch in tqdm(enumerate(train_data)):
             data = batch[0].as_in_context(ctx)
@@ -123,16 +131,34 @@ class DitheringTestCase(unittest.TestCase):
                     # moms[i] += g
                     # g += 0.9 * moms[i]
                     # g += errors[i]
-                    c = dithering(g, k)
+                    c = dithering(g, k, rngs[i])
                     # errors[i] = g - c
 
                     # c += errors_s[i]
-                    cs = dithering(c, k)
+                    cs = dithering(c, k, rngs_s[i])
                     # errors_s[i] = c - cs
                     c = cs
 
                     # c += 1e-4*xs[i]
                     params[i] -= optimizer_params["learning_rate"] * c
+
+                    g2 = param._grad[0].asnumpy().flatten()
+                    d = c.flatten()
+                    if not np.allclose(d, g2, atol=np.finfo(np.float32).eps):
+                        print("False")
+
+                        diff = np.abs(d - g2)
+                        print(d)  # baseline
+                        print(g2)  # byteps
+                        print(diff)
+                        print(it, i, np.max(diff), np.mean(
+                            diff), len(diff), c.shape)
+                        idx = np.where(diff > 1e-5)
+                        print("g: ", idx, gs[i].flatten()[idx])
+                        print("g+e: ", idx, g.flatten()[idx])
+                        print("mxnet: ", idx, d[idx])
+                        print("byteps: ", idx, g2[idx])
+                        input()
 
         cnt = 0
         tot = 0
