@@ -8,8 +8,15 @@ from gluoncv.model_zoo import get_model
 from mxnet import gluon, autograd
 from parameterized import parameterized
 from tqdm import tqdm
+from math import sqrt
+from numba import jit
 
 from utils import fake_data, bernoulli
+
+
+# @jit(nopython=True)
+def norm2(vector):
+    return np.sqrt(np.sum(vector * vector))
 
 
 def round_next_pow2(v):
@@ -27,8 +34,7 @@ def round_next_pow2(v):
 def dithering(x, k, state, partition='linear'):
     y = x.flatten()
     # normalize
-    l2 = np.linalg.norm(y, ord=2)
-    print(l2/k)
+    l2 = np.linalg.norm(y.astype(np.float64), ord=2)
     y /= l2
     sign = np.sign(y)
     y = np.abs(y)
@@ -127,6 +133,7 @@ class DitheringTestCase(unittest.TestCase):
             for i, param in enumerate(trainer._params):
                 if param.grad_req != "null":
                     g = gs[i] / (batch_size * bps.size())
+                    # print("norm2", norm2(g.flatten())/k)
                     # moms[i] *= 0.9
                     # moms[i] += g
                     # g += 0.9 * moms[i]

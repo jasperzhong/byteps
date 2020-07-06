@@ -14,6 +14,7 @@
 // =============================================================================
 
 #include <cmath>
+#include <iomanip>
 
 #include "../compressor_registry.h"
 #include "dithering.h"
@@ -59,7 +60,6 @@ tensor_t DitheringCompressor::CompressImpl(index_t* dst, const scalar_t* src,
     l2 += src[i] * src[i];
   }
   l2 = std::sqrt(l2);
-  BPS_LOG(INFO) << "compress l2=" << l2;
 
   BitWriter<index_t> bit_writer(dst);
   int last_non_zero_pos = -1;
@@ -122,7 +122,7 @@ tensor_t DitheringCompressor::DecompressImpl(scalar_t* dst, const index_t* src,
 
   auto* p_scale = reinterpret_cast<const double*>(src + ints + 1);
   const double scale = *p_scale;
-  BPS_LOG(INFO) << "decompress l2=" << scale;
+
   auto ptr = const_cast<index_t*>(src);
   if ((void*)dst == (void*)src) {
     ptr = reinterpret_cast<index_t*>(_buf.get());
