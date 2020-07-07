@@ -47,5 +47,6 @@ def bernoulli(p, state):
     return r < t
 
 
+@jit(nopython=True)
 def randint(low, high, state):
     return xorshift128p(state) % (high - low) + low

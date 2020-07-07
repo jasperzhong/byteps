@@ -30,7 +30,7 @@ export DMLC_WORKER_ID=0
 export DMLC_ROLE=worker
 export BYTEPS_THREADPOOL_SIZE=4
 export BYTEPS_FORCE_DISTRIBUTED=1
-export BYTEPS_LOG_LEVEL=INFO
+export BYTEPS_LOG_LEVEL=WARNING
 
 if [ "$TEST_TYPE" == "mxnet" ]; then
   echo "TEST MXNET ..."

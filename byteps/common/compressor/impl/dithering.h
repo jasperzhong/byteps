@@ -36,7 +36,7 @@ namespace compressor {
  */
 class DitheringCompressor : public Compressor {
  public:
-  enum class PartitionType { LINEAR, NATURAL };
+  enum class PartitionType { LINEAR = 0, NATURAL = 1 };
 
   DitheringCompressor(size_t size, DataType dtype, int s, unsigned int seed = 0,
                       PartitionType ptype = PartitionType::LINEAR)

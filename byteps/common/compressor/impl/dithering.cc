@@ -36,15 +36,22 @@ CompressorRegistry::Register reg(
                      << "k=" << k;
 
       auto iter2 = kwargs.find("seed");
-      if (iter2 == kwargs.end()) {
-        return std::unique_ptr<Compressor>(
-            new DitheringCompressor(size, dtype, k));
-      } else {
-        unsigned int seed = std::stoul(iter2->second);
+      unsigned int seed = 0;
+      if (iter2 != kwargs.end()) {
+        seed = std::stoul(iter2->second);
         BPS_CHECK(seed != 0) << "seed should not be 0";
-        return std::unique_ptr<Compressor>(
-            new DitheringCompressor(size, dtype, k, seed));
       }
+
+      auto iter3 = kwargs.find("partition");
+      int ptype_int = 0;
+      if (iter3 != kwargs.end()) {
+        ptype_int = std::stoi(iter3->second);
+        BPS_CHECK(ptype_int != 0 && ptype_int != 1) << "ptype should be 0 or 1";
+      }
+      auto ptype = static_cast<DitheringCompressor::PartitionType>(ptype_int);
+
+      return std::unique_ptr<Compressor>(
+          new DitheringCompressor(size, dtype, k, seed, ptype));
     });
 }
 
@@ -100,11 +107,11 @@ tensor_t DitheringCompressor::CompressImpl(index_t* dst, const scalar_t* src,
   *p_bits = bit_writer.bits();
 
   // l2
-  double* p_scale = reinterpret_cast<double*>(&dst[bit_writer.ints() + 1]);
+  float* p_scale = reinterpret_cast<float*>(&dst[bit_writer.ints() + 1]);
   *p_scale = l2;
 
   return {dst, bit_writer.ints() * sizeof(index_t) + sizeof(index_t) +
-                   sizeof(double)};
+                   sizeof(float)};
 }
 
 tensor_t DitheringCompressor::Compress(tensor_t grad) {
@@ -116,44 +123,37 @@ template <typename index_t, typename scalar_t>
 tensor_t DitheringCompressor::DecompressImpl(scalar_t* dst, const index_t* src,
                                              size_t compressed_size) {
   const size_t ints =
-      (compressed_size - sizeof(double) - sizeof(index_t)) / sizeof(index_t);
+      (compressed_size - sizeof(float) - sizeof(index_t)) / sizeof(index_t);
   auto* p_bits = reinterpret_cast<const index_t*>(src + ints);
   const index_t bits = *p_bits;
 
-  auto* p_scale = reinterpret_cast<const double*>(src + ints + 1);
-  const double scale = *p_scale;
+  auto* p_scale = reinterpret_cast<const float*>(src + ints + 1);
+  const float scale = *p_scale;
 
   auto ptr = const_cast<index_t*>(src);
   if ((void*)dst == (void*)src) {
     ptr = reinterpret_cast<index_t*>(_buf.get());
     std::memcpy(ptr, src, compressed_size);
   }
-
   std::memset(dst, 0, _size);
+
+  unsigned int s;
+  if (_ptype == PartitionType::LINEAR) {
+    s = _s;
+  } else if (_ptype == PartitionType::NATURAL) {
+    s = 1 << (_s - 1);
+  }
 
   BitReader<index_t> bit_reader(ptr);
   int last_non_zero_pos = -1;
-  if (_ptype == PartitionType::LINEAR) {
-    while (bit_reader.bits() < bits) {
-      int diff = EliasDeltaDecode(bit_reader);
-      int i = last_non_zero_pos + diff;
-      last_non_zero_pos = i;
-      int signbit = bit_reader.Get();
-      int x = EliasDeltaDecode(bit_reader);
-      float num = x * scale / _s;
-      dst[i] = (1 - (signbit << 1)) * num;
-    }
-  } else if (_ptype == PartitionType::NATURAL) {
-    const int s = 1 << (_s - 1);
-    while (bit_reader.bits() < bits) {
-      int diff = EliasDeltaDecode(bit_reader);
-      int i = last_non_zero_pos + diff;
-      last_non_zero_pos = i;
-      int signbit = bit_reader.Get();
-      int x = EliasDeltaDecode(bit_reader);
-      float num = x / s * scale;
-      dst[i] = (1 - (signbit << 1)) * num;
-    }
+  while (bit_reader.bits() < bits) {
+    int diff = EliasDeltaDecode(bit_reader);
+    int i = last_non_zero_pos + diff;
+    last_non_zero_pos = i;
+    int signbit = bit_reader.Get();
+    int x = EliasDeltaDecode(bit_reader);
+    float num = x * scale / s;
+    dst[i] = (1 - (signbit << 1)) * num;
   }
 
   return {dst, _size};

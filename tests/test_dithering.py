@@ -5,20 +5,15 @@ import mxnet as mx
 import mxnet.ndarray as nd
 import numpy as np
 from gluoncv.model_zoo import get_model
-from mxnet import gluon, autograd
+from mxnet import autograd, gluon
+from numba import jit
 from parameterized import parameterized
 from tqdm import tqdm
-from math import sqrt
-from numba import jit
 
-from utils import fake_data, bernoulli
+from utils import bernoulli, fake_data
 
 
-# @jit(nopython=True)
-def norm2(vector):
-    return np.sqrt(np.sum(vector * vector))
-
-
+@jit(nopython=True)
 def round_next_pow2(v):
     v -= 1
     v |= v >> 1
@@ -65,14 +60,15 @@ class DitheringTestCase(unittest.TestCase):
         print("init")
         bps.init()
 
-    @parameterized.expand([(2,)])
-    def test_dithering(self, k):
+    @parameterized.expand([(2, "natural",),])
+    def test_dithering(self, k, ptype):
         ctx = mx.gpu(0)
         net = get_model("resnet18_v2")
         net.initialize(mx.init.Xavier(), ctx=ctx)
         net.summary(nd.ones((1, 3, 224, 224), ctx=ctx))
 
         # hyper-params
+        seed = 2020
         batch_size = 32
         optimizer_params = {'momentum': 0, 'wd': 0,
                             'learning_rate': 0.01}
@@ -82,7 +78,8 @@ class DitheringTestCase(unittest.TestCase):
             # "ef": "vanilla",
             # "momentum": "nesterov",
             "k": k,
-            "seed": 2020
+            "partition": ptype,
+            "seed": seed
         }
 
         trainer = bps.DistributedTrainer(net.collect_params(
@@ -107,8 +104,8 @@ class DitheringTestCase(unittest.TestCase):
                 errors_s[i] = np.zeros_like(params[i])
                 moms[i] = np.zeros_like(params[i])
                 wd_moms[i] = np.zeros_like(params[i])
-                rngs[i] = np.array([2020, 2020], dtype=np.uint64)
-                rngs_s[i] = np.array([2020, 2020], dtype=np.uint64)
+                rngs[i] = np.array([seed, seed], dtype=np.uint64)
+                rngs_s[i] = np.array([seed, seed], dtype=np.uint64)
 
         for it, batch in tqdm(enumerate(train_data)):
             data = batch[0].as_in_context(ctx)
@@ -149,24 +146,6 @@ class DitheringTestCase(unittest.TestCase):
                     # c += 1e-4*xs[i]
                     params[i] -= optimizer_params["learning_rate"] * c
 
-                    g2 = param._grad[0].asnumpy().flatten()
-                    d = c.flatten()
-                    if not np.allclose(d, g2, atol=np.finfo(np.float32).eps):
-                        print("False")
-
-                        diff = np.abs(d - g2)
-                        print(d)  # baseline
-                        print(g2)  # byteps
-                        print(diff)
-                        print(it, i, np.max(diff), np.mean(
-                            diff), len(diff), c.shape)
-                        idx = np.where(diff > 1e-5)
-                        print("g: ", idx, gs[i].flatten()[idx])
-                        print("g+e: ", idx, g.flatten()[idx])
-                        print("mxnet: ", idx, d[idx])
-                        print("byteps: ", idx, g2[idx])
-                        input()
-
         cnt = 0
         tot = 0
         diffs = []
@@ -184,6 +163,8 @@ class DitheringTestCase(unittest.TestCase):
         if diffs:
             print("max_diff=%f\tmin_diff=%f\tmean_diff=%f" %
                   (np.max(diffs), np.min(diffs), np.mean(diffs)))
+
+        assert cnt == 0
 
 
 if __name__ == '__main__':
