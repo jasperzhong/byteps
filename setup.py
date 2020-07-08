@@ -238,7 +238,7 @@ def get_common_options(build_ext):
     link_flags = get_link_flags(build_ext)
 
     MACROS = [('EIGEN_MPL2_ONLY', 1)]
-    INCLUDES = ['3rdparty/ps-lite/include']
+    INCLUDES = ['3rdparty/ps-lite/include', '3rdparty/BitMagic/src']
     SOURCES = ['byteps/common/common.cc',
                'byteps/common/operations.cc',
                'byteps/common/core_loops.cc',
