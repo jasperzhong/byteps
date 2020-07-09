@@ -101,16 +101,16 @@ tensor_t DitheringCompressor::CompressImpl(index_t* dst, const scalar_t* src,
     }
   }
 
-  bit_writer.Pad();
+  bit_writer.Flush();
   // bits
-  index_t* p_bits = reinterpret_cast<index_t*>(&dst[bit_writer.ints()]);
+  index_t* p_bits = reinterpret_cast<index_t*>(&dst[bit_writer.blocks()]);
   *p_bits = bit_writer.bits();
 
   // l2
-  float* p_scale = reinterpret_cast<float*>(&dst[bit_writer.ints() + 1]);
+  float* p_scale = reinterpret_cast<float*>(&dst[bit_writer.blocks() + 1]);
   *p_scale = l2;
 
-  return {dst, bit_writer.ints() * sizeof(index_t) + sizeof(index_t) +
+  return {dst, bit_writer.blocks() * sizeof(index_t) + sizeof(index_t) +
                    sizeof(float)};
 }
 
@@ -125,12 +125,12 @@ tensor_t DitheringCompressor::DecompressImpl(scalar_t* dst, const index_t* src,
   static_assert(sizeof(index_t) == sizeof(scalar_t),
                 "index_t should be the same size as scalar_t");
 
-  const size_t ints =
+  const size_t blocks =
       (compressed_size - sizeof(float) - sizeof(index_t)) / sizeof(index_t);
-  auto* p_bits = reinterpret_cast<const index_t*>(src + ints);
+  auto* p_bits = reinterpret_cast<const index_t*>(src + blocks);
   const index_t bits = *p_bits;
 
-  auto* p_scale = reinterpret_cast<const float*>(src + ints + 1);
+  auto* p_scale = reinterpret_cast<const float*>(src + blocks + 1);
   const float scale = *p_scale;
 
   auto ptr = const_cast<index_t*>(src);
