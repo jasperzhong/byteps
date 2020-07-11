@@ -14,7 +14,6 @@
 // =============================================================================
 
 #include <cmath>
-#include <iomanip>
 
 #include "../compressor_registry.h"
 #include "dithering.h"
@@ -68,14 +67,16 @@ tensor_t DitheringCompressor::CompressImpl(index_t* dst, const scalar_t* src,
   }
   l2 = std::sqrt(l2);
 
+  BPS_LOG(INFO) << "compress l2=" << l2;
+
   BitWriter<index_t> bit_writer(dst);
   int last_non_zero_pos = -1;
   if (_ptype == PartitionType::LINEAR) {
     for (int i = 0; i < len; ++i) {
-      float x = std::abs(src[i]);
-      float fp = (x / l2) * _s;
-      int low = std::floor(fp);
-      int ret = low + _rng.Bernoulli(fp - low);
+      float abs_x = std::abs(src[i]);
+      float level_float = (abs_x * _s) / l2;
+      float prev_level = std::floor(level_float);
+      int ret = prev_level + _rng.Bernoulli(level_float - prev_level);
       if (ret) {
         int diff = i - last_non_zero_pos;
         last_non_zero_pos = i;
@@ -87,10 +88,11 @@ tensor_t DitheringCompressor::CompressImpl(index_t* dst, const scalar_t* src,
   } else if (_ptype == PartitionType::NATURAL) {
     const int scale = 1 << (_s - 1);
     for (int i = 0; i < len; ++i) {
-      float x = std::abs(src[i]);
-      float fp = (x / l2) * scale;
-      int low = RoundNextPow2(std::ceil(fp)) << 1;
-      int ret = low * (1 + _rng.Bernoulli((fp - low) / low));
+      float abs_x = std::abs(src[i]);
+      float level_float = (abs_x * scale) / l2;
+      float prev_level = RoundNextPow2(std::ceil(level_float)) << 1;
+      int ret = prev_level *
+                (1 + _rng.Bernoulli((level_float - prev_level) / prev_level));
       if (ret) {
         int diff = i - last_non_zero_pos;
         last_non_zero_pos = i;
@@ -132,6 +134,7 @@ tensor_t DitheringCompressor::DecompressImpl(scalar_t* dst, const index_t* src,
 
   auto* p_scale = reinterpret_cast<const float*>(src + blocks + 1);
   const float scale = *p_scale;
+  BPS_LOG(INFO) << "decompress l2=" << scale;
 
   auto ptr = const_cast<index_t*>(src);
   if ((void*)dst == (void*)src) {
@@ -154,8 +157,8 @@ tensor_t DitheringCompressor::DecompressImpl(scalar_t* dst, const index_t* src,
     int i = last_non_zero_pos + diff;
     last_non_zero_pos = i;
     int signbit = bit_reader.Get();
-    int x = EliasDeltaDecode(bit_reader);
-    float num = x * scale / s;
+    int abs_x = EliasDeltaDecode(bit_reader);
+    float num = abs_x / s * scale;
     dst[i] = (1 - (signbit << 1)) * num;
   }
 
@@ -180,12 +183,12 @@ void DitheringCompressor::FastUpdateErrorImpl(scalar_t* error,
   static_assert(sizeof(index_t) == sizeof(scalar_t),
                 "index_t should be the same size as scalar_t");
 
-  const size_t ints =
+  const size_t blocks =
       (compressed_size - sizeof(float) - sizeof(index_t)) / sizeof(index_t);
-  auto* p_bits = reinterpret_cast<const index_t*>(compressed + ints);
+  auto* p_bits = reinterpret_cast<const index_t*>(compressed + blocks);
   const index_t bits = *p_bits;
 
-  auto* p_scale = reinterpret_cast<const float*>(compressed + ints + 1);
+  auto* p_scale = reinterpret_cast<const float*>(compressed + blocks + 1);
   const float scale = *p_scale;
 
   std::memcpy(error, corrected, _size);
@@ -205,7 +208,7 @@ void DitheringCompressor::FastUpdateErrorImpl(scalar_t* error,
     last_non_zero_pos = i;
     int signbit = bit_reader.Get();
     int x = EliasDeltaDecode(bit_reader);
-    float num = x * scale / s;
+    float num = x / s * scale;
     error[i] -= (1 - (signbit << 1)) * num;
   }
 }

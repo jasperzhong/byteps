@@ -507,10 +507,22 @@ bool RunCompressLoopOnce() {
       int dtype = task->tensor->dtype();
       compressor::tensor_t grad(data, len, dtype);
       auto compressed = task->compressor->Compress(grad);
+
+      auto debug = [&]() {
+        std::memcpy(data, compressed.data, compressed.size);
+        auto tensor = task->compressor->Decompress({data, compressed.size});
+        auto ptr = reinterpret_cast<float *>(tensor.data);
+        for (int i = 0; i < 10; ++i) {
+          std::cout << ptr[i] << " ";
+        }
+        std::cout << std::endl;
+        return "done";
+      };
+
       BPS_CHECK_LE(compressed.size, len)
           << "Compressor Implementation Error "
           << ", key=" << task->key << ", src_len=" << len
-          << ", compressed_len=" << compressed.size;
+          << ", compressed_len=" << compressed.size << debug();
 
       task->compressed = std::make_shared<decltype(compressed)>(compressed);
 

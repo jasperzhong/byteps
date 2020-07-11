@@ -9,6 +9,7 @@ from mxnet import autograd, gluon
 from numba import jit
 from parameterized import parameterized
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 from utils import bernoulli, fake_data
 
@@ -29,6 +30,7 @@ def round_next_pow2(v):
 def dithering(x, k, state, partition='linear'):
     y = x.flatten()
     # normalize
+
     l2 = np.linalg.norm(y.astype(np.float64), ord=2)
     y /= l2
     sign = np.sign(y)
@@ -52,7 +54,7 @@ def dithering(x, k, state, partition='linear'):
 
     y *= sign
     y *= l2
-    return y.reshape(x.shape)
+    return y.reshape(x.shape), l2
 
 
 class DitheringTestCase(unittest.TestCase):
@@ -60,7 +62,7 @@ class DitheringTestCase(unittest.TestCase):
         print("init")
         bps.init()
 
-    @parameterized.expand([(2, "linear",),])
+    @parameterized.expand([(2, "linear",), ])
     def test_dithering(self, k, ptype):
         ctx = mx.gpu(0)
         net = get_model("resnet18_v2")
@@ -75,7 +77,7 @@ class DitheringTestCase(unittest.TestCase):
 
         compression_params = {
             "compressor": "dithering",
-            # "ef": "vanilla",
+            "ef": "vanilla",
             # "momentum": "nesterov",
             "k": k,
             "partition": ptype,
@@ -96,6 +98,7 @@ class DitheringTestCase(unittest.TestCase):
         wd_moms = {}
         rngs = {}
         rngs_s = {}
+        l2s = {}
 
         for i, param in enumerate(trainer._params):
             if param.grad_req != 'null':
@@ -106,6 +109,7 @@ class DitheringTestCase(unittest.TestCase):
                 wd_moms[i] = np.zeros_like(params[i])
                 rngs[i] = np.array([seed, seed], dtype=np.uint64)
                 rngs_s[i] = np.array([seed, seed], dtype=np.uint64)
+                l2s[i] = []
 
         for it, batch in tqdm(enumerate(train_data)):
             data = batch[0].as_in_context(ctx)
@@ -134,17 +138,43 @@ class DitheringTestCase(unittest.TestCase):
                     # moms[i] *= 0.9
                     # moms[i] += g
                     # g += 0.9 * moms[i]
-                    # g += errors[i]
-                    c = dithering(g, k, rngs[i], ptype)
-                    # errors[i] = g - c
+                    g += errors[i]
+                    c, l2 = dithering(g, k, rngs[i], ptype)
+                    l2s[i].append(l2)
+                    errors[i] = g - c
 
-                    # c += errors_s[i]
-                    cs = dithering(c, k, rngs_s[i], ptype)
-                    # errors_s[i] = c - cs
+                    c += errors_s[i]
+                    cs, _ = dithering(c, k, rngs_s[i], ptype)
+                    errors_s[i] = c - cs
                     c = cs
 
                     # c += 1e-4*xs[i]
                     params[i] -= optimizer_params["learning_rate"] * c
+
+                    g2 = param._grad[0].asnumpy().flatten()
+                    d = c.flatten()
+                    if not np.allclose(d, g2, atol=np.finfo(np.float32).eps):
+                        print("False")
+
+                        diff = np.abs(d - g2)
+                        print(d)  # baseline
+                        print(g2)  # byteps
+                        print(diff)
+                        print(it, i, np.max(diff), np.mean(
+                            diff), len(diff), c.shape)
+                        idx = np.where(diff > 1e-5)
+                        print("g: ", idx, gs[i].flatten()[idx])
+                        print("g+e: ", idx, g.flatten()[idx])
+                        print("mxnet: ", idx, d[idx])
+                        print("byteps: ", idx, g2[idx])
+                        # numpy number of close zeros
+                        # idx = np.where(np.abs(g.flatten()) < np.finfo(np.float32).eps)
+                        # print(len(idx[0]))
+                        # print(idx)
+                        # # idx = np.where(np.abs(g.flatten()) == 0.0)
+                        # # print(len(idx[0]))
+                        # # print(idx)
+                        input()
 
         cnt = 0
         tot = 0
@@ -154,10 +184,19 @@ class DitheringTestCase(unittest.TestCase):
                 x = param._data[0].asnumpy()
                 tot += len(x.flatten())
                 if not np.allclose(params[i], x, atol=np.finfo(np.float32).eps):
+                    print(params[i])
+                    print(x)
+                    print(np.abs(x-params[i]))
                     diff = np.abs(x.flatten() - params[i].flatten())
+
                     diffs.append(np.max(diff))
                     idx = np.where(diff > np.finfo(np.float32).eps)
                     cnt += len(idx[0])
+                    input()
+
+                plt.plot(l2s[i])
+        plt.grid(True)
+        plt.savefig("../scripts/pngs/l2-ef-2.png")
 
         print("false=%d tot=%d false / tot = %lf" % (cnt, tot, cnt / tot))
         if diffs:
