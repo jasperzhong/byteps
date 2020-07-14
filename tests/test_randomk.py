@@ -48,7 +48,7 @@ class RandomkTestCase(unittest.TestCase):
 
         compression_params = {
             "compressor": "randomk",
-            # "ef": "vanilla",
+            "ef": "vanilla",
             # "momentum": "nesterov",
             "k": k,
             "seed": seed
@@ -105,13 +105,13 @@ class RandomkTestCase(unittest.TestCase):
                     # moms[i] *= 0.9
                     # moms[i] += g
                     # g += 0.9 * moms[i]
-                    # g += errors[i]
+                    g += errors[i]
                     c = randomk(g, k, rngs[i])
-                    # errors[i] = g - c
+                    errors[i] = g - c
 
-                    # c += errors_s[i]
+                    c += errors_s[i]
                     cs = randomk(c, k, rngs_s[i])
-                    # errors_s[i] = c - cs
+                    errors_s[i] = c - cs
                     c = cs
 
                     # c += 1e-4*xs[i]

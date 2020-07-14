@@ -30,7 +30,6 @@ def round_next_pow2(v):
 def dithering(x, k, state, partition='linear'):
     y = x.flatten()
     # normalize
-
     l2 = np.linalg.norm(y.astype(np.float64), ord=2)
     y /= l2
     sign = np.sign(y)

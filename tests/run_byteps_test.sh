@@ -3,19 +3,11 @@
 path="$(dirname $0)"
 
 export PATH=~/.local/bin:$PATH
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/anaconda3/envs/python3/lib/python3.6/site-packages/torch/lib
 export DMLC_NUM_WORKER=1
 export DMLC_NUM_SERVER=1
 export DMLC_PS_ROOT_URI=127.0.0.1
 export DMLC_PS_ROOT_PORT=1234
 export BYTEPS_LOG_LEVEL=WARNING
-
-function cleanup() {
-  rm -rf lr.s
-}
-
-trap cleanup EXIT
-
 pkill bpslaunch
 pkill python3
 sleep 2

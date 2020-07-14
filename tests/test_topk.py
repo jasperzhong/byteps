@@ -14,7 +14,7 @@ from utils import fake_data
 
 def topk(x, k):
     y = x.flatten()
-    indices = np.argsort(np.abs(y))[-k:][::-1]
+    indices = np.argpartition(np.abs(y), -k)[-k:]
     vals = y[indices]
     y.fill(0)
     for idx, val in zip(indices, vals):
@@ -41,7 +41,7 @@ class TopkTestCase(unittest.TestCase):
 
         compression_params = {
             "compressor": "topk",
-            # "ef": "vanilla",
+            "ef": "vanilla",
             # "momentum": "nesterov",
             "k": k,
         }
@@ -93,13 +93,13 @@ class TopkTestCase(unittest.TestCase):
                     # moms[i] *= 0.9
                     # moms[i] += g
                     # g += 0.9 * moms[i]
-                    # g += errors[i]
+                    g += errors[i]
                     c = topk(g, k)
-                    # errors[i] = g - c
+                    errors[i] = g - c
 
-                    # c += errors_s[i]
+                    c += errors_s[i]
                     cs = topk(c, k)
-                    # errors_s[i] = c - cs
+                    errors_s[i] = c - cs
                     c = cs
 
                     # c += 1e-4*xs[i]
