@@ -158,7 +158,7 @@ tensor_t DitheringCompressor::DecompressImpl(scalar_t* dst, const index_t* src,
     last_non_zero_pos = i;
     int signbit = bit_reader.Get();
     int abs_x = EliasDeltaDecode(bit_reader);
-    float num = abs_x / s * scale;
+    float num = abs_x * scale / s;
     dst[i] = (1 - (signbit << 1)) * num;
   }
 
@@ -207,8 +207,8 @@ void DitheringCompressor::FastUpdateErrorImpl(scalar_t* error,
     int i = last_non_zero_pos + diff;
     last_non_zero_pos = i;
     int signbit = bit_reader.Get();
-    int x = EliasDeltaDecode(bit_reader);
-    float num = x / s * scale;
+    int abs_x = EliasDeltaDecode(bit_reader);
+    float num = abs_x * scale / s;
     error[i] -= (1 - (signbit << 1)) * num;
   }
 }
