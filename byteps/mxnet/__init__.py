@@ -160,6 +160,44 @@ def broadcast_parameters(params, root_rank=0):
     else:
         raise ValueError('Invalid params of type: %s' % type(params))
 
+import torch
+import numpy as np
+
+class QSGDCompressor:
+    def __init__(self, quantum_num):
+        self.quantum_num = quantum_num
+
+    def compress(self, tensor):
+        shape = tensor.size()
+        tensor = tensor.flatten()
+
+        norm = tensor.norm()
+        norm = norm.flatten()
+        abs_gradient = tensor.abs()
+
+        level_float = self.quantum_num / norm * abs_gradient
+        previous_level = level_float.floor()
+        prob = torch.empty_like(tensor).uniform_()
+        is_next_level = (prob < (level_float - previous_level)
+                         ).type(torch.float32)
+        new_level = (previous_level + is_next_level)
+
+        sign = tensor.sign()
+        tensor_compressed = (new_level * sign).type(torch.int16)
+        tensor_compressed = tensor_compressed.type(
+            torch.int8 if self.quantum_num < 128 else torch.half)
+        tensor_compressed = tensor_compressed, norm
+
+        return tensor_compressed, shape
+
+    def decompress(self, tensor_compressed, shape):
+        tensor_compressed, norm = tensor_compressed
+
+        decode_output = tensor_compressed.type(torch.float32)
+        tensor_decompressed = norm / self.quantum_num * decode_output
+        tensor_decompressed = tensor_decompressed.view(shape)
+        return tensor_decompressed
+
 
 class DistributedTrainer(mx.gluon.Trainer):
     """A subclass of MXNet gluon.Trainer.
@@ -216,6 +254,8 @@ class DistributedTrainer(mx.gluon.Trainer):
         # function. Normalizing it by BytePS size, which is equivalent to performing
         # average in push_pull, has better performance.
         # self._scale /= size()
+        self.qsgd = QSGDCompressor(2)
+        self.error = {}
         self._bps_size = size()
         self.root_rank = root_rank
         self._intra_compressors = {}
@@ -307,12 +347,18 @@ class DistributedTrainer(mx.gluon.Trainer):
                 # grad /= (batch_size * num_workers)
                 nd._internal._mul_scalar(
                     param._grad[0], 1.0 / self._scale / self._bps_size, out=param._grad[0])
-                compressed, ctx = self._intra_compressors[i].compress(
-                    param._grad[0])
-                byteps_push_pull(compressed, is_average=False,
-                                 name="gradient_" + str(i), priority=-i)
-                param._grad[0] = self._intra_compressors[i].decompress(
-                    compressed, ctx,  x=param._data[0])
+                
+                # byteps_push_pull(compressed, is_average=False,
+                #                  name="gradient_" + str(i), priority=-i)
+                
+                grad_torch = torch.from_numpy(param._grad[0].asnumpy())
+                if i in self.error:
+                    grad_torch += self.error[i]
+                compressed, shape = self.qsgd.compress(grad_torch)
+                decompressed = self.qsgd.decompress(compressed, shape)
+                self.error[i] = grad_torch - decompressed
+                param._grad[0][:] = decompressed.numpy()
+
 
     def _init_params(self):
         tensors = []
