@@ -625,10 +625,10 @@ def get_nccl_vals():
     nccl_lib_dirs = []
     nccl_libs = []
 
-    nccl_home = os.environ.get('BYTEPS_NCCL_HOME', '/usr/local/nccl')
+    nccl_home = os.environ.get('BYTEPS_NCCL_HOME', '/usr')
     if nccl_home:
         nccl_include_dirs += ['%s/include' % nccl_home]
-        nccl_lib_dirs += ['%s/lib' % nccl_home, '%s/lib64' % nccl_home]
+        nccl_lib_dirs += ['%s/lib/x86_64-linux-gnu' % nccl_home]
 
     nccl_link_mode = os.environ.get('BYTEPS_NCCL_LINK', 'STATIC')
     if nccl_link_mode.upper() == 'SHARED':

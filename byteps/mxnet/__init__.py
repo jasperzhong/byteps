@@ -241,8 +241,8 @@ class DistributedTrainer(mx.gluon.Trainer):
             for key in sorted(list(params.keys())):
                 param_list.append(params[key])
 
-        self._intra_compressor = self._register_compressor(
-            params, optimizer_params, compression_params)
+        # self._intra_compressor = self._register_compressor(
+        #     params, optimizer_params, compression_params)
 
         super(DistributedTrainer, self).__init__(
             param_list, optimizer, optimizer_params=optimizer_params, kvstore=None)
@@ -262,8 +262,8 @@ class DistributedTrainer(mx.gluon.Trainer):
         for i, param in enumerate(self._params):
             byteps_declare_tensor("parameter_" + str(i))
             if param.grad_req != 'null':
-                self._intra_compressors[i] = type(self._intra_compressor)(
-                    **self._intra_compressor.__dict__)
+                # self._intra_compressors[i] = type(self._intra_compressor)(
+                #     **self._intra_compressor.__dict__)
                 byteps_params = dict(
                     filter(lambda attr: attr[0].startswith(
                         "byteps_",), param.__dict__.items())

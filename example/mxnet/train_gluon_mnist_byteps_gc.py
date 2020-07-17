@@ -111,12 +111,14 @@ def get_mnist_iterator():
 def conv_nets():
     net = gluon.nn.HybridSequential()
     with net.name_scope():
-        net.add(gluon.nn.Conv2D(channels=20, kernel_size=5, activation='relu'))
+        net.add(gluon.nn.Conv2D(channels=10, kernel_size=5, activation='relu'))
         net.add(gluon.nn.MaxPool2D(pool_size=2, strides=2))
-        net.add(gluon.nn.Conv2D(channels=50, kernel_size=5, activation='relu'))
+        net.add(gluon.nn.Conv2D(channels=20, kernel_size=5, activation='relu'))
+        net.add(gluon.nn.Dropout(.5))
         net.add(gluon.nn.MaxPool2D(pool_size=2, strides=2))
         net.add(gluon.nn.Flatten())
-        net.add(gluon.nn.Dense(512, activation="relu"))
+        net.add(gluon.nn.Dense(50, activation="relu"))
+        net.add(gluon.nn.Dropout(.5))
         net.add(gluon.nn.Dense(10))
     return net
 
