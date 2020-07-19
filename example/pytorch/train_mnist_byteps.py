@@ -33,12 +33,12 @@ args.cuda = not args.no_cuda and torch.cuda.is_available()
 
 # BytePS: initialize library.
 bps.init()
-torch.manual_seed(args.seed)
+# torch.manual_seed()
 
 if args.cuda:
     # BytePS: pin GPU to local rank.
     torch.cuda.set_device(bps.local_rank())
-    torch.cuda.manual_seed(args.seed)
+    # torch.cuda.manual_seed(args.seed)
 
 
 kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
@@ -129,7 +129,7 @@ def train(epoch):
 
 
 def metric_average(val, name):
-    tensor = torch.tensor(val)
+    tensor = torch.tensor(val).cuda()
     avg_tensor = bps.push_pull(tensor, name=name)
     return avg_tensor.item()
 

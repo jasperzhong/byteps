@@ -50,34 +50,29 @@ class QSGDCompressor(Compressor):
         self.quantum_num = quantum_num
 
     @staticmethod
-    def compress(self, tensor):
+    def compress(tensor):
         shape = tensor.size()
         tensor = tensor.flatten()
 
-        norm = tensor.norm()
+        norm = tensor.max()
         norm = norm.flatten()
         abs_gradient = tensor.abs()
 
-        level_float = self.quantum_num / norm * abs_gradient
+        level_float = 2.0 / norm * abs_gradient
         previous_level = level_float.floor()
         prob = torch.empty_like(tensor).uniform_()
         is_next_level = (prob < (level_float - previous_level)).type(torch.float32)
         new_level = (previous_level + is_next_level)
 
         sign = tensor.sign()
-        tensor_compressed = (new_level * sign).type(torch.int16)
-        tensor_compressed = tensor_compressed.type(torch.int8 if self.quantum_num < 128 else torch.half)
-        tensor_compressed = tensor_compressed, norm
-
-        return tensor_compressed, shape
+        tensor_compressed = (new_level * sign).view(shape)
+        return tensor_compressed, norm
 
     @staticmethod
-    def decompress(self, tensor_compressed, shape):
-        tensor_compressed, norm = tensor_compressed
-
-        decode_output = tensor_compressed.type(torch.float32)
-        tensor_decompressed = norm / self.quantum_num * decode_output
-        tensor_decompressed = tensor_decompressed.view(shape)
+    def decompress(tensor_compressed, ctx):
+        # print("max={}\tshape={}".format(ctx.item(), tensor_compressed.shape))
+        tensor_decompressed = ctx / 2.0 * tensor_compressed
+        tensor_decompressed = tensor_decompressed
         return tensor_decompressed
 
 
@@ -95,6 +90,7 @@ class FP16Compressor(Compressor):
     @staticmethod
     def decompress(tensor, ctx):
         """Upcasts the tensor to the initialization dtype."""
+        print("decompress")
         tensor_decompressed = tensor
         dtype = ctx
         if dtype.is_floating_point:

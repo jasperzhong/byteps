@@ -37,6 +37,7 @@ class _DistributedOptimizer(torch.optim.Optimizer):
                  backward_passes_per_step=1):
         super(self.__class__, self).__init__(params)
         self._compression = compression
+        self._error = {}
 
         if named_parameters is not None:
             named_parameters = list(named_parameters)
@@ -87,7 +88,7 @@ class _DistributedOptimizer(torch.optim.Optimizer):
         self._grad_accs = []
         self._requires_update = set()
         self._should_sync = True
-        if size() > 1:
+        if size() >= 1:
             self._register_hooks()
 
         # declare tensors
@@ -133,7 +134,10 @@ class _DistributedOptimizer(torch.optim.Optimizer):
             handle, ctx = None, None
         else:
             tensor = p.grad
+            if name in self._error:
+                tensor += self._error[name]
             tensor_compressed, ctx = self._compression.compress(tensor)
+            self._error[name] = tensor - self._compression.decompress(tensor_compressed, ctx)
             handle = byteps_push_pull(tensor_compressed, average=True, name="Gradient."+name)
         return handle, ctx
 
@@ -166,7 +170,7 @@ class _DistributedOptimizer(torch.optim.Optimizer):
             if handle is None:
                 handle, ctx = self._push_pull_grad_async(p)
                 self._handles[p] = (handle, ctx)
-        for p, (handle, _) in self._handles.items():
+        for p, (handle, ctx) in self._handles.items():
             output = synchronize(handle)
             self._push_pull_delay[p] = self.backward_passes_per_step
             if not self._enable_async:
