@@ -267,6 +267,7 @@ def get_common_options(build_ext):
     else:
         COMPILE_FLAGS = cpp_flags
         LINK_FLAGS = link_flags
+    
     LIBRARY_DIRS = []
     LIBRARIES = []
 
@@ -277,6 +278,10 @@ def get_common_options(build_ext):
 
     # RDMA and NUMA libs
     LIBRARIES += ['numa']
+
+    # TODO: TO SUPPORT FP16
+    INCLUDES += [get_mx_include_dirs()]
+    COMPILE_FLAGS += ['-DMSHADOW_STAND_ALONE']
 
     # auto-detect rdma
     if has_rdma_header():
