@@ -37,10 +37,13 @@ namespace compressor {
 class DitheringCompressor : public Compressor {
  public:
   enum class PartitionType { LINEAR = 0, NATURAL = 1 };
+  enum class NomalizeType { MAX = 0, L2 = 1 };
 
-  DitheringCompressor(size_t size, DataType dtype, unsigned int s, unsigned int seed = 0,
-                      PartitionType ptype = PartitionType::LINEAR)
-      : Compressor(size, dtype), _s(s), _ptype(ptype) {
+  DitheringCompressor(size_t size, DataType dtype, unsigned int s,
+                      unsigned int seed = 0,
+                      PartitionType ptype = PartitionType::LINEAR,
+                      NomalizeType ntype = NomalizeType::MAX)
+      : Compressor(size, dtype), _s(s), _ptype(ptype), _ntype(ntype) {
     if (seed) {
       _rng.set_seed(seed);
     }
@@ -70,6 +73,7 @@ class DitheringCompressor : public Compressor {
   unsigned int _s;
 
   PartitionType _ptype;
+  NomalizeType _ntype;
   XorShift128PlusBitShifterRNG _rng;
 };
 }  // namespace compressor
