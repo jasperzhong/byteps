@@ -47,7 +47,7 @@ class FP16Compressor(Compressor):
     def compress(self, tensor, *args, **kwargs):
         """Downcasts the tensor to 16-bit."""
         tensor_compressed = tensor
-        if 'float' in str(self, tensor.dtype):
+        if 'float' in str(tensor.dtype):
             # Only allow compression from other floating point types
             tensor_compressed = tensor.astype('float16', copy=False)
         return tensor_compressed, tensor.dtype
