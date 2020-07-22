@@ -34,7 +34,7 @@ namespace compressor {
  *
  * 2. natural: {0, 2^{1-s}, 2^(2-s), ..., 2^{-1}, 1}
  *
- * two kinds of normalizations:
+ * two kinds of normalization:
  * 1. max: it gives better accuracy but less sparsity.
  *
  * 2. l2 norm: it is more sparse but less accurate. and
