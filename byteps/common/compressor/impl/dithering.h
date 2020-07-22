@@ -33,6 +33,12 @@ namespace compressor {
  * 1. linear: {0, 1/s, 2/s, ..., (s-1)/s, 1}
  *
  * 2. natural: {0, 2^{1-s}, 2^(2-s), ..., 2^{-1}, 1}
+ *
+ * two kinds of normalizations:
+ * 1. max: it gives better accuracy but less sparsity.
+ *
+ * 2. l2 norm: it is more sparse but less accurate. and
+ * empirically we found it will diverge with error-feedback.
  */
 class DitheringCompressor : public Compressor {
  public:
