@@ -18,8 +18,7 @@
 
 #include <unordered_map>
 #if __F16C__
-#include "mshadow/base.h"
-#include "mshadow/half.h"
+#include "../half.h"
 using half_t = mshadow::half::half_t;
 #endif
 
