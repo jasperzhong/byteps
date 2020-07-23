@@ -279,10 +279,6 @@ def get_common_options(build_ext):
     # RDMA and NUMA libs
     LIBRARIES += ['numa']
 
-    # TODO: TO SUPPORT FP16
-    INCLUDES += [get_mx_include_dirs()]
-    COMPILE_FLAGS += ['-DMSHADOW_STAND_ALONE']
-
     # auto-detect rdma
     if has_rdma_header():
         LIBRARIES += ['rdmacm', 'ibverbs', 'rt']
@@ -717,7 +713,6 @@ def build_mx_extension(build_ext, options):
          'byteps/mxnet/adapter.cc']
     mxnet_lib.extra_compile_args = options['COMPILE_FLAGS'] + \
         mx_compile_flags
-    mxnet_lib.extra_compile_args.remove("-DMSHADOW_STAND_ALONE")
     mxnet_lib.extra_link_args = options['LINK_FLAGS'] + mx_link_flags
     mxnet_lib.extra_objects = options['EXTRA_OBJECTS']
     mxnet_lib.library_dirs = options['LIBRARY_DIRS']
