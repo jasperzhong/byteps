@@ -83,7 +83,7 @@ class WeightDecayMomentum(Compressor):
         if "x" not in kwargs:
             return self.compressor.decompress(tensor, ctx)
 
-        x = kwargs["x"]
+        x = kwargs["x"].astype(tensor.dtype, copy=False)
 
         if self.mom is None:
             self.mom = nd.zeros_like(tensor)
