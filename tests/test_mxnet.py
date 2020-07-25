@@ -14,34 +14,29 @@
 # ==============================================================================
 
 import itertools
-import os
 import unittest
 
 import byteps.mxnet as bps
 import mxnet as mx
 import numpy as np
-from mxnet.base import MXNetError
-from mxnet.test_utils import same
+
+from meta_test import MetaTest
 
 has_gpu = mx.context.num_gpus() > 0
 
 
-class MXTest(unittest.TestCase):
+class MXTest(unittest.TestCase, metaclass=MetaTest):
     """
     Tests for ops in byteps.mxnet.
     """
-    def setUp(self):
-        print("init")
-        self.count = 0
-        bps.init()
-
     def _current_context(self):
         if has_gpu:
             return mx.gpu(bps.local_rank())
         else:
             return mx.current_context()
-
+    
     def test_byteps_trainer_param_order(self):
+        bps.init()
         net = mx.gluon.nn.Sequential()
         # layers may be added in a random order for all workers
         layers = {'ones_': 1, 'zeros_': 0}
@@ -60,11 +55,14 @@ class MXTest(unittest.TestCase):
             assert np.array_equal(weight, expected), (weight, expected)
 
         print('test_byteps_trainer_param_order passed')
+        bps.shutdown()
 
     def test_byteps_push_pull(self):
         """Test that the byteps_push_pull correctly sums 1D, 2D, 3D tensors."""
+        bps.init()
         dtypes = ['float16', 'float32', 'float64']
         dims = [1, 2, 3]
+        count = 0
         ctx = self._current_context()
         shapes = [(), (17), (17, 17), (17, 17, 17)]
         for dtype, dim in itertools.product(dtypes, dims):
@@ -76,20 +74,23 @@ class MXTest(unittest.TestCase):
             tensor = tensor.astype(dtype)
             input = tensor.asnumpy()
 
-            bps.byteps_declare_tensor("tensor_" + str(self.count))
-            bps.byteps_push_pull(tensor, name="tensor_"+str(self.count))
+            bps.byteps_declare_tensor("tensor_" + str(count))
+            bps.byteps_push_pull(tensor, name="tensor_"+str(count))
             tensor.wait_to_read()
             output = tensor.asnumpy()
             assert np.allclose(input, output)
-            self.count += 1
+            count += 1
 
         print('test_byteps_push_pull passed')
+        bps.shutdown()
 
     def test_byteps_push_pull_inplace(self):
         """Test that the byteps_push_pull correctly sums 1D, 2D, 3D tensors."""
+        bps.init()
         size = bps.size()
         dtypes = ['float16', 'float32', 'float64']
         dims = [1, 2, 3]
+        count = 0
         ctx = self._current_context()
         shapes = [(), (17), (17, 17), (17, 17, 17)]
         for dtype, dim in itertools.product(dtypes, dims):
@@ -98,10 +99,10 @@ class MXTest(unittest.TestCase):
                                           ctx=ctx)
             tensor = tensor.astype(dtype)
             multiplied = tensor.copy()
-            bps.byteps_declare_tensor("tensor_" + str(self.count))
-            bps.byteps_push_pull(tensor, name="tensor_" + str(self.count))
+            bps.byteps_declare_tensor("tensor_" + str(count))
+            bps.byteps_push_pull(tensor, name="tensor_" + str(count))
             max_difference = mx.nd.max(mx.nd.subtract(tensor, multiplied))
-            self.count += 1
+            count += 1
 
             # Threshold for floating point equality depends on number of
             # ranks, since we're comparing against precise multiplication.
@@ -115,13 +116,14 @@ class MXTest(unittest.TestCase):
                 break
 
             if max_difference > threshold:
-                print("self", self.count, dtype, dim, max_difference, threshold)
+                print("self", count, dtype, dim, max_difference, threshold)
                 print("tensor", bps.rank(), tensor)
                 print("multiplied", bps.rank(), multiplied)
             assert max_difference <= threshold, 'bps.byteps_push_pull produces \
                                                  incorrect results for self'
 
         print('test_byteps_push_pull_inplace passed')
+        bps.shutdown()
 
 
 if __name__ == '__main__':
