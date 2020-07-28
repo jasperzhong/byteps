@@ -28,7 +28,9 @@ class MetaTest(type):
                 "DMLC_PS_ROOT_URI": "127.0.0.1",
                 "DMLC_PS_ROOT_PORT": "1234",
                 "BYTEPS_LOG_LEVEL": "WARNING"}
-    BASE_ENV = {**BASE_ENV, **os.environ.copy()}
+    for name, value in os.environ.items():
+        if name not in BASE_ENV:
+            BASE_ENV[name] = value
     SCHEDULER_ENV = copy.copy(BASE_ENV)
     SCHEDULER_ENV.update(DMLC_ROLE="scheduler")
     SERVER_ENV = copy.copy(BASE_ENV)
