@@ -45,7 +45,7 @@ def randomk(x, k, state):
 
 
 class RandomkTestCase(unittest.TestCase, metaclass=MetaTest):
-    @parameterized.expand(itertools.product([1, 3, 5], np.random.randint(0, 2020, size=3)))
+    @parameterized.expand(itertools.product([1, 3, 5], np.random.randint(0, 2020, size=3).tolist()))
     def test_randomk(self, k, seed):
         ctx = mx.gpu(0)
         net = get_model("resnet18_v2")
