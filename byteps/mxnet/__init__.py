@@ -228,7 +228,8 @@ class DistributedTrainer(mx.gluon.Trainer):
                 byteps_declare_tensor("gradient_" + str(i), **byteps_params)
 
     def __del__(self):
-        if os.path.exists("lr.s"):
+        if local_rank() == 0:
+            self._f.close()
             os.remove("lr.s")
 
     def _register_compressor(self, params, optimizer_params, compression_params):
