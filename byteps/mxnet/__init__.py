@@ -230,7 +230,8 @@ class DistributedTrainer(mx.gluon.Trainer):
     def __del__(self):
         if local_rank() == 0:
             self._f.close()
-            os.remove("lr.s")
+            if os.path.exists("lr.s"):
+                os.remove("lr.s")
 
     def _register_compressor(self, params, optimizer_params, compression_params):
         """Register compressor for BytePS
