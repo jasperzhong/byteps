@@ -75,6 +75,7 @@ class MetaTest(type):
 
             bps.init()
             func(*args, **kwargs)
+            bps.shutdown()
 
             scheduler.join()
             server.join()
