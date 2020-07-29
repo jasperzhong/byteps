@@ -14,6 +14,7 @@
 # ==============================================================================
 
 import copy
+import time
 import os
 import subprocess
 import sys
@@ -27,7 +28,9 @@ class MetaTest(type):
                 "DMLC_NUM_SERVER": "1",
                 "DMLC_PS_ROOT_URI": "127.0.0.1",
                 "DMLC_PS_ROOT_PORT": "1234",
-                "BYTEPS_LOG_LEVEL": "WARNING"}
+                "BYTEPS_LOG_LEVEL": "WARNING",
+                "BYTEPS_MIN_COMPRESS_BYTES": "0",
+                "BYTEPS_PARTITION_BYTES": "2147483647"}
     for name, value in os.environ.items():
         if name not in BASE_ENV:
             BASE_ENV[name] = value
@@ -60,11 +63,7 @@ class MetaTest(type):
                 subprocess.check_call(args=["bpslaunch"], shell=True,
                                       stdout=sys.stdout, stderr=sys.stderr,
                                       env=env)
-
-            def worker(*args, **kwargs):
-                bps.init()
-                func(*args, **kwargs)
-                bps.shutdown()
+                
             print("bps init")
             scheduler = threading.Thread(target=run,
                                          args=(cls.SCHEDULER_ENV,))
@@ -74,13 +73,12 @@ class MetaTest(type):
             scheduler.start()
             server.start()
 
-            worker = threading.Thread(target=worker, args=args, kwargs=kwargs)
-            worker.daemon = True
-            worker.start()
+            bps.init()
+            func(*args, **kwargs)
 
             scheduler.join()
-            worker.join()
             server.join()
             print("bps shutdown")
+            time.sleep(2)
 
         return wrapper
