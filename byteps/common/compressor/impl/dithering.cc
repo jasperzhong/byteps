@@ -34,11 +34,11 @@ CompressorRegistry::Register reg(
                                              [](unsigned x) { return x != 0; });
 
       auto ptype_int = HyperParamFinder<int>(
-          kwargs, "partition", true, [](int x) { return x == 0 || x == 1; });
+          kwargs, "dithering_partition", true, [](int x) { return x == 0 || x == 1; });
       auto ptype = static_cast<DitheringCompressor::PartitionType>(ptype_int);
 
       auto ntype_int = HyperParamFinder<int>(
-          kwargs, "normalize", true, [](int x) { return x == 0 || x == 1; });
+          kwargs, "dithering_normalize", true, [](int x) { return x == 0 || x == 1; });
       auto ntype = static_cast<DitheringCompressor::NomalizeType>(ntype_int);
 
       return std::unique_ptr<Compressor>(

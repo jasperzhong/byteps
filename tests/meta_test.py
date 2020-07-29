@@ -28,7 +28,7 @@ class MetaTest(type):
                 "DMLC_NUM_SERVER": "1",
                 "DMLC_PS_ROOT_URI": "127.0.0.1",
                 "DMLC_PS_ROOT_PORT": "1234",
-                "BYTEPS_LOG_LEVEL": "WARNING",
+                "BYTEPS_LOG_LEVEL": "INFO",
                 "BYTEPS_MIN_COMPRESS_BYTES": "0",
                 "BYTEPS_PARTITION_BYTES": "2147483647"}
     for name, value in os.environ.items():

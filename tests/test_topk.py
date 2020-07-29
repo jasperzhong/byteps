@@ -112,7 +112,7 @@ class TopkTestCase(unittest.TestCase, metaclass=MetaTest):
                     idx = np.where(diff > np.finfo(np.float32).eps)
                     cnt += len(idx[0])
 
-        assert cnt == 0, "false/tot=" % (cnt, tot)
+        assert cnt == 0, "false/tot=%d/%d=%f" % (cnt, tot, cnt/tot)
 
 
 if __name__ == '__main__':

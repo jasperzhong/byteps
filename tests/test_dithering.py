@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import copy
 import itertools
 import unittest
 
@@ -64,7 +65,7 @@ def dithering(x, k, state, partition='linear', norm="max"):
     elif partition == "natural":
         y *= 2**(k-1)
         low = round_next_pow2((np.ceil(y).astype(np.uint32))) >> 1
-        length = low.copy()
+        length = copy.deepcopy(low)
         length[length == 0] = 1
         p = (y - low) / length
         y = low + length * bernoulli(p, state)
@@ -79,7 +80,7 @@ def dithering(x, k, state, partition='linear', norm="max"):
 
 
 class DitheringTestCase(unittest.TestCase, metaclass=MetaTest):
-    @parameterized.expand(itertools.product([1, 3, 5], ["linear", "natural"], ["max", "l2"], np.random.randint(0, 2020, size=3).tolist()))
+    @parameterized.expand(itertools.product([2], ["natural"], ["max"], [2020]))
     def test_dithering(self, k, ptype, ntype, seed):
         ctx = mx.gpu(0)
         net = get_model("resnet18_v2")
@@ -143,8 +144,21 @@ class DitheringTestCase(unittest.TestCase, metaclass=MetaTest):
 
                     cs = dithering(c, k, rngs_s[i], ptype, ntype)
                     c = cs
-
+                    
                     params[i] -= optimizer_params["learning_rate"] * c
+
+                    np_g = c.flatten()
+                    mx_g = param._grad[0].asnumpy().flatten()
+                    if not np.allclose(np_g, mx_g, atol=np.finfo(np.float32).eps):
+                        diff = np.abs(np_g - mx_g)
+                        print("numpy", np_g)
+                        print("byteps", mx_g)
+                        print("diff", diff)
+                        idx = np.nonzero(diff)
+                        print(idx, diff[idx])
+                        print(idx, np_g[idx])
+                        print(idx, mx_g[idx])
+                        input()
 
         cnt = 0
         tot = 0
@@ -157,7 +171,7 @@ class DitheringTestCase(unittest.TestCase, metaclass=MetaTest):
                     idx = np.where(diff > np.finfo(np.float32).eps)
                     cnt += len(idx[0])
 
-        assert cnt == 0
+        assert cnt == 0, "false/tot=%d/%d=%f" % (cnt, tot, cnt/tot)
 
 
 if __name__ == '__main__':
