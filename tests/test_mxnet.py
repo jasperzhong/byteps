@@ -36,7 +36,6 @@ class MXTest(unittest.TestCase, metaclass=MetaTest):
             return mx.current_context()
     
     def test_byteps_trainer_param_order(self):
-        bps.init()
         net = mx.gluon.nn.Sequential()
         # layers may be added in a random order for all workers
         layers = {'ones_': 1, 'zeros_': 0}
@@ -55,11 +54,9 @@ class MXTest(unittest.TestCase, metaclass=MetaTest):
             assert np.array_equal(weight, expected), (weight, expected)
 
         print('test_byteps_trainer_param_order passed')
-        bps.shutdown()
 
     def test_byteps_push_pull(self):
         """Test that the byteps_push_pull correctly sums 1D, 2D, 3D tensors."""
-        bps.init()
         dtypes = ['float16', 'float32', 'float64']
         dims = [1, 2, 3]
         count = 0
@@ -82,11 +79,9 @@ class MXTest(unittest.TestCase, metaclass=MetaTest):
             count += 1
 
         print('test_byteps_push_pull passed')
-        bps.shutdown()
 
     def test_byteps_push_pull_inplace(self):
         """Test that the byteps_push_pull correctly sums 1D, 2D, 3D tensors."""
-        bps.init()
         size = bps.size()
         dtypes = ['float16', 'float32', 'float64']
         dims = [1, 2, 3]
@@ -123,7 +118,6 @@ class MXTest(unittest.TestCase, metaclass=MetaTest):
                                                  incorrect results for self'
 
         print('test_byteps_push_pull_inplace passed')
-        bps.shutdown()
 
 
 if __name__ == '__main__':

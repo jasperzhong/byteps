@@ -51,7 +51,7 @@ class MetaTest(type):
         os.environ["BYTEPS_FORCE_DISTRIBUTED"] = "1"
         os.environ["BYTEPS_LOCAL_RANK"] = "0"
         os.environ["BYTEPS_LOCAL_SIZE"] = "1"
-        return type(name, bases, dict) 
+        return type(name, bases, dict)
 
     @classmethod
     def launch_bps(cls, func):
@@ -60,7 +60,11 @@ class MetaTest(type):
                 subprocess.check_call(args=["bpslaunch"], shell=True,
                                       stdout=sys.stdout, stderr=sys.stderr,
                                       env=env)
-                                      
+
+            def worker(*args, **kwargs):
+                bps.init()
+                func(*args, **kwargs)
+                bps.shutdown()
             print("bps init")
             scheduler = threading.Thread(target=run,
                                          args=(cls.SCHEDULER_ENV,))
@@ -69,8 +73,8 @@ class MetaTest(type):
             server.daemon = True
             scheduler.start()
             server.start()
-            
-            worker = threading.Thread(target=func, args=args, kwargs=kwargs)
+
+            worker = threading.Thread(target=worker, args=args, kwargs=kwargs)
             worker.daemon = True
             worker.start()
 
