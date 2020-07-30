@@ -14,6 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 """Gradient compression algorithms."""
+from functools import reduce
+
 import mxnet.ndarray as nd
 
 
@@ -64,12 +66,17 @@ class FP16Compressor(Compressor):
 class WeightDecayMomentum(Compressor):
     """For 1bit compression."""
 
-    def __init__(self, compressor, mu, wd, *args, **kwargs):
+    def __init__(self, compressor, mu, wd, threshold, *args, **kwargs):
         self.compressor = compressor
         self.mom = None
         self.cache = None
         self.mu = mu
         self.wd = wd
+        self.threshold = threshold
+
+    @staticmethod
+    def size(tensor):
+        return reduce(lambda x, y: x*y, tensor.shape)
 
     def compress(self, tensor, *args, **kwargs):
         """Returns the tensor unmodified."""
@@ -80,7 +87,8 @@ class WeightDecayMomentum(Compressor):
             m_t = \mu * m_{t-1} + wd * x_t
             x_{t+1} = x_t - \eta_t (tensor + \mu m_t + wd * x_t)
         """
-        if "x" not in kwargs:
+        # not need to do wd mom for uncompressed gradients
+        if self.size(tensor) < self.threshold or "x" not in kwargs:
             return self.compressor.decompress(tensor, ctx)
 
         x = kwargs["x"].astype(tensor.dtype, copy=False)

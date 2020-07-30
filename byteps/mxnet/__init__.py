@@ -266,6 +266,8 @@ class DistributedTrainer(mx.gluon.Trainer):
                 # raise KeyError if 'k' is not found
                 setattr(param, "byteps_compressor_k",
                         compression_params["k"])
+            else:
+                raise ValueError("Unsupported compressor %s" % compressor)
 
             if compression_params.get("momentum"):
                 setattr(param, "byteps_momentum_mu",
@@ -280,8 +282,11 @@ class DistributedTrainer(mx.gluon.Trainer):
         if compression_params.get("momentum"):
             # 1bit compressor use an additional momentum for weight decay
             if compressor == "onebit" and "wd" in optimizer_params:
-                intra_compressor = Compression.wdmom(
-                    intra_compressor, optimizer_params["momentum"], optimizer_params["wd"])
+                threshold = os.environ.get("BYTEPS_MIN_COMPRESS_BYTES", 65536)
+                mu = optimizer_params["momentum"]
+                wd = optimizer_params["wd"]
+                intra_compressor = Compression.wdmom(intra_compressor,
+                                                     mu, wd, threshold)
                 del optimizer_params["wd"]
 
             del optimizer_params['momentum']
