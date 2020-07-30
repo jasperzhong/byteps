@@ -279,10 +279,10 @@ class DistributedTrainer(mx.gluon.Trainer):
         # to avoid duplication
         if compression_params.get("momentum"):
             # 1bit compressor use an additional momentum for weight decay
-            if compressor == "onebit" and "wd" in optimizer_params:
-                intra_compressor = Compression.wdmom(
-                    intra_compressor, optimizer_params["momentum"], optimizer_params["wd"])
-                del optimizer_params["wd"]
+            # if compressor == "onebit" and "wd" in optimizer_params:
+            #     intra_compressor = Compression.wdmom(
+            #         intra_compressor, optimizer_params["momentum"], optimizer_params["wd"])
+            #     del optimizer_params["wd"]
 
             del optimizer_params['momentum']
 
