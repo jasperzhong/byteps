@@ -91,20 +91,22 @@ class WeightDecayMomentum(Compressor):
             return self.compressor.decompress(tensor, ctx)
 
         x = kwargs["x"].astype(tensor.dtype, copy=False)
-
-        # normal weight decay
-        if self.size(tensor) < self.threshold:
-            tensor += self.wd * x
-            return self.compressor.decompress(tensor, ctx)
-
-        if self.mom is None:
-            self.mom = nd.zeros_like(tensor)
+        
+        if self.cache is None:
             self.cache = nd.zeros_like(tensor)
-
+        
+        # normal weight decay
         nd._internal._mul_scalar(x, self.wd, out=self.cache)
-        self.mom += self.cache
-        nd._internal._mul_scalar(self.mom, self.mu, out=self.mom)
-        tensor += self.mom
+        
+        # weight decay momentum
+        if self.size(tensor) >= self.threshold:
+            if self.mom is None:
+                self.mom = nd.zeros_like(tensor)
+            
+            self.mom += self.cache
+            nd._internal._mul_scalar(self.mom, self.mu, out=self.mom)
+            tensor += self.mom
+        
         tensor += self.cache
         return self.compressor.decompress(tensor, ctx)
 
