@@ -87,11 +87,15 @@ class WeightDecayMomentum(Compressor):
             m_t = \mu * m_{t-1} + wd * x_t
             x_{t+1} = x_t - \eta_t (tensor + \mu m_t + wd * x_t)
         """
-        # not need to do wd mom for uncompressed gradients
-        if self.size(tensor) < self.threshold or "x" not in kwargs:
+        if "x" not in kwargs:
             return self.compressor.decompress(tensor, ctx)
 
         x = kwargs["x"].astype(tensor.dtype, copy=False)
+
+        # normal weight decay
+        if self.size(tensor) < self.threshold:
+            tensor += self.wd * x
+            return self.compressor.decompress(tensor, ctx)
 
         if self.mom is None:
             self.mom = nd.zeros_like(tensor)
