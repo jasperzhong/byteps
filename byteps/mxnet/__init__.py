@@ -20,6 +20,7 @@ import copy
 import os
 import struct
 import warnings
+from functools import reduce
 
 import mxnet as mx
 import mxnet.ndarray as nd
@@ -218,8 +219,6 @@ class DistributedTrainer(mx.gluon.Trainer):
         self._intra_compressors = {}
         for i, param in enumerate(self._params):
             byteps_declare_tensor("parameter_" + str(i))
-            self._intra_compressors[param.name] = type(self._intra_compressor)(
-                **self._intra_compressor.__dict__)
             if param.grad_req != 'null':
                 byteps_params = dict(
                     filter(lambda attr: attr[0].startswith(
@@ -279,10 +278,10 @@ class DistributedTrainer(mx.gluon.Trainer):
         # to avoid duplication
         if compression_params.get("momentum"):
             # 1bit compressor use an additional momentum for weight decay
-            # if compressor == "onebit" and "wd" in optimizer_params:
-            #     intra_compressor = Compression.wdmom(
-            #         intra_compressor, optimizer_params["momentum"], optimizer_params["wd"])
-            #     del optimizer_params["wd"]
+            if compressor == "onebit" and "wd" in optimizer_params:
+                Compression.wdmom = Compression.wdmom(
+                    intra_compressor, optimizer_params["momentum"], optimizer_params["wd"])
+                del optimizer_params["wd"]
 
             del optimizer_params['momentum']
 
@@ -316,6 +315,7 @@ class DistributedTrainer(mx.gluon.Trainer):
 
     def _init_params(self):
         tensors = []
+        threshold = int(os.environ.get("BYTEPS_MIN_COMPRESS_BYTES", 65536))
         for param in self._params_to_init:
             if param._deferred_init:
                 tensors.append(param)
@@ -325,6 +325,15 @@ class DistributedTrainer(mx.gluon.Trainer):
 
                 if rank() != self.root_rank:
                     param_arrays[0].__imul__(0)
+
+                # register intra-node compressor
+                size = reduce(lambda x, y: x*y, param_arrays[0].shape)
+                if size >= threshold:
+                    self._intra_compressors[param.name] = type(
+                        Compression.wdmom)(**Compression.wdmom.__dict__)
+                else:
+                    self._intra_compressors[param.name] = type(
+                        self._intra_compressor)(**self._intra_compressor.__dict__)
 
                 compressed, ctx = self._intra_compressors[param.name].compress(
                     param_arrays[0])
