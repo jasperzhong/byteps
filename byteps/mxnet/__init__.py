@@ -266,8 +266,6 @@ class DistributedTrainer(mx.gluon.Trainer):
                 # raise KeyError if 'k' is not found
                 setattr(param, "byteps_compressor_k",
                         compression_params["k"])
-            else:
-                raise ValueError("Unsupported compressor %s" % compressor)
 
             if compression_params.get("momentum"):
                 setattr(param, "byteps_momentum_mu",
