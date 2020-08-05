@@ -17,6 +17,7 @@
 #include <cstring>
 #include <sstream>
 
+
 #include "../compressor_registry.h"
 #include "dithering.h"
 
@@ -89,12 +90,14 @@ tensor_t DitheringCompressor::CompressImpl(index_t* dst, const scalar_t* src,
     std::stringstream ss;
     for (size_t i = 0; i < len; ++i) {
       float abs_x = std::abs(src[i]);
-      float normalized = (abs_x / scale) * level;
+      double normalized = (abs_x / scale) * level;
+      if (std::abs(abs_x) > 1e-6) {
+        ss << i << " " << abs_x << "\t";
+      }
       unsigned floor = RoundNextPow2(std::ceil(normalized)) >> 1;
       unsigned length = (floor != 0) ? floor : 1;
       double p = (normalized - floor) / length;
-      unsigned quantized =
-          floor + length * _rng.Bernoulli(p);
+      unsigned quantized = normalized;
       if (quantized) {
         size_t diff = i - last_non_zero_pos;
         last_non_zero_pos = i;
@@ -103,6 +106,7 @@ tensor_t DitheringCompressor::CompressImpl(index_t* dst, const scalar_t* src,
         EliasDeltaEncode(bit_writer, quantized);
       }
     }
+    BPS_LOG(INFO) << ss.str();
   }
   bit_writer.Flush();
 
@@ -157,7 +161,7 @@ tensor_t DitheringCompressor::DecompressImpl(scalar_t* dst, const index_t* src,
     last_non_zero_pos = i;
     int signbit = bit_reader.Get();
     unsigned quantized = EliasDeltaDecode(bit_reader);
-    float num = quantized * scale / s;
+    double num = quantized;
     dst[i] = (1 - (signbit << 1)) * num;
   }
 

@@ -51,7 +51,10 @@ def dithering(x, k, state, partition='linear', norm="max"):
         scale = np.linalg.norm(y.astype(np.float64), ord=2)
     else:
         raise ValueError("Unsupported normalization")
-    y /= scale
+    if scale > 1e-7:
+        y /= scale
+    else:
+        y = np.zeros_like(y)
     sign = np.sign(y)
     y = np.abs(y)
 
@@ -63,24 +66,28 @@ def dithering(x, k, state, partition='linear', norm="max"):
         y = low + bernoulli(p, state)
         y /= k
     elif partition == "natural":
+        s = copy.deepcopy(y)
         y *= 2**(k-1)
-        low = round_next_pow2((np.ceil(y).astype(np.uint32))) >> 1
-        length = copy.deepcopy(low)
-        length[length == 0] = 1
-        p = (y - low) / length
-        y = low + length * bernoulli(p, state)
+        t = copy.deepcopy(y)
+
+        # low = round_next_pow2((np.ceil(y).astype(np.uint32))) >> 1
+        # length = copy.deepcopy(low)
+        # length[length == 0] = 1
+        # p = (y - low) / length 
+        # y = \
+        y = y.astype(int)
         y = y.astype(np.float32)
-        y /= 2**(k-1)
+        # y /= 2**(k-1)
     else:
         raise ValueError("Unsupported partition")
 
     y *= sign
-    y *= scale
-    return y.reshape(x.shape)
+    # y *= scale
+    return y.reshape(x.shape), (s, t)
 
 
 class DitheringTestCase(unittest.TestCase, metaclass=MetaTest):
-    @parameterized.expand(itertools.product([2], ["natural"], ["max"], [2020]))
+    @parameterized.expand(itertools.product([8], ["natural"], ["l2"], [2020]))
     def test_dithering(self, k, ptype, ntype, seed):
         ctx = mx.gpu(0)
         net = get_model("resnet18_v2")
@@ -99,6 +106,7 @@ class DitheringTestCase(unittest.TestCase, metaclass=MetaTest):
             "normalize": ntype,
             "seed": seed
         }
+        print(compression_params)
 
         trainer = bps.DistributedTrainer(net.collect_params(
         ), "sgd", optimizer_params, compression_params=compression_params)
@@ -140,9 +148,9 @@ class DitheringTestCase(unittest.TestCase, metaclass=MetaTest):
             for i, param in enumerate(trainer._params):
                 if param.grad_req != "null":
                     g = gs[i] / (batch_size * bps.size())
-                    c = dithering(g, k, rngs[i], ptype, ntype)
+                    c, _ = dithering(g, k, rngs[i], ptype, ntype)
 
-                    cs = dithering(c, k, rngs_s[i], ptype, ntype)
+                    cs, p = dithering(c, k, rngs_s[i], ptype, ntype)
                     c = cs
 
                     params[i] -= optimizer_params["learning_rate"] * c
@@ -151,13 +159,12 @@ class DitheringTestCase(unittest.TestCase, metaclass=MetaTest):
                     mx_g = param._grad[0].asnumpy().flatten()
                     if not np.allclose(np_g, mx_g, atol=np.finfo(np.float32).eps):
                         diff = np.abs(np_g - mx_g)
-                        print("numpy", np_g)
-                        print("byteps", mx_g)
+                        print("np", np_g)
+                        print("mx", mx_g)
                         print("diff", diff)
-                        idx = np.nonzero(diff)
-                        print(idx, diff[idx])
-                        print(idx, np_g[idx])
-                        print(idx, mx_g[idx])
+                        print("max diff", np.max(diff))
+                        idx = np.nonzero(diff > 1e-5)
+                        print("idx", idx, np_g[idx], mx_g[idx], p[0][idx], p[1][idx])
                         input()
 
         cnt = 0
