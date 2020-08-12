@@ -51,10 +51,7 @@ def dithering(x, k, state, partition='linear', norm="max"):
         scale = np.linalg.norm(y.astype(np.float64), ord=2)
     else:
         raise ValueError("Unsupported normalization")
-    if scale > 1e-7:
-        y /= scale
-    else:
-        y = np.zeros_like(y)
+    y /= scale
     sign = np.sign(y)
     y = np.abs(y)
 
@@ -66,28 +63,24 @@ def dithering(x, k, state, partition='linear', norm="max"):
         y = low + bernoulli(p, state)
         y /= k
     elif partition == "natural":
-        s = copy.deepcopy(y)
         y *= 2**(k-1)
-        t = copy.deepcopy(y)
-
-        # low = round_next_pow2((np.ceil(y).astype(np.uint32))) >> 1
-        # length = copy.deepcopy(low)
-        # length[length == 0] = 1
-        # p = (y - low) / length 
-        # y = \
-        y = y.astype(int)
+        low = round_next_pow2((np.ceil(y).astype(np.uint32))) >> 1
+        length = copy.deepcopy(low)
+        length[length == 0] = 1
+        p = (y - low) / length
+        y = low + length * bernoulli(p, state)
         y = y.astype(np.float32)
-        # y /= 2**(k-1)
+        y /= 2**(k-1)
     else:
         raise ValueError("Unsupported partition")
 
     y *= sign
-    # y *= scale
-    return y.reshape(x.shape), (s, t)
+    y *= scale
+    return y.reshape(x.shape)
 
 
 class DitheringTestCase(unittest.TestCase, metaclass=MetaTest):
-    @parameterized.expand(itertools.product([8], ["natural"], ["l2"], [2020]))
+    @parameterized.expand(itertools.product([2, 4, 8], ["linear, natural"], ["max", "l2"], np.random.randint(0, 2020, size=3).tolist()))
     def test_dithering(self, k, ptype, ntype, seed):
         ctx = mx.gpu(0)
         net = get_model("resnet18_v2")
@@ -148,9 +141,9 @@ class DitheringTestCase(unittest.TestCase, metaclass=MetaTest):
             for i, param in enumerate(trainer._params):
                 if param.grad_req != "null":
                     g = gs[i] / (batch_size * bps.size())
-                    c, _ = dithering(g, k, rngs[i], ptype, ntype)
+                    c = dithering(g, k, rngs[i], ptype, ntype)
 
-                    cs, p = dithering(c, k, rngs_s[i], ptype, ntype)
+                    cs = dithering(c, k, rngs_s[i], ptype, ntype)
                     c = cs
 
                     params[i] -= optimizer_params["learning_rate"] * c
@@ -164,7 +157,7 @@ class DitheringTestCase(unittest.TestCase, metaclass=MetaTest):
                         print("diff", diff)
                         print("max diff", np.max(diff))
                         idx = np.nonzero(diff > 1e-5)
-                        print("idx", idx, np_g[idx], mx_g[idx], p[0][idx], p[1][idx])
+                        print("idx", idx, np_g[idx], mx_g[idx])
                         input()
 
         cnt = 0
