@@ -108,7 +108,7 @@ class WeightDecayMomentumAdapter(Compressor):
         self.mu = mu
         self.wd = wd
         self.threshold = threshold
-        self.wdmom = True
+        self.wdmom = False
         self.inited = False
 
     def compress(self, tensor, *args, **kwargs):
