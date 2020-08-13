@@ -68,7 +68,8 @@ class FP16Compressor(Compressor):
 
 class NagAdapter(Compressor):
     """For uncompressed gradients"""
-    def __init__(self, compressor, mu, threshold):
+
+    def __init__(self, compressor, mu, threshold, *args, **kwargs):
         self.compressor = compressor
         self.mu = mu
         self.mom = None
