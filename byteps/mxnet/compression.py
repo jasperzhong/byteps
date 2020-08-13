@@ -22,6 +22,7 @@ import mxnet.ndarray as nd
 def size(shape):
     return reduce(lambda x, y: x*y, shape) * 4
 
+
 class Compressor(object):
     """Interface for compressing and decompressing a given tensor."""
 
@@ -82,7 +83,7 @@ class NagAdapter(Compressor):
 
     def decompress(self, tensor, ctx, *args, **kwargs):
         """Add nesterov momentum for uncompressed gradients"""
-        tensor, ctx = self.compressor.decompress(tensor, ctx, *args, **kwargs)
+        tensor = self.compressor.decompress(tensor, ctx, *args, **kwargs)
         
         # uncompressed gradients need to do nag explicitly
         if not self.inited and size(tensor.shape) < self.threshold:
@@ -94,7 +95,7 @@ class NagAdapter(Compressor):
             nd._internal._mul_scalar(self.mom, self.mu, out=self.mom)
             tensor += self.mom
 
-        return tensor, ctx
+        return tensor
 
 
 class WeightDecayMomentumAdapter(Compressor):
