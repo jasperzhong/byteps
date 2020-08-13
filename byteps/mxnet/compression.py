@@ -136,11 +136,11 @@ class WeightDecayMomentumAdapter(Compressor):
         nd._internal._mul_scalar(x, self.wd, out=self.cache)
 
         # weight decay momentum
-        if self.inited:
+        if self.wdmom:
             self.mom += self.cache
             nd._internal._mul_scalar(self.mom, self.mu, out=self.mom)
             tensor += self.mom
-            
+
         tensor += self.cache
         return self.compressor.decompress(tensor, ctx, *args, **kwargs)
 
