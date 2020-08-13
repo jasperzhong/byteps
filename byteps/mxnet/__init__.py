@@ -218,8 +218,8 @@ class DistributedTrainer(mx.gluon.Trainer):
         self._intra_compressors = {}
         for i, param in enumerate(self._params):
             byteps_declare_tensor("parameter_" + str(i))
-            self._intra_compressors[param.name] = type(self._intra_compressor)(
-                **self._intra_compressor.__dict__)
+            self._intra_compressors[param.name] = copy.deepcopy(
+                self._intra_compressor)
             if param.grad_req != 'null':
                 byteps_params = dict(
                     filter(lambda attr: attr[0].startswith(
