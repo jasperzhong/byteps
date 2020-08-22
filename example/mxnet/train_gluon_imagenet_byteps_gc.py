@@ -253,7 +253,6 @@ def main():
             preprocess_threads=num_workers,
             shuffle=True,
             batch_size=batch_size,
-            prefetch_bufer=1,
 
             data_shape=(3, input_size, input_size),
             mean_r=mean_rgb[0],
@@ -273,7 +272,8 @@ def main():
             contrast=jitter_param,
             pca_noise=lighting_param,
             num_parts=nworker,
-            part_index=rank
+            part_index=rank,
+            device_id=bps.local_rank()
         )
         val_data = mx.io.ImageRecordIter(
             path_imgrec=rec_val,
@@ -281,7 +281,6 @@ def main():
             preprocess_threads=num_workers,
             shuffle=False,
             batch_size=batch_size,
-            prefetch_buffer=1,
 
             resize=resize,
             data_shape=(3, input_size, input_size),
@@ -292,7 +291,8 @@ def main():
             std_g=std_rgb[1],
             std_b=std_rgb[2],
             num_parts=nworker,
-            part_index=rank
+            part_index=rank,
+            device_id=bps.local_rank()
         )
         return train_data, val_data, batch_fn
 
