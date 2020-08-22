@@ -253,6 +253,7 @@ def main():
             preprocess_threads=num_workers,
             shuffle=True,
             batch_size=batch_size,
+            prefetch_bufer=1,
 
             data_shape=(3, input_size, input_size),
             mean_r=mean_rgb[0],
@@ -280,6 +281,7 @@ def main():
             preprocess_threads=num_workers,
             shuffle=False,
             batch_size=batch_size,
+            prefetch_buffer=1,
 
             resize=resize,
             data_shape=(3, input_size, input_size),
