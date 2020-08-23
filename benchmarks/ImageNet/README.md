@@ -1,8 +1,6 @@
 ## Step-by-Step Tutorial
 
 
-
-
 ## Necessary Configurations
 
 **Note that you may need to change some default configurations to accomodate to your own machines.** The default configurations are set according to Amazon's P3 instances.
