@@ -20,21 +20,21 @@ min_compress_bytes=1024000
 log_file=$algo"-"$lr
 compression_args=''
 if [[ $algo == "baseline" ]]; then
-  $threadpool_size=0
+  threadpool_size=0
 elif [[ $algo == "onebit" ]]; then
-  $compression_args='--compressor onebit --onebit-scaling --ef vanilla --compress-momentum nesterov'
+  compression_args='--compressor onebit --onebit-scaling --ef vanilla --compress-momentum nesterov'
 elif [[ $algo == "topk" ]]; then
   k=$3
-  $compression_args='--compressor topk --k '${k}' --ef vanilla --compress-momentum nesterov'
-  $log_file=$log_file"-k="${k}
+  compression_args='--compressor topk --k '${k}' --ef vanilla --compress-momentum nesterov'
+  log_file=$log_file"-k="${k}
 elif [[ $algo == "randomk" ]]; then
   k=$3
-  $compression_args='--compressor randomk --k '${k}' --ef vanilla --compress-momentum nesterov'
-  $log_file=$log_file"-k="${k}
+  compression_args='--compressor randomk --k '${k}' --ef vanilla --compress-momentum nesterov'
+  log_file=$log_file"-k="${k}
 elif [[ $algo == "dithering" ]]; then
   k=$3
-  $compression_args='--compressor dithering --k '${k}' --normalize l2'
-  $log_file=$log_file"-k="${k}
+  compression_args='--compressor dithering --k '${k}' --normalize l2'
+  log_file=$log_file"-k="${k}
 else
   echo "unknown compressor. aborted."
   exit
