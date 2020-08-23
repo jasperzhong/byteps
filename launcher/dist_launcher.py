@@ -65,17 +65,17 @@ def start_ssh(prog, node, port, username, fname, pem):
         os.mkdir(dirname)
 
     pname = dirname + '/' + fname
-    prog = 'ssh -o StrictHostKeyChecking=no '
+    cmd = 'ssh -o StrictHostKeyChecking=no '
     if username is not None:
-        prog += ' -l ' + username
+        cmd += ' -l ' + username
 
     if pem is not None:
-        prog += ' -i ' + pem
+        cmd += ' -i ' + pem
 
-    prog += ' ' + node + ' -p ' + port + ' \'' + prog + '\'' \
+    cmd += ' ' + node + ' -p ' + port + ' \'' + prog + '\'' \
         + ' > ' + pname + '.stdout' + ' 2>' + pname + '.stderr&'
 
-    thread = Thread(target=run, args=(prog,))
+    thread = Thread(target=run, args=(cmd,))
     thread.setDaemon(True)
     thread.start()
     return thread
@@ -117,12 +117,14 @@ def submit(args):
         pass_envs['DMLC_ROLE'] = name
         pass_envs['DMLC_WORKER_ID'] = str(i)
         prog = get_env(pass_envs) + (' '.join(args.command))
-        threads.append(start_ssh(prog, node, port, username, name + str(i), pem))
+        threads.append(start_ssh(prog, node, port,
+                                 username, name + str(i), pem))
     for i, (node, port) in enumerate(server_hosts):
         name = 'server'
         pass_envs['DMLC_ROLE'] = name
         prog = get_env(pass_envs) + (' '.join(args.command))
-        threads.append(start_ssh(prog, node, port, username, name + str(i), pem))
+        threads.append(start_ssh(prog, node, port,
+                                 username, name + str(i), pem))
 
     for t in threads:
         t.join()
