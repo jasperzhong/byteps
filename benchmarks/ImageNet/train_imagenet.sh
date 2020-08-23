@@ -16,12 +16,12 @@ threadpool_size=16
 omp_num_threads=4
 partition_bytes=4096000
 min_compress_bytes=1024000
-server_engine_thread=8
+server_engine_thread=4
 
 # path
-repo_path='/home/ubuntu/repos/byteps'
-script_path=$repo_path'/example/mxnet/train_gluon_imagenet_byteps_gc.py'
-data_path='/home/ubuntu/data/ILSVRC2012/'
+repo_path=/home/ubuntu/repos/byteps
+script_path=$repo_path/example/mxnet/train_gluon_imagenet_byteps_gc.py
+data_path=/home/ubuntu/data/ILSVRC2012/
 pem_file=$4
 
 log_file=$algo"-"$lr
