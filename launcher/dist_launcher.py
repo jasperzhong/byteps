@@ -111,18 +111,18 @@ def submit(args):
         name = 'scheduler'
         pass_envs['DMLC_ROLE'] = name
         prog = get_env(pass_envs) + (' '.join(args.command))
-        threads.append(start_ssh(prog, node, port, username, name))
+        threads.append(start_ssh(prog, node, port, username, name, pem))
     for i, (node, port) in enumerate(worker_hosts):
         name = 'worker'
         pass_envs['DMLC_ROLE'] = name
         pass_envs['DMLC_WORKER_ID'] = str(i)
         prog = get_env(pass_envs) + (' '.join(args.command))
-        threads.append(start_ssh(prog, node, port, username, name + str(i)))
+        threads.append(start_ssh(prog, node, port, username, name + str(i), pem))
     for i, (node, port) in enumerate(server_hosts):
         name = 'server'
         pass_envs['DMLC_ROLE'] = name
         prog = get_env(pass_envs) + (' '.join(args.command))
-        threads.append(start_ssh(prog, node, port, username, name + str(i)))
+        threads.append(start_ssh(prog, node, port, username, name + str(i), pem))
 
     for t in threads:
         t.join()
