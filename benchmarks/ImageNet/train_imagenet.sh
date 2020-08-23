@@ -41,7 +41,7 @@ else
 fi
 
 
-cmd="python $repo_path/launcher/dist_launcher.py -WH hosts -SH hosts --scheduler-ip $ip --scheduler-port $port --interface $interface --username ubuntu --env OMP_WAIT_POLICY:PASSIVE OMP_NUM_THREADS:$omp_num_threads BYTEPS_THREADPOOL_SIZE:$threadpool_size BYTEPS_MIN_COMPRESS_BYTES:$min_compress_bytes BYTEPS_NUMA_ON:1 \"bpslaunch python3 $script_path --model $model --mode hybrid --rec-train $data_path"train.rec" --rec-train-idx $data_path"train.idx" --rec-val $data_path"val.rec" --rec-val-idx $data_path"val.idx" --use-rec --batch-size $batch_size --num-gpus 1 --num-epochs $epochs -j 2 --warmup-epochs 5 --warmup-lr $lr --lr $lr --lr-mode cosine --logging-file $log_file\""
+cmd="python $repo_path/launcher/dist_launcher.py -WH hosts -SH hosts --scheduler-ip $ip --scheduler-port $port --interface $interface --username ubuntu --env OMP_WAIT_POLICY:PASSIVE OMP_NUM_THREADS:$omp_num_threads BYTEPS_THREADPOOL_SIZE:$threadpool_size BYTEPS_MIN_COMPRESS_BYTES:$min_compress_bytes BYTEPS_NUMA_ON:1 \"bpslaunch python3 $script_path --model $model --mode hybrid --rec-train $data_path"train.rec" --rec-train-idx $data_path"train.idx" --rec-val $data_path"val.rec" --rec-val-idx $data_path"val.idx" --use-rec --batch-size $batch_size --num-gpus 1 --num-epochs $epochs -j 2 --warmup-epochs 5 --warmup-lr $lr --lr $lr --lr-mode cosine $compression_args --logging-file $log_file\""
 
 echo $cmd
 exec $cmd
