@@ -29,7 +29,7 @@ data_path=/home/ubuntu/data/ILSVRC2012/
 pem_file=$1
 shift
 
-log_file=$algo"-lr="$lr
+log_file="${algo}-lr=${lr}"
 compression_args=''
 if [[ $algo == "baseline" ]]; then
   threadpool_size=0
