@@ -1,10 +1,11 @@
+## Step-by-Step Tutorial
 
 
-## Configure
 
-**Note that you may need to change some default configurations to accomodate to your own machines.**
 
-The default configurations are set according to Amazon's P3 instances.
+## Necessary Configurations
+
+**Note that you may need to change some default configurations to accomodate to your own machines.** The default configurations are set according to Amazon's P3 instances.
 
 ### Network
 
@@ -26,11 +27,11 @@ $ ip link show
 - `ens3` - Your ethernet network interface at PCIe 
 - `docker0` - docker interface
 
-If your network interface is not `ens3`, please replace it with your own ethernet network interface in the [train_imagenet.sh](train_imagenet.sh).
+If your network interface is not `ens3`, please replace it with your own ethernet network interface (e.g. `eht0` ) in the [train_imagenet.sh](train_imagenet.sh).
 
 For more about interface naming, please check [Consistent Network Device Naming](https://en.wikipedia.org/wiki/Consistent_Network_Device_Naming).
 
-1. port 
+2. port 
 
 The default port is 1234. Please make sure it is not taken by other processes. You can check it with `lsof`. 
 
