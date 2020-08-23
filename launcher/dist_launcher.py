@@ -137,7 +137,7 @@ def main():
                         help = 'the username for ssh')
     parser.add_argument('--scheduler-ssh-port', type=str, default='22',
                         help = 'the ssh port of the scheduler')
-    parser.add_argument('command', nargs='+',
+    parser.add_argument('command', nargs=argparse.REMAINDER,
                         help = 'command for launching the program')
 
     args = parser.parse_args()
