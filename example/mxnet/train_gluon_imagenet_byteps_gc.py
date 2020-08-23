@@ -444,7 +444,7 @@ def main():
 
             for i, batch in enumerate(train_data):
                 data, label = batch_fn(batch, ctx)
-                if data.shape[0] != batch_size:
+                if len(data) != batch_size:
                     continue
 
                 if opt.mixup:
