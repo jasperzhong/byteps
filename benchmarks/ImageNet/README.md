@@ -18,7 +18,7 @@ Given that you have N nodes, each equipped with 8 GPUs and ethernet interconnect
 
 Please refer to our `install guide`. 
 
-1. download training scripts in all your machines. 
+2. download training scripts in all your machines. 
 
 We recommend you just clone the `byteps` repo in your machines. 
 
