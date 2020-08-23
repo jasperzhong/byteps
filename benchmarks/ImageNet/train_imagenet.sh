@@ -1,7 +1,7 @@
 #!/bin/bash 
 ip=`ifconfig ens3 | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
 port=1234
-interface=eth0
+interface=ens3
 
 # args
 algo=$1
