@@ -3,10 +3,6 @@ ip=`ifconfig ens3 | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-
 port=1234
 interface=eth0
 
-repo_path='/home/ubuntu/repos/byteps'
-script_path=$repo_path'/example/mxnet/train_gluon_imagenet_byteps_gc.py'
-data_path='/home/ubuntu/data/ILSVRC2012/'
-
 # args
 algo=$1
 lr=$2
@@ -16,6 +12,11 @@ batch_size=128
 threadpool_size=16
 omp_num_threads=4
 min_compress_bytes=1024000
+
+repo_path='/home/ubuntu/repos/byteps'
+script_path=$repo_path'/example/mxnet/train_gluon_imagenet_byteps_gc.py'
+data_path='/home/ubuntu/data/ILSVRC2012/'
+pem_file=$4
 
 log_file=$algo"-"$lr
 compression_args=''
@@ -41,7 +42,7 @@ else
 fi
 
 
-cmd="python $repo_path/launcher/dist_launcher.py -WH hosts -SH hosts --scheduler-ip $ip --scheduler-port $port --interface $interface --username ubuntu --env OMP_WAIT_POLICY:PASSIVE OMP_NUM_THREADS:$omp_num_threads BYTEPS_THREADPOOL_SIZE:$threadpool_size BYTEPS_MIN_COMPRESS_BYTES:$min_compress_bytes BYTEPS_NUMA_ON:1 \"bpslaunch python3 $script_path --model $model --mode hybrid --rec-train $data_path"train.rec" --rec-train-idx $data_path"train.idx" --rec-val $data_path"val.rec" --rec-val-idx $data_path"val.idx" --use-rec --batch-size $batch_size --num-gpus 1 --num-epochs $epochs -j 2 --warmup-epochs 5 --warmup-lr $lr --lr $lr --lr-mode cosine $compression_args --logging-file $log_file\""
+cmd="python $repo_path/launcher/dist_launcher.py -WH hosts -SH hosts --scheduler-ip $ip --scheduler-port $port --interface $interface -i $pem_file --username ubuntu --env OMP_WAIT_POLICY:PASSIVE OMP_NUM_THREADS:$omp_num_threads BYTEPS_THREADPOOL_SIZE:$threadpool_size BYTEPS_MIN_COMPRESS_BYTES:$min_compress_bytes BYTEPS_NUMA_ON:1 \"bpslaunch python3 $script_path --model $model --mode hybrid --rec-train $data_path"train.rec" --rec-train-idx $data_path"train.idx" --rec-val $data_path"val.rec" --rec-val-idx $data_path"val.idx" --use-rec --batch-size $batch_size --num-gpus 1 --num-epochs $epochs -j 2 --warmup-epochs 5 --warmup-lr $lr --lr $lr --lr-mode cosine $compression_args --logging-file $log_file\""
 
 echo $cmd
 exec $cmd
