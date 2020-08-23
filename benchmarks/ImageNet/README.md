@@ -1,4 +1,30 @@
+# Benchmarking Guide
+
+
+- [Benchmarking Guide](#benchmarking-guide)
+  - [Step-by-Step Tutorial](#step-by-step-tutorial)
+  - [Necessary Configurations](#necessary-configurations)
+    - [Network](#network)
+    - [GPU](#gpu)
+  - [Debug](#debug)
+
 ## Step-by-Step Tutorial
+
+Given that you have N nodes, each equipped with 8 GPUs and ethernet interconnection. In this guide, we take training ImageNet with ResNet50 for example. Now let's begin our tour of distributed training with BytePS.
+
+1. install BytePS in all your machines. 
+
+Please refer to our `install guide`. 
+
+1. download training scripts in all your machines. 
+
+We recommend you just clone the `byteps` repo in your machines. 
+
+For this experiment, 
+
+3. 
+
+
 
 
 ## Necessary Configurations
@@ -41,4 +67,10 @@ If there is no output, then the port is unused. You can also change the default 
 
 ### GPU
 
-You need to determine NVIDIA_VISIBLE_DEVICES based on the number of GPUs in your machine. For example, if the machine has 8 GPUs, you should set `NVIDIA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7` in the [train_imagenet.sh](train_imagenet.sh).
+You need to determine NVIDIA_VISIBLE_DEVICES based on the number of GPUs in your machine. For example, if the machine has 8 GPUs, you should set `NVIDIA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7` in the [train_imagenet.sh](train_imagenet.sh).figurations
+
+**Note that you may need to change some default configurations to accomodate to your own machines.** The default configurations are set according to Amazon's P3 instances.
+
+
+## Debug
+
