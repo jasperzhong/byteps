@@ -39,17 +39,17 @@ elif [[ $algo == "topk" ]]; then
   k=$1
   shift
   compression_args='--compressor topk --k '${k}' --ef vanilla --compress-momentum nesterov'
-  log_file=$log_file"-k="${k}
+  log_file=$log_file"-k=${k}"
 elif [[ $algo == "randomk" ]]; then
   k=$1
   shift
   compression_args='--compressor randomk --k '${k}' --ef vanilla --compress-momentum nesterov'
-  log_file=$log_file"-k="${k}
+  log_file=$log_file"-k=${k}"
 elif [[ $algo == "dithering" ]]; then
   k=$1
   shift
   compression_args='--compressor dithering --k '${k}' --normalize l2'
-  log_file=$log_file"-k="${k}
+  log_file=$log_file"-k=${k}"
 else
   echo "unknown compressor. aborted."
   exit
