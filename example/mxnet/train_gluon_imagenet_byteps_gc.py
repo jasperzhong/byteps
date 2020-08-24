@@ -444,7 +444,6 @@ def main():
 
             for i, batch in enumerate(train_data):
                 data, label = batch_fn(batch, ctx)
-                logger.info("i=%d\t bz=%d" %(i, data[0].shape[0]))
 
                 if opt.mixup:
                     lam = np.random.beta(opt.mixup_alpha, opt.mixup_alpha)
