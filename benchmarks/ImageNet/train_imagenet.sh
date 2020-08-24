@@ -19,6 +19,7 @@ omp_num_threads=4
 partition_bytes=4096000
 min_compress_bytes=1024000
 server_engine_thread=4
+data_threads=4
 
 # path
 repo_path=/home/ubuntu/repos/byteps
@@ -57,7 +58,7 @@ fi
 log_file=$log_file".log"
 
 
-cmd="python $repo_path/launcher/dist_launcher.py -WH $worker_hosts -SH $server_hosts --scheduler-ip $ip --scheduler-port $port --interface $interface -i $pem_file --username ubuntu --env OMP_WAIT_POLICY:PASSIVE --env OMP_NUM_THREADS:$omp_num_threads --env BYTEPS_THREADPOOL_SIZE:$threadpool_size --env BYTEPS_MIN_COMPRESS_BYTES:$min_compress_bytes --env BYTEPS_NUMA_ON:1 --env NVIDIA_VISIBLE_DEVICES:$NVIDIA_VISIBLE_DEVICES --env BYTEPS_SERVER_ENGINE_THREAD:$server_engine_thread --env BYTEPS_PARTITION_BYTES:$partition_bytes source ~/.profile; bpslaunch python3 $script_path --model $model --mode hybrid --rec-train $data_path"train.rec" --rec-train-idx $data_path"train.idx" --rec-val $data_path"val.rec" --rec-val-idx $data_path"val.idx" --use-rec --batch-size $batch_size --num-gpus 1 --num-epochs $epochs -j 2 --warmup-epochs 5 --warmup-lr $lr --lr $lr --lr-mode cosine $compression_args --logging-file $repo_path/benchmarks/ImageNet/$log_file"
+cmd="python $repo_path/launcher/dist_launcher.py -WH $worker_hosts -SH $server_hosts --scheduler-ip $ip --scheduler-port $port --interface $interface -i $pem_file --username ubuntu --env OMP_WAIT_POLICY:PASSIVE --env OMP_NUM_THREADS:$omp_num_threads --env BYTEPS_THREADPOOL_SIZE:$threadpool_size --env BYTEPS_MIN_COMPRESS_BYTES:$min_compress_bytes --env BYTEPS_NUMA_ON:1 --env NVIDIA_VISIBLE_DEVICES:$NVIDIA_VISIBLE_DEVICES --env BYTEPS_SERVER_ENGINE_THREAD:$server_engine_thread --env BYTEPS_PARTITION_BYTES:$partition_bytes source ~/.profile; bpslaunch python3 $script_path --model $model --mode hybrid --rec-train $data_path"train.rec" --rec-train-idx $data_path"train.idx" --rec-val $data_path"val.rec" --rec-val-idx $data_path"val.idx" --use-rec --batch-size $batch_size --num-gpus 1 --num-epochs $epochs -j $data_threads --warmup-epochs 5 --warmup-lr $lr --lr $lr --lr-mode cosine $compression_args --logging-file $repo_path/benchmarks/ImageNet/$log_file"
 
 echo $cmd
 exec $cmd
