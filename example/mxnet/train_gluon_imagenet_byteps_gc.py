@@ -466,37 +466,36 @@ def main():
                     teacher_prob = [nd.softmax(teacher(X.astype(opt.dtype, copy=False)) / opt.temperature)
                                     for X in data]
 
-                # with ag.record():
-                #     outputs = [net(X.astype(opt.dtype, copy=False))
-                #                for X in data]
-                #     if distillation:
-                #         loss = [L(yhat.astype('float32', copy=False),
-                #                   y.astype('float32', copy=False),
-                #                   p.astype('float32', copy=False)) for yhat, y, p in zip(outputs, label, teacher_prob)]
-                #     else:
-                #         loss = [L(yhat, y.astype(opt.dtype, copy=False))
-                #                 for yhat, y in zip(outputs, label)]
-                # for l in loss:
-                #     l.backward()
-                # trainer.step(batch_size)
-                trainer._optimizer.num_update += 1
+                with ag.record():
+                    outputs = [net(X.astype(opt.dtype, copy=False))
+                               for X in data]
+                    if distillation:
+                        loss = [L(yhat.astype('float32', copy=False),
+                                  y.astype('float32', copy=False),
+                                  p.astype('float32', copy=False)) for yhat, y, p in zip(outputs, label, teacher_prob)]
+                    else:
+                        loss = [L(yhat, y.astype(opt.dtype, copy=False))
+                                for yhat, y in zip(outputs, label)]
+                for l in loss:
+                    l.backward()
+                trainer.step(batch_size)
 
-                # if opt.mixup:
-                #     output_softmax = [nd.SoftmaxActivation(out.astype('float32', copy=False))
-                #                       for out in outputs]
-                #     train_metric.update(label, output_softmax)
-                # else:
-                #     if opt.label_smoothing:
-                #         train_metric.update(hard_label, outputs)
-                #     else:
-                #         train_metric.update(label, outputs)
+                if opt.mixup:
+                    output_softmax = [nd.SoftmaxActivation(out.astype('float32', copy=False))
+                                      for out in outputs]
+                    train_metric.update(label, output_softmax)
+                else:
+                    if opt.label_smoothing:
+                        train_metric.update(hard_label, outputs)
+                    else:
+                        train_metric.update(label, outputs)
 
                 if opt.log_interval and not (i+1) % opt.log_interval:
                     train_metric_name, train_metric_score = train_metric.get()
-                    logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\t%s=%f\tlr=%f\ttime=%f\tnum_update=%d' % (
+                    logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\t%s=%f\tlr=%f\ttime=%f' % (
                                 epoch, i, batch_size*nworker *
                                 opt.log_interval/(time.time()-btic),
-                                train_metric_name, train_metric_score, trainer.learning_rate, time.time()-btic, trainer._optimizer.num_update))
+                                train_metric_name, train_metric_score, trainer.learning_rate, time.time()-btic))
                     btic = time.time()
 
             train_metric_name, train_metric_score = train_metric.get()
@@ -505,32 +504,31 @@ def main():
             logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f' %
                         (epoch, throughput, time.time()-tic))
 
-            # err_top1_val, err_top5_val = test(ctx, val_data)
-            # err_top1_val, err_top5_val = 0, 0
+            err_top1_val, err_top5_val = test(ctx, val_data)
 
-            # acc = mx.nd.array([train_metric_score, err_top1_val, err_top5_val],
-            #                   ctx=ctx[0])
-            # bps.byteps_push_pull(acc, name="acc", is_average=False)
-            # # acc /= bps.size()
+            acc = mx.nd.array([train_metric_score, err_top1_val, err_top5_val],
+                              ctx=ctx[0])
+            bps.byteps_push_pull(acc, name="acc", is_average=False)
+            acc /= bps.size()
 
-            # if bps.rank() == 0:
-            #     logger.info('[Epoch %d] training: %s=%f' %
-            #                 (epoch, train_metric_name, acc[0].asscalar()))
-            #     logger.info('[Epoch %d] validation: err-top1=%f err-top5=%f' %
-            #                 (epoch, acc[1].asscalar(), acc[2].asscalar()))
+            if bps.rank() == 0:
+                logger.info('[Epoch %d] training: %s=%f' %
+                            (epoch, train_metric_name, acc[0].asscalar()))
+                logger.info('[Epoch %d] validation: err-top1=%f err-top5=%f' %
+                            (epoch, acc[1].asscalar(), acc[2].asscalar()))
 
-            # if err_top1_val < best_val_score:
-            #     best_val_score = err_top1_val
-            #     net.save_parameters('%s/%.4f-imagenet-%s-%d-best.params' %
-            #                         (save_dir, best_val_score, model_name, epoch))
-            #     trainer.save_states('%s/%.4f-imagenet-%s-%d-best.states' %
-            #                         (save_dir, best_val_score, model_name, epoch))
+            if err_top1_val < best_val_score:
+                best_val_score = err_top1_val
+                net.save_parameters('%s/%.4f-imagenet-%s-%d-best.params' %
+                                    (save_dir, best_val_score, model_name, epoch))
+                trainer.save_states('%s/%.4f-imagenet-%s-%d-best.states' %
+                                    (save_dir, best_val_score, model_name, epoch))
 
-            # if save_frequency and save_dir and (epoch + 1) % save_frequency == 0:
-            #     net.save_parameters('%s/imagenet-%s-%d.params' %
-            #                         (save_dir, model_name, epoch))
-            #     trainer.save_states('%s/imagenet-%s-%d.states' %
-            #                         (save_dir, model_name, epoch))
+            if save_frequency and save_dir and (epoch + 1) % save_frequency == 0:
+                net.save_parameters('%s/imagenet-%s-%d.params' %
+                                    (save_dir, model_name, epoch))
+                trainer.save_states('%s/imagenet-%s-%d.states' %
+                                    (save_dir, model_name, epoch))
 
         if save_frequency and save_dir:
             net.save_parameters('%s/imagenet-%s-%d.params' %
