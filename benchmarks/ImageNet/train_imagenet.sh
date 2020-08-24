@@ -19,7 +19,7 @@ omp_num_threads=4
 partition_bytes=4096000
 min_compress_bytes=1024000
 server_engine_thread=4
-data_threads=4
+data_threads=2
 
 # path
 repo_path=/home/ubuntu/repos/byteps

@@ -12,7 +12,9 @@
 
 Given that you have N nodes, each equipped with 8 GPUs and ethernet interconnection. In this guide, we take training ImageNet with ResNet50 for example. Now let's begin our tour of distributed training with BytePS.
 
-0. make sure the first node can ssh to other machines
+0. make sure the first node can ssh to other machines without passwords.
+
+
 
 1. install BytePS in all your machines. 
 

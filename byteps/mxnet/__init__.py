@@ -247,8 +247,7 @@ class DistributedTrainer(mx.gluon.Trainer):
         if compression_params.get("fp16"):
             intra_compressor = Compression.fp16
 
-        if "compressor" not in compression_params:
-            warnings.warn("Compressor is not defined")
+        if compression_params.get("compressor"):
             return intra_compressor
 
         check_list = ["compressor", "ef", "momentum"]
