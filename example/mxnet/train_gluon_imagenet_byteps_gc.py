@@ -478,7 +478,7 @@ def main():
                 #                 for yhat, y in zip(outputs, label)]
                 # for l in loss:
                 #     l.backward()
-                # trainer.step(batch_size)
+                trainer.step(batch_size)
 
                 # if opt.mixup:
                 #     output_softmax = [nd.SoftmaxActivation(out.astype('float32', copy=False))
