@@ -80,7 +80,7 @@ class NagAdapter(Compressor):
 
     def compress(self, tensor, *args, **kwargs):
         """Returns the tensor unmodified."""
-        return self.compressor.compress(tensor, *args, **kwarg)
+        return self.compressor.compress(tensor, *args, **kwargs)
 
     def decompress(self, tensor, ctx, *args, **kwargs):
         """Add nesterov momentum for uncompressed gradients"""
