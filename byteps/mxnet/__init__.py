@@ -310,7 +310,7 @@ class DistributedTrainer(mx.gluon.Trainer):
                     intra_compressor = Compression.wdmom(intra_compressor,
                                                         mu, wd, threshold)
                 elif compressor == "randomk":
-                    intra_compressor = Compression.wdadt(intra_compressor, wd, threshold)
+                    intra_compressor = Compression.wdadt(intra_compressor, wd, threshold, bps.size())
                 
                 del optimizer_params["wd"]
 

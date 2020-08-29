@@ -148,11 +148,12 @@ class WeightDecayMomentumAdapter(Compressor):
 
 class WeightDecayAdapter(Compressor):
 
-    def __init__(self, compressor, wd, threshold, *args, **kwargs):
+    def __init__(self, compressor, wd, threshold, world_size, *args, **kwargs):
         self.compressor = compressor
         self.cache = None
         self.wd = wd
         self.threshold = threshold
+        self.world_size = world_size
         self.before_pushpull = False
         self.inited = False
 
@@ -167,6 +168,7 @@ class WeightDecayAdapter(Compressor):
             self.cache = nd.zeros_like(tensor)
             if size(tensor.shape) >= self.threshold:
                 self.before_pushpull = True
+                self.wd /= self.world_size
             self.inited = True
         
         if self.before_pushpull:
