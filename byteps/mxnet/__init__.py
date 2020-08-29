@@ -203,6 +203,7 @@ class DistributedTrainer(mx.gluon.Trainer):
             for key in sorted(list(params.keys())):
                 param_list.append(params[key])
 
+        self._bps_size = size()
         self._intra_compressor = self._register_compressor(
             params, optimizer_params, compression_params)
 
@@ -213,7 +214,6 @@ class DistributedTrainer(mx.gluon.Trainer):
             self._f = open("lr.s", "wb")
             self._f.truncate(8)
 
-        self._bps_size = size()
         self.root_rank = root_rank
         self._intra_compressors = {}
         for i, param in enumerate(self._params):
