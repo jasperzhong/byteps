@@ -249,6 +249,7 @@ class DistributedTrainer(mx.gluon.Trainer):
 
         if not compression_params.get("compressor"):
             return intra_compressor
+        compressor = compression_params["compressor"]
 
         check_list = ["compressor", "ef", "momentum"]
 
@@ -263,7 +264,6 @@ class DistributedTrainer(mx.gluon.Trainer):
                         raise TypeError("%s should be str" % item)
 
             # need parameter
-            compressor = compression_params["compressor"]
             if compressor == "onebit":
                 setattr(param, "byteps_compressor_onebit_scaling", str(
                     compression_params.get("scaling", False)))
@@ -306,8 +306,12 @@ class DistributedTrainer(mx.gluon.Trainer):
             # 1bit compressor use an additional momentum for weight decay
             if "wd" in optimizer_params:
                 wd = optimizer_params["wd"]
-                intra_compressor = Compression.wdmom(intra_compressor,
-                                                     mu, wd, threshold)
+                if compressor == "onebit" or compressor == "topk":
+                    intra_compressor = Compression.wdmom(intra_compressor,
+                                                        mu, wd, threshold)
+                elif compressor == "randomk":
+                    intra_compressor = Compression.wdadt(intra_compressor, wd, threshold)
+                
                 del optimizer_params["wd"]
 
             intra_compressor = Compression.nag(intra_compressor, mu, threshold)
@@ -335,7 +339,7 @@ class DistributedTrainer(mx.gluon.Trainer):
                 nd._internal._mul_scalar(
                     param._grad[0], 1.0 / self._scale / self._bps_size, out=param._grad[0])
                 compressed, ctx = self._intra_compressors[param.name].compress(
-                    param._grad[0])
+                    param._grad[0], x=param._data[0])
                 byteps_push_pull(compressed, is_average=False,
                                  name="gradient_" + str(i), priority=-i)
                 param._grad[0][:] = self._intra_compressors[param.name].decompress(

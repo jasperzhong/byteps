@@ -80,7 +80,7 @@ class NagAdapter(Compressor):
 
     def compress(self, tensor, *args, **kwargs):
         """Returns the tensor unmodified."""
-        return self.compressor.compress(tensor)
+        return self.compressor.compress(tensor, *args, **kwarg)
 
     def decompress(self, tensor, ctx, *args, **kwargs):
         """Add nesterov momentum for uncompressed gradients"""
@@ -102,7 +102,6 @@ class NagAdapter(Compressor):
 
 
 class WeightDecayMomentumAdapter(Compressor):
-    """For 1bit compression."""
 
     def __init__(self, compressor, mu, wd, threshold, *args, **kwargs):
         self.compressor = compressor
@@ -116,7 +115,7 @@ class WeightDecayMomentumAdapter(Compressor):
 
     def compress(self, tensor, *args, **kwargs):
         """Returns the tensor unmodified."""
-        return self.compressor.compress(tensor)
+        return self.compressor.compress(tensor, *args, **kwargs)
 
     def decompress(self, tensor, ctx, *args, **kwargs):
         """Returns the tensor added with additional momentum for wd
@@ -147,6 +146,45 @@ class WeightDecayMomentumAdapter(Compressor):
         tensor += self.cache
         return self.compressor.decompress(tensor, ctx, *args, **kwargs)
 
+class WeightDecayAdapter(Compressor):
+
+    def __init__(self, compressor, wd, threshold, *args, **kwargs):
+        self.compressor = compressor
+        self.cache = None
+        self.wd = wd
+        self.threshold = threshold
+        self.before_pushpull = False
+        self.inited = False
+
+    def compress(self, tensor, *args, **kwargs):
+        """Returns the tensor unmodified."""
+        if "x" not in kwargs:
+            raise ValueError("x is missing")
+
+        x = kwargs["x"].astype(tensor.dtype, copy=False)   
+        
+        if not self.inited:
+            self.cache = nd.zeros_like(tensor)
+            if size(tensor.shape) >= self.threshold:
+                self.before_pushpull = True
+            self.inited = True
+        
+        if self.before_pushpull:
+            nd._internal._mul_scalar(x, self.wd, out=self.cache)
+            tensor += self.cache
+        return self.compressor.compress(tensor, *args, **kwargs)
+
+    def decompress(self, tensor, ctx, *args, **kwargs):
+        if "x" not in kwargs:
+            raise ValueError("x is missing")
+
+        x = kwargs["x"].astype(tensor.dtype, copy=False)   
+        
+        if not self.before_pushpull:
+            nd._internal._mul_scalar(x, self.wd, out=self.cache)
+            tensor += self.cache
+        return self.compressor.decompress(tensor, ctx, *args, **kwargs)
+
 
 class Compression(object):
     """Optional gradient compression algorithm used during push_pull."""
@@ -162,3 +200,5 @@ class Compression(object):
 
     """NAG for uncompressed. This is a wrapper."""
     nag = NagAdapter
+
+    wdadt = WeightDecayAdapter

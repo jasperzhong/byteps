@@ -10,7 +10,7 @@ shift
 lr=$1
 shift
 model=resnet50_v2
-epochs=120
+epochs=121
 batch_size=64
 
 # finetune params
