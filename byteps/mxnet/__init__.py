@@ -214,7 +214,7 @@ class DistributedTrainer(mx.gluon.Trainer):
             self._f = open("lr.s", "wb")
             self._f.truncate(8)
 
-        self._bps_size = size()
+        self._scale /= size()
         self.root_rank = root_rank
         self._intra_compressors = {}
         for i, param in enumerate(self._params):
@@ -320,12 +320,6 @@ class DistributedTrainer(mx.gluon.Trainer):
 
         return intra_compressor
 
-    def step(self, batch_size, ignore_stale_grad=False):
-        # grad is normalized with batch_size. setting _scale to batch_size is
-        # to prevent normalized by batch_size twice.
-        self._scale = batch_size
-        super(DistributedTrainer, self).step(batch_size, ignore_stale_grad)
-
     def _allreduce_grads(self):
         # update lr
         if local_rank() == 0:
@@ -336,9 +330,6 @@ class DistributedTrainer(mx.gluon.Trainer):
 
         for i, param in enumerate(self._params):
             if param.grad_req != 'null':
-                # normalized with batch_size and num_workers
-                nd._internal._mul_scalar(
-                    param._grad[0], 1.0 / self._scale / self._bps_size, out=param._grad[0])
                 compressed, ctx = self._intra_compressors[param.name].compress(
                     param._grad[0])
                 byteps_push_pull(compressed, is_average=False,
