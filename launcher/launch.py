@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 from __future__ import print_function
 import os
@@ -88,7 +88,7 @@ def allocate_cpu(local_size):
             cpu_nums = reduce(lambda x, y: (len(x) + len(y)), nodes)
         else:
             cpu_nums = len(nodes[0])
-        
+
         # default quota is the number of cpus for non-root processess
         default_quota = int(os.getenv("BYTEPS_NUMA_DEFAULT_QUOTA", 6))
         while default_quota >= 1 and default_quota * local_size > cpu_nums:
@@ -206,7 +206,7 @@ def launch_bps():
             t[i].join()
 
     elif os.environ.get("BYTEPS_FORCE_DISTRIBUTED", "") == "1" or \
-         int(os.environ.get("DMLC_NUM_WORKER", "1")) > 1:
+            int(os.environ.get("DMLC_NUM_WORKER", "1")) > 1:
         import byteps.server
 
 
