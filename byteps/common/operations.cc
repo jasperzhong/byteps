@@ -13,6 +13,8 @@
 // limitations under the License.
 // =============================================================================
 
+#include "operations.h"
+
 #include <cuda_runtime.h>
 #include <unistd.h>
 
@@ -26,7 +28,6 @@
 #include "core_loops.h"
 #include "global.h"
 #include "logging.h"
-#include "operations.h"
 
 namespace byteps {
 namespace common {
@@ -395,7 +396,7 @@ void InitTensor(BPSContext &context, size_t size, int dtype, void *cpubuff) {
     for (auto key : key_list) {
       auto &kv = BytePSGlobal::EncodeDefaultKey(key, len);
       ps::SArray<char> vals(data, len, false);
-      int cmd = GetCommandType(RequestType::kCompressedPushPull, dtype);
+      int cmd = GetCommandType(RequestType::kConfigPushPull, dtype);
       ps->Wait(ps->ZPush(kv.keys, vals, kv.lens, cmd));
     }
   }
