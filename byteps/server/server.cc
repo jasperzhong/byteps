@@ -116,9 +116,9 @@ void BytePSServerEngineThread(int i) {
         if (msg.mixed_precision) {
           auto& fp16_copy = fp16_copy_[msg.key];
           CHECK(fp16_copy.tensor);
-          bps_reducer_->copy_mixed_precision(
-              fp16_copy.tensor, msg.src, fp16_copy.len,
-              static_cast<common::DataType>(fp16_copy.dtype), false);
+          // bps_reducer_->copy_mixed_precision(
+          //     fp16_copy.tensor, msg.src, fp16_copy.len,
+          //     static_cast<common::DataType>(fp16_copy.dtype), false);
           updates.merged.tensor = fp16_copy.tensor;
           updates.merged.len = fp16_copy.len;
           LOG(INFO) << "len=" << fp16_copy.len;
