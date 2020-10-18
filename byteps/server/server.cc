@@ -436,15 +436,15 @@ void BytePSHandleDefaultReq(uint64_t key, DataHandleType type,
                             const ps::KVMeta& req_meta,
                             const ps::KVPairs<char>& req_data,
                             ps::KVServer<char>* server) {
-  // some checks
-  CHECK_EQ(req_data.lens.size(), (size_t)1);
-  CHECK_EQ(req_data.vals.size(), (size_t)req_data.lens[0]);
-
   auto stored = GetStore(key);
   auto len = (size_t)req_data.lens[0];
 
   bool mixed_precision = type.dtype == common::BYTEPS_FLOAT16;
   if (req_meta.push) {
+    // some checks
+    CHECK_EQ(req_data.lens.size(), (size_t)1);
+    CHECK_EQ(req_data.vals.size(), (size_t)req_data.lens[0]);
+
     if (!stored->tensor) {
       // initialize buffer
       BytePSHanleInit(key, type, len, stored, req_meta, req_data, server,
@@ -459,18 +459,6 @@ void BytePSHandleDefaultReq(uint64_t key, DataHandleType type,
     // handle PULL request
     BytePSHandlePull(key, type, len, stored, req_meta, req_data, server);
   }
-}
-
-void BytePSHandleCompressedReq(uint64_t key, DataHandleType type,
-                               const ps::KVMeta& req_meta,
-                               const ps::KVPairs<char>& req_data,
-                               ps::KVServer<char>* server) {
-  // some checks
-  CHECK_EQ(req_data.lens.size(), (size_t)1);
-  CHECK_EQ(req_data.vals.size(), (size_t)req_data.lens[0]);
-
-  auto stored = GetStore(key);
-  auto len = (size_t)req_data.lens[0];
 }
 
 void BytePSHandler(const ps::KVMeta& req_meta,
@@ -500,7 +488,7 @@ void BytePSHandler(const ps::KVMeta& req_meta,
     case RequestType::kDefaultPushPull:
       return BytePSHandleDefaultReq(key, type, req_meta, req_data, server);
     case RequestType::kCompressedPushPull:
-      return BytePSHandleCompressedReq(key, type, req_meta, req_data, server);
+      return BytePSHandleDefaultReq(key, type, req_meta, req_data, server);
     case RequestType::kRowSparsePushPull:
       BPS_CHECK(0) << "Not implemented.";
     default:
