@@ -287,7 +287,7 @@ inline size_t Align(size_t size, int dtype) {
 inline void Promote(size_t& size, int& dtype) {
   size_t ele_size = getDataTypeLength(dtype);
   if (ele_size < 4) {
-    size *= (ele_size / 4);
+    size *= (4 / ele_size);
     dtype = BYTEPS_FLOAT32;
   }
 }
