@@ -397,8 +397,8 @@ void BytePSHandlePush(uint64_t key, DataHandleType type, size_t len,
   }
 }
 
-void BytePSHandlePull(uint64_t key, DataHandleType type, size_t len,
-                      BytePSArray* stored, const ps::KVMeta& req_meta,
+void BytePSHandlePull(uint64_t key, DataHandleType type, BytePSArray* stored,
+                      const ps::KVMeta& req_meta,
                       const ps::KVPairs<char>& req_data,
                       ps::KVServer<char>* server) {
   CHECK(stored->tensor) << "Should init the buffer for key=" << key << " first";
@@ -438,7 +438,6 @@ void BytePSHandleDefaultReq(uint64_t key, DataHandleType type,
                             const ps::KVPairs<char>& req_data,
                             ps::KVServer<char>* server) {
   auto stored = GetStore(key);
-  auto len = (size_t)req_data.lens[0];
 
   bool mixed_precision = type.dtype == common::BYTEPS_FLOAT16;
   if (req_meta.push) {
@@ -446,6 +445,7 @@ void BytePSHandleDefaultReq(uint64_t key, DataHandleType type,
     CHECK_EQ(req_data.lens.size(), (size_t)1);
     CHECK_EQ(req_data.vals.size(), (size_t)req_data.lens[0]);
 
+    auto len = (size_t)req_data.lens[0];
     if (!stored->tensor) {
       // initialize buffer
       BytePSHanleInit(key, type, len, stored, req_meta, req_data, server,
@@ -458,7 +458,7 @@ void BytePSHandleDefaultReq(uint64_t key, DataHandleType type,
     }
   } else {
     // handle PULL request
-    BytePSHandlePull(key, type, len, stored, req_meta, req_data, server);
+    BytePSHandlePull(key, type, stored, req_meta, req_data, server);
   }
 }
 
