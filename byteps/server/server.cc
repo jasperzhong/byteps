@@ -106,6 +106,7 @@ void BytePSServerEngineThread(int i) {
         msg.src = decompressed.data;
         msg.len = decompressed.size;
         msg.type.dtype = decompressed.dtype;
+        msg.mixed_precision = false;  // have already been in FP32
       }
     } else {
       if (msg.ops == ALL_RECV) {
