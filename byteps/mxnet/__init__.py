@@ -351,7 +351,7 @@ class DistributedTrainer(mx.gluon.Trainer):
                     compressed, ctx, x=param._data[0])
                 after.append(param._grad[0])
 
-        for i, front, tail in enumerate(zip(before, after)):
+        for i, (front, tail) in enumerate(zip(before, after)):
             front = front.asnumpy().flatten()
             tail = tail.asnumpy().flatten()
             diff = np.abs(front - tail)
