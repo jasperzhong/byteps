@@ -335,8 +335,7 @@ class DistributedTrainer(mx.gluon.Trainer):
             self._f.write(ba)
             self._f.flush()
 
-        before = []
-        after = []
+        before = {}
         for i, param in enumerate(self._params):
             if param.grad_req != 'null':
                 # normalized with batch_size and num_workers
@@ -344,17 +343,19 @@ class DistributedTrainer(mx.gluon.Trainer):
                     param._grad[0], 1.0 / self._scale / self._bps_size, out=param._grad[0])
                 compressed, ctx = self._intra_compressors[param.name].compress(
                     param._grad[0])
-                before.append(compressed.asnumpy().flatten())
+                before[i] = compressed.asnumpy().flatten()
                 byteps_push_pull(compressed, is_average=False,
                                  name="gradient_" + str(i), priority=-i)
                 param._grad[0][:] = self._intra_compressors[param.name].decompress(
                     compressed, ctx, x=param._data[0])
-                after.append(param._grad[0].asnumpy().flatten())
 
-        for i, (front, tail) in enumerate(zip(before, after)):
-            diff = np.abs(front - tail)
-            print("param %d: max norm=%.2f" %
-                  (i, np.linalg.norm(diff, ord=np.inf)))
+        for i, param in enumerate(self._params):
+            if param.grad_req != 'null':
+                front = before[i]
+                tail = param._grad[0]
+                diff = np.abs(front - tail)
+                print("param %d: max norm=%.2f" %
+                      (i, np.linalg.norm(diff, ord=np.inf)))
 
     def _init_params(self):
         tensors = []
