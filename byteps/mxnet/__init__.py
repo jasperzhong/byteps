@@ -352,10 +352,10 @@ class DistributedTrainer(mx.gluon.Trainer):
         for i, param in enumerate(self._params):
             if param.grad_req != 'null':
                 front = before[i]
-                tail = param._grad[0].asnumpy().flatten()
-                diff = np.abs(front - tail)
-                print("param %d: max norm=%.2f" %
-                      (i, np.linalg.norm(diff, ord=np.inf)))
+                # tail = param._grad[0].asnumpy().flatten()
+                # diff = np.abs(front - tail)
+                print("param %d: g max norm=%.2f" %
+                      (i, np.linalg.norm(front, ord=np.inf)))
 
     def _init_params(self):
         tensors = []
