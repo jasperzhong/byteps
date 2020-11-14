@@ -27,7 +27,7 @@ CompressorRegistry::Register reg(
        std::unique_ptr<Compressor> cptr) -> std::unique_ptr<Compressor> {
       // register cptr
       BPS_CHECK_NE(cptr, nullptr);
-      BPS_CHECK_EQ(dtype, BYTEPS_FLOAT16);
+      BPS_CHECK_EQ(dtype, BYTEPS_FLOAT32);
 
       BPS_LOG(INFO) << "fp16 cast is registered.";
       return std::unique_ptr<FP16CastCompressor>(
@@ -44,7 +44,6 @@ tensor_t FP16CastCompressor::CastToFP32(tensor_t grad) {
   for (size_t i = 0; i < len; ++i) {
     dst[i] = src[i];
   }
-
   // use BYTEPS_FLOAT32 as dtype in the following compression
   return {dst, len * sizeof(float), BYTEPS_FLOAT32};
 }

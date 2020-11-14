@@ -336,7 +336,7 @@ void InitTensor(BPSContext &context, size_t size, int dtype, void *cpubuff) {
   // use the first key in key_list as the index
   auto shm_obj = BytePSGlobal::GetSharedMemoryObj();
 
-  size_t aligned_size = Align(size, dtype);
+  size_t aligned_size = Align(size);
   if (BytePSGlobal::IsCrossPcieSwitch()) {
     context.pcie_cpubuff =
         shm_obj->openPcieSharedMemory(key_list[0], aligned_size);

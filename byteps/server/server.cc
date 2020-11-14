@@ -91,8 +91,9 @@ void BytePSServerEngineThread(int i) {
       // compress
       if (msg.ops == ALL_RECV) {
         common::compressor::tensor_t grad(reinterpret_cast<char*>(msg.src),
-                                          msg.len, msg.type.dtype);
-        auto compressed = iter->second->Compress(grad);
+                                          msg.len, msg.type.dtype),
+            compressed;
+        iter->second->Compress(grad, compressed);
         // 1. compress
         auto& updates = update_buf_[msg.key];
         updates.merged.tensor = compressed.data;
@@ -101,8 +102,9 @@ void BytePSServerEngineThread(int i) {
         auto compressed_len = msg.sarray.lens[0];
         CHECK_LE(compressed_len, msg.len);
         common::compressor::tensor_t compressed(
-            reinterpret_cast<char*>(msg.src), compressed_len, msg.type.dtype);
-        auto decompressed = iter->second->Decompress(compressed);
+            reinterpret_cast<char*>(msg.src), compressed_len, msg.type.dtype),
+            decompressed;
+        iter->second->Decompress(compressed, decompressed);
         msg.src = decompressed.data;
         msg.len = decompressed.size;
         msg.type.dtype = decompressed.dtype;
@@ -234,7 +236,7 @@ void BytePSHandleConfigReq(uint64_t key, DataHandleType type,
                         static_cast<size_t>(req_data.lens[0])};
     auto kwargs = byteps::common::compressor::Deserialize(content);
     auto stored = GetStore(key);
-    size_t aligned_size = byteps::common::Align(stored->len, stored->dtype);
+    size_t aligned_size = byteps::common::Align(stored->len);
     auto compressor_ptr =
         byteps::common::compressor::CompressorRegistry::Create(
             kwargs, aligned_size,
@@ -292,7 +294,7 @@ void BytePSHanleInit(uint64_t key, DataHandleType type, size_t len,
     common::Promote(len, dtype);
   }
 
-  size_t aligned_size = common::Align(len, dtype);
+  size_t aligned_size = common::Align(len);
   // init stored buffer, use page aligned memory
   PageAlignedMalloc((void**)&stored->tensor, aligned_size);
   stored->len = len;

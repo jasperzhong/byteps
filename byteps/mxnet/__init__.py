@@ -21,6 +21,7 @@ import os
 import struct
 import warnings
 
+import numpy as np
 import mxnet as mx
 import mxnet.ndarray as nd
 

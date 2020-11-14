@@ -44,16 +44,17 @@ def round_next_pow2(v):
 
 
 def dithering(x, k, state, partition='linear', norm="max"):
-    y = x.flatten()
+    dtype = x.dtype
+    y = x.flatten().astype(np.float32)
     if norm == "max":
         scale = np.max(np.abs(y))
     elif norm == "l2":
-        scale = np.linalg.norm(y.astype(np.float64), ord=2)
+        scale = np.linalg.norm(y, ord=2)
     else:
         raise ValueError("Unsupported normalization")
-    y /= scale
-    sign = np.sign(y)
+    sign = np.array(0 < y).astype(np.int32) - np.array(y < 0).astype(np.int32)
     y = np.abs(y)
+    y /= scale
 
     # stocastic rounding
     if partition == 'linear':
@@ -61,6 +62,7 @@ def dithering(x, k, state, partition='linear', norm="max"):
         low = np.floor(y)
         p = y - low  # whether to ceil
         y = low + bernoulli(p, state)
+        y *= scale
         y /= k
     elif partition == "natural":
         y *= 2**(k-1)
@@ -70,21 +72,21 @@ def dithering(x, k, state, partition='linear', norm="max"):
         p = (y - low) / length
         y = low + length * bernoulli(p, state)
         y = y.astype(np.float32)
+        y *= scale
         y /= 2**(k-1)
     else:
         raise ValueError("Unsupported partition")
 
     y *= sign
-    y *= scale
-    return y.reshape(x.shape)
+    return y.reshape(x.shape).astype(dtype)
 
 
 class DitheringTestCase(unittest.TestCase, metaclass=MetaTest):
     TEST_BENCH = [
         [2, 4, 8],
         ["linear", "natural"],
-        ["max", "l2"],
-        ["float32", "float16"],
+        ["l2"],
+        ["float16"],
         np.random.randint(0, 2020, size=3).tolist()
     ]
 
@@ -160,6 +162,18 @@ class DitheringTestCase(unittest.TestCase, metaclass=MetaTest):
 
                     params[i] -= optimizer_params["learning_rate"] * c
 
+                    np_g = c.flatten()
+                    mx_g = param._grad[0].asnumpy().flatten()
+                    if not np.allclose(np_g, mx_g, atol=np.finfo(dtype).eps):
+                        diff = np.abs(np_g - mx_g)
+                        print("np", np_g)
+                        print("mx", mx_g)
+                        print("diff", diff)
+                        print("max diff", np.max(diff))
+                        idx = np.nonzero(diff > np.finfo(dtype).eps)
+                        print("idx", idx, np_g[idx], mx_g[idx])
+                        input()
+
         cnt = 0
         tot = 0
         threshold = 0 if dtype == "float32" else 10
@@ -172,6 +186,7 @@ class DitheringTestCase(unittest.TestCase, metaclass=MetaTest):
                     idx = np.where(diff > np.finfo(dtype).eps)
                     cnt += len(idx[0])
 
+        print("false/tot=%d/%d=%f" % (cnt, tot, cnt/tot))
         assert cnt <= threshold, "false/tot=%d/%d=%f" % (cnt, tot, cnt/tot)
 
 

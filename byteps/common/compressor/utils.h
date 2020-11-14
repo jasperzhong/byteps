@@ -266,6 +266,130 @@ auto sgn(T val) -> int {
   return (T(0) < val) - (val < T(0));
 }
 
+template <typename T>
+int _sum(T* __restrict__ dst, const T* __restrict__ src, size_t len,
+         float alpha) {
+#pragma omp parallel for simd
+  for (size_t i = 0; i < len / (size_t)sizeof(T); ++i) {
+    dst[i] = dst[i] + alpha * src[i];
+  }
+  return 0;
+}
+
+inline int sum(void* dst, const void* src, size_t len, DataType dtype,
+               float alpha) {
+  switch (dtype) {
+    case BYTEPS_FLOAT32:
+      return _sum(reinterpret_cast<float*>(dst),
+                  reinterpret_cast<const float*>(src), len, alpha);
+    case BYTEPS_FLOAT64:
+      return _sum(reinterpret_cast<double*>(dst),
+                  reinterpret_cast<const double*>(src), len, alpha);
+    case BYTEPS_FLOAT16:
+      return _sum(reinterpret_cast<half_t*>(dst),
+                  reinterpret_cast<const half_t*>(src), len, alpha);
+    case BYTEPS_UINT8:
+      return _sum(reinterpret_cast<uint8_t*>(dst),
+                  reinterpret_cast<const uint8_t*>(src), len, alpha);
+    case BYTEPS_INT32:
+      return _sum(reinterpret_cast<int32_t*>(dst),
+                  reinterpret_cast<const int32_t*>(src), len, alpha);
+    case BYTEPS_INT8:
+      return _sum(reinterpret_cast<int8_t*>(dst),
+                  reinterpret_cast<const int8_t*>(src), len, alpha);
+    case BYTEPS_INT64:
+      return _sum(reinterpret_cast<int64_t*>(dst),
+                  reinterpret_cast<const int64_t*>(src), len, alpha);
+    default:
+      BPS_CHECK(0) << "Unsupported data type: " << dtype;
+  }
+  return 0;
+}
+
+template <typename T>
+int _sum(T* __restrict__ dst, const T* __restrict__ src1,
+         const T* __restrict__ src2, size_t len, float alpha) {
+#pragma omp parallel for simd
+  for (size_t i = 0; i < len / (size_t)sizeof(T); ++i) {
+    dst[i] = src1[i] + alpha * src2[i];
+  }
+  return 0;
+}
+
+inline int sum(void* dst, const void* src1, const void* src2, size_t len,
+               DataType dtype, float alpha) {
+  switch (dtype) {
+    case BYTEPS_FLOAT32:
+      return _sum(reinterpret_cast<float*>(dst),
+                  reinterpret_cast<const float*>(src1),
+                  reinterpret_cast<const float*>(src2), len, alpha);
+    case BYTEPS_FLOAT64:
+      return _sum(reinterpret_cast<double*>(dst),
+                  reinterpret_cast<const double*>(src1),
+                  reinterpret_cast<const double*>(src2), len, alpha);
+    case BYTEPS_FLOAT16:
+      return _sum(reinterpret_cast<half_t*>(dst),
+                  reinterpret_cast<const half_t*>(src1),
+                  reinterpret_cast<const half_t*>(src2), len, alpha);
+    case BYTEPS_UINT8:
+      return _sum(reinterpret_cast<uint8_t*>(dst),
+                  reinterpret_cast<const uint8_t*>(src1),
+                  reinterpret_cast<const uint8_t*>(src2), len, alpha);
+    case BYTEPS_INT32:
+      return _sum(reinterpret_cast<int32_t*>(dst),
+                  reinterpret_cast<const int32_t*>(src1),
+                  reinterpret_cast<const int32_t*>(src2), len, alpha);
+    case BYTEPS_INT8:
+      return _sum(reinterpret_cast<int8_t*>(dst),
+                  reinterpret_cast<const int8_t*>(src1),
+                  reinterpret_cast<const int8_t*>(src2), len, alpha);
+    case BYTEPS_INT64:
+      return _sum(reinterpret_cast<int64_t*>(dst),
+                  reinterpret_cast<const int64_t*>(src1),
+                  reinterpret_cast<const int64_t*>(src2), len, alpha);
+    default:
+      BPS_CHECK(0) << "Unsupported data type: " << dtype;
+  }
+  return 0;
+}
+
+template <typename T>
+int _sparse_sum(T* __restrict__ dst, T* __restrict__ src, size_t len,
+                float alpha, const std::vector<uint32_t>& idx_list) {
+  size_t size = idx_list.size();
+
+#pragma omp parallel for simd
+  for (size_t i = 0; i < size; ++i) {
+    dst[i] += src[idx_list[i]] * alpha;
+    src[idx_list[i]] = 0;
+  }
+
+  return 0;
+}
+
+inline int sparse_sum(void* dst, void* src, size_t size, DataType dtype,
+                      float alpha, const std::vector<uint32_t>& idx_list) {
+  switch (dtype) {
+    case BYTEPS_FLOAT32:
+      return _sparse_sum(reinterpret_cast<float*>(dst),
+                         reinterpret_cast<float*>(src), size / sizeof(float),
+                         alpha, idx_list);
+    case BYTEPS_FLOAT64:
+      return _sparse_sum(reinterpret_cast<double*>(dst),
+                         reinterpret_cast<double*>(src),
+
+                         size / sizeof(double), alpha, idx_list);
+    case BYTEPS_FLOAT16:
+      return _sparse_sum(reinterpret_cast<half_t*>(dst),
+                         reinterpret_cast<half_t*>(src),
+
+                         size / sizeof(half_t), alpha, idx_list);
+    default:
+      BPS_CHECK(0) << "Unsupported data type: " << dtype;
+  }
+  return 0;
+}
+
 }  // namespace compressor
 }  // namespace common
 }  // namespace byteps
