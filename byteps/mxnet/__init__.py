@@ -360,6 +360,7 @@ class DistributedTrainer(mx.gluon.Trainer):
                     for grad, param in zip(grads, fusion_list):
                         param._grad[0] = grad
                     fusion_list = []
+                    buffer_size = 0
                 else:
                     param._grad[0][:] = decompressed
 
