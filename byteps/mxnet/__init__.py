@@ -358,7 +358,7 @@ class DistributedTrainer(mx.gluon.Trainer):
                 if self.fusion_enable:
                     grads = Fusion.unmerge(decompressed, ctxs)
                     for grad, param in zip(grads, fusion_list):
-                        param._grad[0] = grad
+                        param._grad[0][:] = grad
                     fusion_list = []
                     buffer_size = 0
                 else:
@@ -384,7 +384,7 @@ class DistributedTrainer(mx.gluon.Trainer):
 
             grads = Fusion.unmerge(decompressed, ctxs)
             for grad, param in zip(grads, fusion_list):
-                param._grad[0] = grad
+                param._grad[0][:] = grad
             fusion_list = []
 
     def _init_params(self):
