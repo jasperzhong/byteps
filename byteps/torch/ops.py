@@ -14,23 +14,22 @@
 # limitations under the License.
 # ==============================================================================
 
+
+from __future__ import absolute_import, division, print_function
+
 import warnings
-
-from __future__ import absolute_import
-from byteps.torch.compression import Compression
-from __future__ import division
-from __future__ import print_function
-
 from distutils.version import LooseVersion
 
-# Load all the necessary PyTorch C types.
-import torch
-
+from byteps.common import BytePSBasics as _BytePSBasics
 # PyTorch must be >= 1.0.0 (including nightly builds)
 # This should be guaranteed by setup.py
 # TODO: we may not support older pytorch. Raise exception here
 from byteps.torch import c_lib
-from byteps.common import BytePSBasics as _BytePSBasics
+from byteps.torch.compression import Compression
+
+# Load all the necessary PyTorch C types.
+import torch
+
 _basics = _BytePSBasics(__file__, 'c_lib')
 _NULL = ""
 
