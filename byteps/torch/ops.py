@@ -69,7 +69,6 @@ def _push_pull_group_function_factory(tensor):
 
 
 def _do_push_pull_async(tensor, output, average, name, version=0, priority=0):
-    declare(name)
     function = _check_function(_push_pull_function_factory, tensor)
     handle = getattr(c_lib, function)(tensor, output, average,
                                       name.encode() if name is not None else _NULL,
@@ -79,7 +78,6 @@ def _do_push_pull_async(tensor, output, average, name, version=0, priority=0):
 
 
 def _do_push_pull_group_sync(tensor, output, average, name, version=0, priority=0):
-    declare(name)
     function = _check_function(_push_pull_group_function_factory, tensor)
     handle, curr_count = getattr(c_lib, function)(tensor, output, average,
                                                   name.encode() if name is not None else _NULL,
