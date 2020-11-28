@@ -36,7 +36,7 @@ class TorchTest(unittest.TestCase, metaclass=MetaTest):
         count = 0
         device = torch.device(
             "cuda") if torch.cuda.is_available() else torch.device("cpu")
-        shapes = [(), (17), (17, 17), (17, 17, 17)]
+        shapes = [(), (17,), (17, 17), (17, 17, 17)]
         for dtype, dim in itertools.product(dtypes, dims):
             # MXNet uses gpu_id as part of the seed, so to get identical seeds
             # we must set a context.
