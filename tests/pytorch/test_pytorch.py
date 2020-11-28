@@ -41,7 +41,7 @@ class TorchTest(unittest.TestCase, metaclass=MetaTest):
             # MXNet uses gpu_id as part of the seed, so to get identical seeds
             # we must set a context.
             tensor = torch.randn(size=shapes[dim]).to(device)
-            tensor = tensor.astype(dtype)
+            tensor = tensor.type(dtype)
             input = tensor.clone()
 
             bps.declare("tensor_" + str(count))
