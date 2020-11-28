@@ -14,29 +14,28 @@
 # limitations under the License.
 # ==============================================================================
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
+import collections
+import copy
+import os
 from contextlib import contextmanager
 
 from byteps.torch.compression import Compression
+from byteps.torch.ops import (declare, init, local_rank, local_size, poll,
+                              push_pull)
 from byteps.torch.ops import push_pull_async_inplace as byteps_push_pull
-from byteps.torch.ops import push_pull
-from byteps.torch.ops import poll, synchronize, declare
-from byteps.torch.ops import init, shutdown, suspend, resume
-from byteps.torch.ops import size, local_size, rank, local_rank
+from byteps.torch.ops import rank, resume, shutdown, size, suspend, synchronize
 
-import os
 import torch
-import collections
 
 
 class _DistributedOptimizer(torch.optim.Optimizer):
-    def __init__(self, params, named_parameters, compression,
+    def __init__(self, params, named_parameters, compression_params=None,
                  backward_passes_per_step=1):
         super(self.__class__, self).__init__(params)
-        self._compression = compression
+        self._intra_compressor = self._register_compressor(
+            self.default, compression_params)
 
         if named_parameters is not None:
             named_parameters = list(named_parameters)
@@ -92,9 +91,22 @@ class _DistributedOptimizer(torch.optim.Optimizer):
         if size() > 1:
             self._register_hooks()
 
+        self._intra_compressors = {}
         # declare tensors
-        for name in sorted(self._parameter_names.values()):
-            declare("Gradient."+name)
+        for param_group in self.param_groups:
+            for param in param_group['params']:
+                self._intra_compressors[param] = copy.deepcopy(
+                    self._intra_compressor)
+                if param.requires_grad:
+                    if self._is_tensor_instance:
+                        name = self._parameter_names.get(param.__hash__())
+                    else:
+                        name = self._parameter_names.get(param)
+                    byteps_params = dict(
+                        filter(lambda attr: attr[0].startswith(
+                            "byteps_",), param.__dict__.items())
+                    )
+                    declare("Gradient."+name, **byteps_params)
 
     @staticmethod
     def find_duplicates(lst):
@@ -122,6 +134,94 @@ class _DistributedOptimizer(torch.optim.Optimizer):
                     grad_acc.register_hook(self._make_hook(p))
                     self._grad_accs.append(grad_acc)
 
+    def _register_compressor(self, optimizer_params, compression_params):
+        """Register compressor for BytePS
+
+        optimizer_params : dict
+        compression_params : dict
+        """
+        intra_compressor = Compression.none
+        if not compression_params:
+            return intra_compressor
+
+        if compression_params.get("fp16"):
+            intra_compressor = Compression.fp16
+
+        if not compression_params.get("compressor"):
+            return intra_compressor
+
+        check_list = ["compressor", "ef", "momentum"]
+
+        for i, param_group in enumerate(self.param_groups):
+            for param in param_group['params']:
+                if not param.requires_grad:
+                    continue
+
+                # generic
+                for item in check_list:
+                    if compression_params.get(item):
+                        if isinstance(compression_params[item], str):
+                            setattr(param, "byteps_%s_type" %
+                                    item, compression_params[item])
+                        else:
+                            raise TypeError("%s should be str" % item)
+
+                # need parameter
+                compressor = compression_params["compressor"]
+                if compressor == "onebit":
+                    setattr(param, "byteps_compressor_onebit_scaling", str(
+                        compression_params.get("scaling", False)))
+                elif compressor == "topk" or compressor == "randomk" or \
+                        compressor == "dithering":
+                    # raise KeyError if 'k' is not found
+                    setattr(param, "byteps_compressor_k",
+                            compression_params["k"])
+
+                if compression_params.get("momentum"):
+                    setattr(param, "byteps_momentum_mu",
+                            optimizer_params["momentum"])
+
+                if compression_params.get("seed", None) is not None:
+                    seed = int(compression_params["seed"])
+                    setattr(param, "byteps_seed", seed + i)
+
+                if compression_params.get("partition"):
+                    if compression_params["partition"] == "linear":
+                        setattr(param, "byteps_dithering_partition", "0")
+                    elif compression_params["partition"] == "natural":
+                        setattr(param, "byteps_dithering_partition", "1")
+                    else:
+                        raise ValueError("Unsupported partition %s" %
+                                         compression_params["partition"])
+
+                if compression_params.get("normalize"):
+                    if compression_params["normalize"] == "max":
+                        setattr(param, "byteps_dithering_normalize", "0")
+                    elif compression_params["normalize"] == "l2":
+                        setattr(param, "byteps_dithering_normalize", "1")
+                    else:
+                        raise ValueError("Unsupported normalization %s" %
+                                         compression_params["normalize"])
+
+        # the following code will delete some items in `optimizer_params`
+        # to avoid duplication
+        if compression_params.get("momentum"):
+            threshold = int(os.environ.get(
+                "BYTEPS_MIN_COMPRESS_BYTES", 0))
+            mu = optimizer_params["momentum"]
+
+            # 1bit compressor use an additional momentum for weight decay
+            if "weight_decay" in optimizer_params:
+                wd = optimizer_params["weight_decay"]
+                intra_compressor = Compression.wdmom(intra_compressor,
+                                                     mu, wd, threshold)
+                optimizer_params["weight_decay"] = 0  # disable
+
+            intra_compressor = Compression.nag(intra_compressor, mu, threshold)
+            optimizer_params['momentum'] = 0  # disable
+
+        return intra_compressor
+
     def _push_pull_grad_async(self, p):
         if self._is_tensor_instance:
             name = self._parameter_names.get(p.__hash__())
@@ -132,9 +232,12 @@ class _DistributedOptimizer(torch.optim.Optimizer):
             handle, ctx = None, None
         else:
             tensor = p.grad
-            tensor_compressed, ctx = self._compression.compress(tensor)
+            # grad is normalized with bps.size()
+            tensor /= size()
+            tensor_compressed, ctx = self._intra_compressors[p].compress(
+                tensor)
             handle = byteps_push_pull(
-                tensor_compressed, average=True, name="Gradient."+name)
+                tensor_compressed, average=False, name="Gradient."+name)
         return handle, ctx
 
     def _make_hook(self, p):
@@ -170,7 +273,7 @@ class _DistributedOptimizer(torch.optim.Optimizer):
             output = synchronize(handle)
             self._push_pull_delay[p] = self.backward_passes_per_step
             if not self._enable_async:
-                p.grad.set_(self._compression.decompress(output, ctx))
+                p.grad.set_(self._intra_compressors[p].decompress(output, ctx))
         self._handles.clear()
 
     @contextmanager
