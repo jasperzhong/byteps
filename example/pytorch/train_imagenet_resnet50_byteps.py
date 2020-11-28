@@ -76,14 +76,15 @@ for try_epoch in range(args.epochs, 0, -1):
 
 # BytePS: broadcast resume_from_epoch from rank 0 (which will have
 # checkpoints) to other ranks.
-#resume_from_epoch = bps.broadcast(torch.tensor(resume_from_epoch), root_rank=0,
+# resume_from_epoch = bps.broadcast(torch.tensor(resume_from_epoch), root_rank=0,
 #                                  name='resume_from_epoch').item()
 
 # BytePS: print logs on the first worker.
 verbose = 1 if bps.rank() == 0 else 0
 
 # BytePS: write TensorBoard logs on first worker.
-log_writer = tensorboardX.SummaryWriter(args.log_dir) if bps.rank() == 0 else None
+log_writer = tensorboardX.SummaryWriter(
+    args.log_dir) if bps.rank() == 0 else None
 
 
 kwargs = {'num_workers': 4, 'pin_memory': True} if args.cuda else {}
@@ -133,13 +134,9 @@ optimizer = optim.SGD(model.parameters(),
                           args.batches_per_pushpull * bps.size()),
                       momentum=args.momentum, weight_decay=args.wd)
 
-# BytePS: (optional) compression algorithm.
-compression = bps.Compression.fp16 if args.fp16_pushpull else bps.Compression.none
-
 # BytePS: wrap optimizer with DistributedOptimizer.
 optimizer = bps.DistributedOptimizer(
     optimizer, named_parameters=model.named_parameters(),
-    compression=compression,
     backward_passes_per_step=args.batches_per_pushpull)
 
 # Restore from a previous checkpoint, if initial_epoch is specified.
@@ -153,6 +150,7 @@ if resume_from_epoch > 0 and bps.rank() == 0:
 # BytePS: broadcast parameters & optimizer state.
 bps.broadcast_parameters(model.state_dict(), root_rank=0)
 bps.broadcast_optimizer_state(optimizer, root_rank=0)
+
 
 def train(epoch):
     model.train()
@@ -233,7 +231,8 @@ def adjust_learning_rate(epoch, batch_idx):
     else:
         lr_adj = 1e-3
     for param_group in optimizer.param_groups:
-        param_group['lr'] = args.base_lr * bps.size() * args.batches_per_pushpull * lr_adj
+        param_group['lr'] = args.base_lr * \
+            bps.size() * args.batches_per_pushpull * lr_adj
 
 
 def accuracy(output, target):
