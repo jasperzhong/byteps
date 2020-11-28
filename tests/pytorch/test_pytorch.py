@@ -40,7 +40,7 @@ class TorchTest(unittest.TestCase, metaclass=MetaTest):
         for dtype, dim in itertools.product(dtypes, dims):
             # MXNet uses gpu_id as part of the seed, so to get identical seeds
             # we must set a context.
-            tensor = torch.randn(shape=shapes[dim]).to(device)
+            tensor = torch.randn(size=shapes[dim]).to(device)
             tensor = tensor.astype(dtype)
             input = tensor.clone()
 
