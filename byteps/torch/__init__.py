@@ -95,9 +95,6 @@ class _DistributedOptimizer(torch.optim.Optimizer):
         # declare tensors
         for name in sorted(self._parameter_names.values()):
             declare("Gradient."+name)
-        # We use two loops for load-balancing
-        for name in sorted(self._parameter_names.values()):
-            declare("Parameter."+name)
 
     @staticmethod
     def find_duplicates(lst):
@@ -288,6 +285,8 @@ def broadcast_parameters(params, root_rank):
         if rank() != root_rank:
             p.fill_(0)
         # Remember to disable averaging because we are doing broadcast
+        # We use two loops for load-balancing
+        declare("Parameter."+name)
         if name:
             handle = byteps_push_pull(p, average=False, name="Parameter."+name)
         else:
