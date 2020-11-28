@@ -31,7 +31,7 @@ class TorchTest(unittest.TestCase, metaclass=MetaTest):
 
     def test_byteps_push_pull(self):
         """Test that the byteps_push_pull correctly sums 1D, 2D, 3D tensors."""
-        dtypes = ['float16', 'float32', 'float64']
+        dtypes = [torch.float16, torch.float32, torch.float64]
         dims = [1, 2, 3]
         count = 0
         device = torch.device(
