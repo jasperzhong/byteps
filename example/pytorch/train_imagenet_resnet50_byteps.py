@@ -24,8 +24,6 @@ parser.add_argument('--log-dir', default='./logs',
                     help='tensorboard log directory')
 parser.add_argument('--checkpoint-format', default='./checkpoint-{epoch}.pth.tar',
                     help='checkpoint file format')
-parser.add_argument('--fp16-pushpull', action='store_true', default=False,
-                    help='use fp16 compression during pushpull')
 parser.add_argument('--batches-per-pushpull', type=int, default=1,
                     help='number of batches processed locally before '
                          'executing pushpull across workers; it multiplies '
