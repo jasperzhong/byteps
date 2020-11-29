@@ -43,15 +43,15 @@ def randomk(x, k, state):
     return y.reshape(x.shape)
 
 
-class OnebitTestCase(unittest.TestCase, metaclass=MetaTest):
+class RandomkTestCase(unittest.TestCase, metaclass=MetaTest):
     TEST_BENCH = [
         [1, 3, 5],
-        ["float32", "float16"],
+        [torch.float32, torch.float16],
         np.random.randint(0, 2020, size=3).tolist()
     ]
 
     @parameterized.expand(itertools.product(*TEST_BENCH))
-    def test_onebit(self, k, dtype, seed):
+    def test_randomk(self, k, dtype, seed):
         bps.init()
         np_dtype = str(dtype).split('.')[1]
 

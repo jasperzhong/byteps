@@ -42,11 +42,11 @@ def topk(x, k):
 class TopkTestCase(unittest.TestCase, metaclass=MetaTest):
     TEST_BENCH = [
         [1, 3, 5],
-        ["float32", "float16"]
+        [torch.float32, torch.float16]
     ]
 
     @parameterized.expand(itertools.product(*TEST_BENCH))
-    def test_onebit(self, k, dtype):
+    def test_topk(self, k, dtype):
         bps.init()
         np_dtype = str(dtype).split('.')[1]
 
@@ -59,7 +59,7 @@ class TopkTestCase(unittest.TestCase, metaclass=MetaTest):
         batch_size = 32
         lr = 0.01
         compression_params = {
-            "compressor": "onebit",
+            "compressor": "topk",
             "k": k,
         }
 

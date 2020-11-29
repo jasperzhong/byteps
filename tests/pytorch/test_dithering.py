@@ -85,13 +85,13 @@ class OnebitTestCase(unittest.TestCase, metaclass=MetaTest):
     TEST_BENCH = [
         [2, 4, 8],
         ["linear", "natural"],
-        ["l2"],
-        ["float16"],
+        ["max", "l2"],
+        [torch.float32, torch.float16],
         np.random.randint(0, 2020, size=3).tolist()
     ]
 
     @parameterized.expand(itertools.product(*TEST_BENCH))
-    def test_onebit(self, k, ptype, ntype, dtype, seed):
+    def test_dithering(self, k, ptype, ntype, dtype, seed):
         bps.init()
         np_dtype = str(dtype).split('.')[1]
 
