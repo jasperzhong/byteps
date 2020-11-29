@@ -115,7 +115,7 @@ class OnebitTestCase(unittest.TestCase, metaclass=MetaTest):
                         if not np.allclose(np_g, th_g, atol=np.finfo(np_dtype).eps):
                             diff = np.abs(np_g - th_g)
                             print("np", np_g)
-                            print("mx", th_g)
+                            print("th", th_g)
                             print("diff", diff)
                             print("max diff", np.max(diff))
                             idx = np.nonzero(diff > np.finfo(np_dtype).eps)
