@@ -240,7 +240,7 @@ def validate(epoch):
                     data, target = data.cuda(), target.cuda()
                 output = model(data)
 
-                val_loss.update(F.cross_entropy(output, target))
+                val_loss.update(F.cross_entropy(output, target).item())
                 val_accuracy.update(accuracy(output, target))
                 t.set_postfix({'loss': val_loss.avg.item(),
                                'accuracy': 100. * val_accuracy.avg.item()})
