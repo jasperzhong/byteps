@@ -119,19 +119,6 @@ class RandomkTestCase(unittest.TestCase, metaclass=MetaTest):
 
                         params[param] -= lr * c
 
-                        np_g = c.flatten()
-                        th_g = param.grad.cpu().numpy().flatten()
-
-                        if not np.allclose(np_g, th_g, atol=np.finfo(np_dtype).eps):
-                            diff = np.abs(np_g - th_g)
-                            print("np", np_g)
-                            print("th", th_g)
-                            print("diff", diff)
-                            print("max diff", np.max(diff))
-                            idx = np.nonzero(diff > np.finfo(np_dtype).eps)
-                            print("idx", idx, np_g[idx], th_g[idx])
-                            input()
-
         cnt = 0
         tot = 0
         threshold = 0 if dtype == torch.float32 else 10
