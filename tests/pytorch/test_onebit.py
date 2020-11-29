@@ -49,6 +49,8 @@ class OnebitTestCase(unittest.TestCase, metaclass=MetaTest):
     @parameterized.expand(itertools.product(*TEST_BENCH))
     def test_onebit(self, scaling, dtype):
         bps.init()
+        np_dtype = str(dtype).split('.')[1]
+
         device = torch.device(
             "cuda") if torch.cuda.is_available() else torch.device("cpu")
         net = torchvision.models.resnet18().to(device)
@@ -109,13 +111,14 @@ class OnebitTestCase(unittest.TestCase, metaclass=MetaTest):
 
                         np_g = c.flatten()
                         th_g = param.grad.cpu().numpy().flatten()
-                        if not np.allclose(np_g, th_g, atol=np.finfo(dtype).eps):
+
+                        if not np.allclose(np_g, th_g, atol=np.finfo(np_dtype).eps):
                             diff = np.abs(np_g - th_g)
                             print("np", np_g)
                             print("mx", th_g)
                             print("diff", diff)
                             print("max diff", np.max(diff))
-                            idx = np.nonzero(diff > np.finfo(dtype).eps)
+                            idx = np.nonzero(diff > np.finfo(np_dtype).eps)
                             print("idx", idx, np_g[idx], th_g[idx])
                             input()
 
@@ -127,9 +130,9 @@ class OnebitTestCase(unittest.TestCase, metaclass=MetaTest):
                 if param.requires_grad:
                     x = param.data.cpu().numpy()
                     tot += len(x.flatten())
-                    if not np.allclose(params[i], x, atol=np.finfo(dtype).eps):
+                    if not np.allclose(params[i], x, atol=np.finfo(np_dtype).eps):
                         diff = np.abs(x.flatten() - params[i].flatten())
-                        idx = np.where(diff > np.finfo(dtype).eps)
+                        idx = np.where(diff > np.finfo(np_dtype).eps)
                         cnt += len(idx[0])
 
         assert cnt <= threshold, "false/tot=%d/%d=%f" % (
