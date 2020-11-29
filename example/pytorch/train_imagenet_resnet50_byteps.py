@@ -52,6 +52,24 @@ parser.add_argument('--no-cuda', action='store_true', default=False,
 parser.add_argument('--seed', type=int, default=42,
                     help='random seed')
 
+# additional arguments for gradient compression
+parser.add_argument('--compressor', type=str, default='',
+                    help='which compressor')
+parser.add_argument('--ef', type=str, default='',
+                    help='which error-feedback')
+parser.add_argument('--compress-momentum', type=str, default='',
+                    help='which compress momentum')
+parser.add_argument('--onebit-scaling', action='store_true', default=False,
+                    help='enable scaling for onebit compressor')
+parser.add_argument('--k', default=1, type=float,
+                    help='topk or randomk')
+parser.add_argument('--partition', default='linear', type=str,
+                    help='linear or natural')
+parser.add_argument('--normalize', default='max', type=str,
+                    help='max or l2')
+parser.add_argument('--fp16-pushpull', action='store_true', default=False,
+                    help='use fp16 compression during pushpull')
+
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
@@ -127,16 +145,34 @@ if args.cuda:
     # Move model to GPU.
     model.cuda()
 
+if args.compressor and args.compressor != "dithering":
+    nesterov = False
+else:
+    nesterov = True
+
 # BytePS: scale learning rate by the number of GPUs.
 # Gradient Accumulation: scale learning rate by batches_per_pushpull
 optimizer = optim.SGD(model.parameters(),
                       lr=(args.base_lr *
                           args.batches_per_pushpull * bps.size()),
-                      momentum=args.momentum, weight_decay=args.wd)
+                      momentum=args.momentum, weight_decay=args.wd,
+                      nesterov=nesterov)
+
+compression_params = {
+    "compressor": args.compressor,
+    "ef": args.ef,
+    "momentum": args.compress_momentum,
+    "scaling": args.onebit_scaling,
+    "k": args.k,
+    "partition": args.partition,
+    "normalize": args.normalize,
+    "seed": args.seed
+}
 
 # BytePS: wrap optimizer with DistributedOptimizer.
 optimizer = bps.DistributedOptimizer(
     optimizer, named_parameters=model.named_parameters(),
+    compression_params=compression_params,
     backward_passes_per_step=args.batches_per_pushpull)
 
 # Restore from a previous checkpoint, if initial_epoch is specified.
