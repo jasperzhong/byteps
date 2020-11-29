@@ -43,7 +43,7 @@ def onebit(x, scaling):
 class OnebitTestCase(unittest.TestCase, metaclass=MetaTest):
     TEST_BENCH = [
         [True, False],
-        ["float32", "float16"]
+        [torch.float32, torch.float16]
     ]
 
     @parameterized.expand(itertools.product(*TEST_BENCH))
@@ -59,8 +59,7 @@ class OnebitTestCase(unittest.TestCase, metaclass=MetaTest):
         lr = 0.01
         compression_params = {
             "compressor": "onebit",
-            "scaling": scaling,
-            "fp16": True if dtype == "float16" else False
+            "scaling": scaling
         }
 
         optimizer = optim.SGD(net.parameters(), lr=lr)
@@ -110,7 +109,7 @@ class OnebitTestCase(unittest.TestCase, metaclass=MetaTest):
 
         cnt = 0
         tot = 0
-        threshold = 0 if dtype == "float32" else 10
+        threshold = 0 if dtype == torch.float32 else 10
         for i, param_group in enumerate(optimizer.param_groups):
             for param in param_group['params']:
                 if param.requires_grad:
