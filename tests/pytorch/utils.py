@@ -4,22 +4,19 @@ from numba import jit
 
 
 def fake_data(dtype=torch.float32, batch_size=32, height=224, width=224, depth=3, num_classes=1000):
-    image_list = []
-    label_list = []
+    data_list = []
     for _ in range(128):
         image = torch.normal(-1, 1,
-                             size=[batch_size, depth, height, width],
+                             size=[1, depth, height, width],
                              dtype=dtype)
         label = torch.randint(0, num_classes, size=[1])
 
-        # print(labels)
-        image_list.append(image)
-        label_list.append(label)
+        images = image.repeat_interleave(batch_size, dim=0)
+        labels = label.repeat_interleave(batch_size, dim=0)
 
-    images = torch.stack(image_list, dim=0)
-    labels = torch.stack(label_list, dim=0)
+        data_list.append((images, labels))
 
-    return images, labels
+    return data_list
 
 
 @ jit(nopython=True)
