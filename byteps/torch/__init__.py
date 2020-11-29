@@ -35,7 +35,7 @@ class _DistributedOptimizer(torch.optim.Optimizer):
                  backward_passes_per_step=1):
         super(self.__class__, self).__init__(params)
         self._intra_compressor = self._register_compressor(
-            self.default, compression_params)
+            self.defaults, compression_params)
 
         if named_parameters is not None:
             named_parameters = list(named_parameters)
