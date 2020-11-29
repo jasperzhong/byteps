@@ -128,10 +128,7 @@ void DeclareTensor(const std::string& name,
   common::IsTensorDeclared(tensor_name);
 
   if (!args.empty()) {
-    for (auto kv : args) {
-      std::cout << kv.first << " " << kv.second << std::endl;
-    }
-    common::RegisterCompressor(name, args);
+    common::RegisterCompressor(tensor_name, args);
   }
 }
 
