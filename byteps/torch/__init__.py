@@ -21,6 +21,8 @@ import copy
 import os
 from contextlib import contextmanager
 
+from torch import is_distributed
+
 from byteps.torch.compression import Compression
 from byteps.torch.ops import (declare, init, local_rank, local_size, poll,
                               push_pull)
@@ -88,7 +90,9 @@ class _DistributedOptimizer(torch.optim.Optimizer):
         self._grad_accs = []
         self._requires_update = set()
         self._should_sync = True
-        if size() > 1:
+
+        force_distributed = int(os.getenv('BYTEPS_FORCE_DISTRIBUTED', 0))
+        if size() > 1 or force_distributed:
             self._register_hooks()
 
         self._intra_compressors = {}
@@ -108,7 +112,7 @@ class _DistributedOptimizer(torch.optim.Optimizer):
                     )
                     declare("Gradient."+name, **byteps_params)
 
-    @staticmethod
+    @ staticmethod
     def find_duplicates(lst):
         seen = set()
         dups = set()
@@ -276,7 +280,7 @@ class _DistributedOptimizer(torch.optim.Optimizer):
                 p.grad.set_(self._intra_compressors[p].decompress(output, ctx))
         self._handles.clear()
 
-    @contextmanager
+    @ contextmanager
     def skip_synchronize(self):
         if self._enable_async:
             raise AssertionError(
@@ -344,10 +348,10 @@ def DistributedOptimizer(optimizer, named_parameters=None,
         optimizer: Optimizer to use for computing gradients and applying updates.
         named_parameters: A mapping between parameter names and values. Used for naming of
                           push_pull operations. Typically just `model.named_parameters()`.
-        compression_params : dict. Key-word arguments to be passed to gradient compression 
-                             constructor. For example,`{'compressor': 'onebit', 'ef': 
+        compression_params : dict. Key-word arguments to be passed to gradient compression
+                             constructor. For example,`{'compressor': 'onebit', 'ef':
                              'vanilla', 'momentum': 'nesterov', 'scaling': true}`.
-                             All compressor accept 'compressor', 'ef'. See each compressor's 
+                             All compressor accept 'compressor', 'ef'. See each compressor's
                              constructor for a list of additional supported arguments.
         backward_passes_per_step: Number of expected backward passes to perform
                                   before calling step()/synchronize(). This
