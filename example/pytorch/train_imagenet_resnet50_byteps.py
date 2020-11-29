@@ -221,8 +221,11 @@ def train(epoch):
             t.update(1)
 
     if log_writer:
-        log_writer.add_scalar('train/loss', train_loss.avg, epoch)
-        log_writer.add_scalar('train/accuracy', train_accuracy.avg, epoch)
+        handle = bps.byteps_push_pull(torch.FloatTensor(
+            [train_loss.avg, train_accuracy.avg]).cuda(), name="acc")
+        output = bps.synchronize(handle)
+        log_writer.add_scalar('train/loss', output[0].item(), epoch)
+        log_writer.add_scalar('train/accuracy', output[1].item(), epoch)
 
 
 def validate(epoch):
@@ -246,8 +249,11 @@ def validate(epoch):
                 t.update(1)
 
     if log_writer:
-        log_writer.add_scalar('val/loss', val_loss.avg, epoch)
-        log_writer.add_scalar('val/accuracy', val_accuracy.avg, epoch)
+        handle = bps.byteps_push_pull(torch.FloatTensor(
+            [val_loss.avg, val_accuracy.avg]).cuda(), name="acc")
+        output = bps.synchronize(handle)
+        log_writer.add_scalar('val/loss', output[0].item(), epoch)
+        log_writer.add_scalar('val/accuracy', output[1].item(), epoch)
 
 
 # BytePS: using `lr = base_lr * bps.size()` from the very beginning leads to worse final
@@ -306,6 +312,9 @@ class Metric(object):
 
 
 for epoch in range(resume_from_epoch, args.epochs):
+    bps.declare("acc")
+    handle = bps.byteps_push_pull(torch.empty(2).cuda(), name="acc")
+    bps.synchronize(handle)
     train(epoch)
     validate(epoch)
     save_checkpoint(epoch)
