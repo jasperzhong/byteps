@@ -99,7 +99,7 @@ class OnebitTestCase(unittest.TestCase, metaclass=MetaTest):
             for i, param_group in enumerate(optimizer.param_groups):
                 for param in param_group['params']:
                     if param.requires_grad:
-                        g = gs[param] / (batch_size * bps.size())
+                        g = gs[param] / bps.size()
                         c = onebit(g, scaling)
 
                         cs = onebit(c, scaling)
