@@ -5,7 +5,7 @@ from numba import jit
 
 def fake_data(dtype=torch.float32, batch_size=32, height=224, width=224, depth=3, num_classes=1000):
     data_list = []
-    for _ in range(128):
+    for _ in range(32):
         image = torch.normal(-1, 1,
                              size=[1, depth, height, width],
                              dtype=dtype)
