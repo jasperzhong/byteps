@@ -10,7 +10,7 @@ def fake_data(dtype=torch.float32, batch_size=32, height=224, width=224, depth=3
         image = torch.normal(-1, 1,
                              size=[batch_size, depth, height, width],
                              dtype=dtype)
-        label = torch.randint(0, num_classes, size=[1, 1])
+        label = torch.randint(0, num_classes, size=[1])
 
         # print(labels)
         image_list.append(image)
