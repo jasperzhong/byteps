@@ -8,7 +8,7 @@ def fake_data(dtype=torch.float32, batch_size=32, height=224, width=224, depth=3
     label_list = []
     for _ in range(8):
         image = torch.normal(-1, 1,
-                             size=[1, depth, height, width],
+                             size=[batch_size, depth, height, width],
                              dtype=dtype)
         label = torch.randint(0, num_classes, size=[1, 1])
 
@@ -18,8 +18,8 @@ def fake_data(dtype=torch.float32, batch_size=32, height=224, width=224, depth=3
         image_list.append(images)
         label_list.append(labels)
 
-    images = torch.cat(image_list, dim=0)
-    labels = torch.cat(label_list, dim=0)
+    images = torch.stack(image_list, dim=0)
+    labels = torch.stack(label_list, dim=0)
 
     return images, labels
 
