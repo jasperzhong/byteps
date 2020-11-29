@@ -320,7 +320,7 @@ class _DistributedOptimizer(torch.optim.Optimizer):
 
 
 def DistributedOptimizer(optimizer, named_parameters=None,
-                         compression=Compression.none,
+                         compression_params=None,
                          backward_passes_per_step=1):
     """
     An optimizer that wraps another torch.optim.Optimizer, using an push_pull to
@@ -344,9 +344,11 @@ def DistributedOptimizer(optimizer, named_parameters=None,
         optimizer: Optimizer to use for computing gradients and applying updates.
         named_parameters: A mapping between parameter names and values. Used for naming of
                           push_pull operations. Typically just `model.named_parameters()`.
-        compression: Compression algorithm used during push_pull to reduce the amount
-                     of data sent during the each parameter update step.  Defaults to
-                     not using compression.
+        compression_params : dict. Key-word arguments to be passed to gradient compression 
+                             constructor. For example,`{'compressor': 'onebit', 'ef': 
+                             'vanilla', 'momentum': 'nesterov', 'scaling': true}`.
+                             All compressor accept 'compressor', 'ef'. See each compressor's 
+                             constructor for a list of additional supported arguments.
         backward_passes_per_step: Number of expected backward passes to perform
                                   before calling step()/synchronize(). This
                                   allows accumulating gradients over multiple
@@ -358,7 +360,7 @@ def DistributedOptimizer(optimizer, named_parameters=None,
     cls = type(optimizer.__class__.__name__, (optimizer.__class__,),
                dict(_DistributedOptimizer.__dict__))
     return cls(optimizer.param_groups, named_parameters,
-               compression, backward_passes_per_step)
+               compression_params, backward_passes_per_step)
 
 
 def broadcast_parameters(params, root_rank):
