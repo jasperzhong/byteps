@@ -130,8 +130,8 @@ class OnebitTestCase(unittest.TestCase, metaclass=MetaTest):
                 if param.requires_grad:
                     x = param.data.cpu().numpy()
                     tot += len(x.flatten())
-                    if not np.allclose(params[i], x, atol=np.finfo(np_dtype).eps):
-                        diff = np.abs(x.flatten() - params[i].flatten())
+                    if not np.allclose(params[param], x, atol=np.finfo(np_dtype).eps):
+                        diff = np.abs(x.flatten() - params[param].flatten())
                         idx = np.where(diff > np.finfo(np_dtype).eps)
                         cnt += len(idx[0])
 
