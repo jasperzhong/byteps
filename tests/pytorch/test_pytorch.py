@@ -52,6 +52,17 @@ class TorchTest(unittest.TestCase, metaclass=MetaTest):
 
         print('test_byteps_push_pull passed')
 
+    def test_byteps_push_pull_temp_tensor(self):
+        """Test pushpull in temporary tensors"""
+        bps.declare("tmp")
+        shape = (2,)
+        handle = bps.byteps_push_pull(torch.empty(shape).cuda(), name="tmp")
+        bps.synchronize(handle)
+
+        handle = bps.byteps_push_pull(torch.ones(shape).cuda(), name="tmp")
+        output = bps.synchronize(handle)
+        assert torch.allclose(output, torch.ones(shape).cuda())
+
 
 if __name__ == '__main__':
     unittest.main()
