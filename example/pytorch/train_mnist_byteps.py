@@ -157,8 +157,8 @@ def train(epoch):
 def metric_average(val, name):
     tensor = torch.tensor(val).cuda()
     bps.declare(name)
-    avg_tensor = bps.push_pull_inplace(tensor, average=True, name=name)
-    return avg_tensor.item()
+    avg_tensor = bps.push_pull_inplace(tensor, average=False, name=name)
+    return avg_tensor.item() / bps.size()
 
 
 def test():
