@@ -25,7 +25,7 @@ from torch import is_distributed
 
 from byteps.torch.compression import Compression
 from byteps.torch.ops import (declare, init, local_rank, local_size, poll,
-                              push_pull)
+                              push_pull, push_pull_inplace)
 from byteps.torch.ops import push_pull_async_inplace as byteps_push_pull
 from byteps.torch.ops import rank, resume, shutdown, size, suspend, synchronize
 
