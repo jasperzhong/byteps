@@ -309,10 +309,10 @@ class Metric(object):
         return self.sum / self.n
 
 
+bps.declare("acc")
+handle = bps.byteps_push_pull(torch.empty(2).cuda(), name="acc")
+bps.synchronize(handle)
 for epoch in range(resume_from_epoch, args.epochs):
-    bps.declare("acc")
-    handle = bps.byteps_push_pull(torch.empty(2).cuda(), name="acc")
-    bps.synchronize(handle)
     train(epoch)
     validate(epoch)
     save_checkpoint(epoch)
