@@ -69,7 +69,7 @@ train_dataset = \
 train_sampler = torch.utils.data.distributed.DistributedSampler(
     train_dataset, num_replicas=bps.size(), rank=bps.rank())
 train_loader = torch.utils.data.DataLoader(
-    train_dataset, batch_size=.batch_size, sampler=train_sampler, **kwargs)
+    train_dataset, batch_size=args.batch_size, sampler=train_sampler, **kwargs)
 
 test_dataset = \
     datasets.MNIST('data-%d' % bps.rank(), train=False, transform=transforms.Compose([
