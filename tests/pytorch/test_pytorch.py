@@ -58,10 +58,11 @@ class TorchTest(unittest.TestCase, metaclass=MetaTest):
         shape = (2,)
         handle = bps.byteps_push_pull(torch.empty(shape).cuda(), name="tmp")
         bps.synchronize(handle)
-
-        handle = bps.byteps_push_pull(torch.ones(shape).cuda(), name="tmp")
-        output = bps.synchronize(handle)
-        assert torch.allclose(output, torch.ones(shape).cuda())
+        for _ in range(10):
+            x = torch.randn(shape)
+            handle = bps.byteps_push_pull(x.clone().cuda(), name="tmp")
+            output = bps.synchronize(handle)
+            assert torch.allclose(output, x.cuda())
 
 
 if __name__ == '__main__':
