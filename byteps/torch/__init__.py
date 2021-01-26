@@ -295,7 +295,7 @@ class _DistributedOptimizer(torch.optim.Optimizer):
             self._push_pull_delay[p] = self.backward_passes_per_step
             if not self._enable_async:
                 g = self._intra_compressors[p].decompress(
-                    output, ctx, x=p.data)
+                    output, ctx)
 
                 if not isclose(self.post_scale_factor, 1.0):
                     g *= self.post_scale_factor
