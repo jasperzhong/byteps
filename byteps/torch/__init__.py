@@ -259,8 +259,8 @@ class _DistributedOptimizer(torch.optim.Optimizer):
                     name = self._parameter_names.get(p.__hash__())
                 else:
                     name = self._parameter_names.get(p)
-                print("BytePS: detect nan in %s before pushpull!" %
-                      name, flush=True)
+                print("BytePS: local rank %d detect nan in %s before pushpull!" % (
+                      local_rank(), name), flush=True)
             # grad is scaled with pre_scale_factor
             tensor *= self.pre_scale_factor
             tensor_compressed, ctx = self._intra_compressors[p].compress(
@@ -312,8 +312,8 @@ class _DistributedOptimizer(torch.optim.Optimizer):
                         name = self._parameter_names.get(p.__hash__())
                     else:
                         name = self._parameter_names.get(p)
-                    print("BytePS: detect nan in %s after pushpull!" %
-                          name, flush=True)
+                    print("BytePS: local rank detect nan in %s after pushpull!" %
+                          (local_rank(), name), flush=True)
 
                 if not isclose(self.post_scale_factor, 1.0):
                     g *= self.post_scale_factor
@@ -369,8 +369,8 @@ class _DistributedOptimizer(torch.optim.Optimizer):
                             name = self._parameter_names.get(p.__hash__())
                         else:
                             name = self._parameter_names.get(p)
-                        print("BytePS: detect nan in %s before updating!!!" %
-                              name, flush=True)
+                        print("BytePS: local rank %d detect nan in %s before updating!!!" %
+                              (local_rank(), name), flush=True)
             return super(self.__class__, self).step(closure)
 
 
