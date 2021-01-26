@@ -297,6 +297,14 @@ class _DistributedOptimizer(torch.optim.Optimizer):
                 g = self._intra_compressors[p].decompress(
                     output, ctx, x=p.data)
 
+                # debug
+                if torch.any(torch.isnan(g)):
+                    if self._is_tensor_instance:
+                        name = self._parameter_names.get(p.__hash__())
+                    else:
+                        name = self._parameter_names.get(p)
+                    print("BytePS: detect nan in %s!" % name, flush=True)
+
                 if not isclose(self.post_scale_factor, 1.0):
                     g *= self.post_scale_factor
                 p.grad.set_(g)
